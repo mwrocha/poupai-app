@@ -68,6 +68,17 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     tagId = tagId,
 )
 
+// ─── Transaction domain → Entity (usado ao salvar resposta da API no Room) ───
+fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
+    id = id,
+    title = title,
+    amount = amount,
+    type = type.name,
+    category = category,
+    date = date.time,
+    tagId = tagId,
+)
+
 // ─── Investment Mappers ───
 
 fun InvestmentDto.toDomain(): Investment = Investment(
