@@ -19,19 +19,13 @@ class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
 ) : TransactionRepository {
 
-    /**
-     * Estratégia offline-first:
-     * 1. Emite imediatamente os dados do Room (cache local)
-     * 2. Busca da API em paralelo
-     * 3. Salva no Room e emite os dados atualizados
-     */
     override fun getTransactions(): Flow<Resource<List<Transaction>>> = flow {
-        // 1. Emite cache local primeiro (resposta imediata)
+        // 1. Emite cache local primeiro
         val cached = transactionDao.getAllTransactionsOnce()
         if (cached.isNotEmpty()) {
             emit(Resource.Success(cached.map { it.toDomain() }))
         } else {
-            emit(Resource.Loading())
+            emit(Resource.Loading)
         }
 
         // 2. Sincroniza com a API
@@ -40,12 +34,10 @@ class TransactionRepositoryImpl @Inject constructor(
             val apiResponse = response.body()
             if (response.isSuccessful && apiResponse?.success == true && apiResponse.data != null) {
                 val remote = apiResponse.data
-                // Substitui o cache local pelo dado mais recente da API
                 transactionDao.clearAll()
-                transactionDao.insertTransactions(remote.map { it.toEntity() })
+                transactionDao.insertAll(remote.map { it.toEntity() })
                 emit(Resource.Success(remote.map { it.toDomain() }))
             } else {
-                // API falhou mas já emitimos o cache — não precisa emitir erro se tinha cache
                 if (cached.isEmpty()) {
                     emit(Resource.Error("Erro ao carregar transações"))
                 }
@@ -54,7 +46,6 @@ class TransactionRepositoryImpl @Inject constructor(
             if (cached.isEmpty()) {
                 emit(Resource.Error(e.message ?: "Erro de conexão"))
             }
-            // Se tinha cache, silencia o erro — usuário já viu os dados locais
         }
     }
 
