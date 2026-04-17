@@ -1,5 +1,6 @@
 package io.poupai.app.core.di
 
+import io.poupai.app.core.network.AuthInterceptor
 import io.poupai.app.data.remote.api.AuthApi
 import io.poupai.app.data.remote.api.FinanceApi
 import io.poupai.app.data.remote.api.InvestmentApi
@@ -25,8 +26,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)               // ← JWT em todas as requisições
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BODY
