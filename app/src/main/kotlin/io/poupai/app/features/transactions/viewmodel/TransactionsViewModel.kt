@@ -112,7 +112,7 @@ class TransactionsViewModel @Inject constructor(
 
             val result = addTransactionUseCase(
                 title = state.formTitle,
-                amount = state.formAmount.toDouble(),
+                amount = state.formAmount.replace(",", ".").toDouble(),
                 type = state.formType,
                 category = state.formCategory,
                 date = convertDate(state.formDate),
