@@ -13,6 +13,10 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
 
+    // Versão suspend para leitura única (sem Flow) — usada na sincronização inicial
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
+    suspend fun getAllTransactionsOnce(): List<TransactionEntity>
+
     @Query("SELECT * FROM transactions WHERE date BETWEEN :startDate AND :endDate ORDER BY date DESC")
     fun getTransactionsByDateRange(startDate: Long, endDate: Long): Flow<List<TransactionEntity>>
 
@@ -28,6 +32,13 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(transactions: List<TransactionEntity>)
 
+    // Alias para compatibilidade com o repositório
+    suspend fun insertTransactions(transactions: List<TransactionEntity>) = insertAll(transactions)
+
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteTransaction(id: String)
+
+    // Limpa o cache local antes de sincronizar com a API
+    @Query("DELETE FROM transactions")
+    suspend fun clearAll()
 }
