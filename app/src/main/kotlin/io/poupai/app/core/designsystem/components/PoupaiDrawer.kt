@@ -14,7 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 
 data class DrawerMenuItem(
     val icon: ImageVector,
@@ -49,36 +53,65 @@ fun PoupaiDrawerContent(
             .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 32.dp),
     ) {
-        // Header: avatar + nome
+        // ─── Header: avatar + nome ───
         Row(
             modifier = Modifier.padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Avatar com foto ou inicial
             Box(
-                modifier = Modifier.size(56.dp).clip(CircleShape)
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = userName.firstOrNull()?.uppercase() ?: "U",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
+                if (!profileImageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = profileImageUrl,
+                        contentDescription = "Foto de perfil",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Text(
+                        text = userName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "U",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
             }
+
             Spacer(Modifier.width(16.dp))
+
             Column {
-                Text(userName, style = MaterialTheme.typography.titleMedium)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("@$userHandle", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(6.dp))
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF4CAF50)))
+                Text(
+                    text = userName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (userHandle.isNotBlank()) {
+                    Text(
+                        text = "@$userHandle",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
 
         Spacer(Modifier.height(32.dp))
 
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // ─── Itens do menu ───
         drawerMenuItems.forEach { item ->
             val isSelected = item.route == selectedRoute
             Row(
@@ -86,31 +119,54 @@ fun PoupaiDrawerContent(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 2.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                        else Color.Transparent
+                    )
                     .clickable { onItemClick(item.route) }
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(item.icon, item.label,
+                Icon(
+                    item.icon,
+                    item.label,
                     tint = if (isSelected) MaterialTheme.colorScheme.primary
-                           else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp))
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp),
+                )
                 Spacer(Modifier.width(16.dp))
-                Text(item.label, style = MaterialTheme.typography.bodyLarge,
+                Text(
+                    item.label,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f))
-                Icon(Icons.Default.ChevronRight, null,
+                    else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    Icons.Default.ChevronRight,
+                    null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(20.dp))
+                    modifier = Modifier.size(20.dp),
+                )
             }
         }
 
         Spacer(Modifier.weight(1f))
 
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        // ─── Botão sair ───
         OutlinedButton(
             onClick = onLogout,
-            modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(48.dp),
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .fillMaxWidth()
+                .height(48.dp),
             shape = RoundedCornerShape(12.dp),
         ) {
             Text("Sair")
