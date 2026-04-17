@@ -1,7 +1,5 @@
 package io.poupai.app.data.remote.dto
 
-// ─── Wrapper que bate com o formato do backend ───
-// {"success":true,"message":"...","data":{...}}
 data class ApiResponse<T>(
     val success: Boolean,
     val message: String?,
@@ -32,6 +30,14 @@ data class UserDto(
     val birthDate: String?,
     val profileImageUrl: String?,
     val token: String?,
+)
+
+data class CreateTransactionRequest(
+    val title: String,
+    val amount: Double,
+    val type: String,
+    val category: String,
+    val date: String,
 )
 
 data class TransactionDto(
