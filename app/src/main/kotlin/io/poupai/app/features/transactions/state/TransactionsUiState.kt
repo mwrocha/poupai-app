@@ -24,7 +24,7 @@ data class TransactionsUiState(
     val isFormValid: Boolean
         get() = formTitle.isNotBlank() &&
                 formAmount.isNotBlank() &&
-                formAmount.toDoubleOrNull() != null &&
+                formAmount.replace(",", ".").toDoubleOrNull() != null &&
                 formCategory.isNotBlank() &&
                 formDate.isNotBlank()
 }
