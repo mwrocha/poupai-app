@@ -3,7 +3,7 @@ package io.poupai.app.features.dashboard.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.poupai.app.core.network.Resource
-import io.poupai.app.domain.repository.AuthRepository
+import io.poupai.app.core.util.PreferencesManager
 import io.poupai.app.domain.repository.TransactionRepository
 import io.poupai.app.features.dashboard.state.DashboardUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    private val preferencesManager: PreferencesManager,
     private val transactionRepository: TransactionRepository,
 ) : ViewModel() {
 
@@ -31,18 +31,22 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            // Carregar nome do usuário
-            val user = authRepository.getCurrentUser()
-            _uiState.update { it.copy(userName = user?.firstName ?: "Usuário") }
+            // Lê direto do DataStore — já salvo no login/cadastro
+            val firstName = preferencesManager.getFirstNameSync()
+                ?.ifBlank { null } ?: "Usuário"
+            val profileImageUrl = preferencesManager.getProfileImageUrlSync()
 
-            // Carregar saldo total
+            _uiState.update {
+                it.copy(
+                    userName = firstName,
+                    profileImageUrl = profileImageUrl,
+                )
+            }
+
+            // Saldo total
             when (val balance = transactionRepository.getTotalBalance()) {
-                is Resource.Success -> {
-                    _uiState.update { it.copy(totalSaved = balance.data) }
-                }
-                is Resource.Error -> {
-                    _uiState.update { it.copy(errorMessage = balance.message) }
-                }
+                is Resource.Success -> _uiState.update { it.copy(totalSaved = balance.data) }
+                is Resource.Error -> _uiState.update { it.copy(errorMessage = balance.message) }
                 is Resource.Loading -> Unit
             }
 

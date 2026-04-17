@@ -20,35 +20,55 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun login(email: String, password: String): Resource<User> {
         return try {
             val response = authApi.login(LoginRequest(email, password))
-            if (response.isSuccessful && response.body() != null) {
-                val userDto = response.body()!!
+            val apiResponse = response.body()
 
-                // Salvar token e ID no DataStore
+            if (response.isSuccessful && apiResponse?.success == true && apiResponse.data != null) {
+                val userDto = apiResponse.data
                 userDto.token?.let { preferencesManager.saveAuthToken(it) }
                 preferencesManager.saveUserId(userDto.id.orEmpty())
-
+                preferencesManager.saveFirstName(userDto.firstName.orEmpty().trim())
+                userDto.profileImageUrl?.let { preferencesManager.saveProfileImageUrl(it) }
                 Resource.Success(userDto.toDomain())
             } else {
-                Resource.Error("Credenciais inválidas")
+                Resource.Error(apiResponse?.message ?: "Credenciais inválidas")
             }
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Erro ao fazer login", e)
         }
     }
 
-    override suspend fun register(email: String, password: String): Resource<User> {
+    override suspend fun register(
+        email: String,
+        password: String,
+        username: String,
+        firstName: String,
+        lastName: String,
+        birthDate: String,
+        profileImagePath: String?,
+    ): Resource<User> {
         return try {
-            val response = authApi.register(RegisterRequest(email, password))
-            if (response.isSuccessful && response.body() != null) {
-                val userDto = response.body()!!
+            val response = authApi.register(
+                RegisterRequest(
+                    email = email,
+                    password = password,
+                    username = username.ifBlank { null },
+                    firstName = firstName.ifBlank { null },
+                    lastName = lastName.ifBlank { null },
+                    birthDate = birthDate.ifBlank { null },
+                    profileImageUrl = profileImagePath,
+                )
+            )
+            val apiResponse = response.body()
 
-                // Salvar token e ID no DataStore
+            if (response.isSuccessful && apiResponse?.success == true && apiResponse.data != null) {
+                val userDto = apiResponse.data
                 userDto.token?.let { preferencesManager.saveAuthToken(it) }
                 preferencesManager.saveUserId(userDto.id.orEmpty())
-
+                preferencesManager.saveFirstName(userDto.firstName.orEmpty().trim())
+                userDto.profileImageUrl?.let { preferencesManager.saveProfileImageUrl(it) }
                 Resource.Success(userDto.toDomain())
             } else {
-                Resource.Error("Erro ao criar conta")
+                Resource.Error(apiResponse?.message ?: "Erro ao criar conta")
             }
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Erro ao registrar", e)
@@ -60,9 +80,8 @@ class AuthRepositoryImpl @Inject constructor(
         userDao.deleteAll()
     }
 
-    override suspend fun isLoggedIn(): Boolean {
-        return preferencesManager.getAuthTokenSync() != null
-    }
+    override suspend fun isLoggedIn(): Boolean =
+        preferencesManager.getAuthTokenSync() != null
 
     override suspend fun getCurrentUser(): User? {
         val userId = preferencesManager.getUserIdSync() ?: return null

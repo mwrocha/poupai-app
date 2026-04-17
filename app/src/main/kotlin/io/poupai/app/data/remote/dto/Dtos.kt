@@ -1,6 +1,12 @@
 package io.poupai.app.data.remote.dto
 
-import com.google.gson.annotations.SerializedName
+// ─── Wrapper que bate com o formato do backend ───
+// {"success":true,"message":"...","data":{...}}
+data class ApiResponse<T>(
+    val success: Boolean,
+    val message: String?,
+    val data: T?,
+)
 
 data class LoginRequest(
     val email: String,
@@ -10,9 +16,13 @@ data class LoginRequest(
 data class RegisterRequest(
     val email: String,
     val password: String,
+    val username: String?,
+    val firstName: String?,
+    val lastName: String?,
+    val birthDate: String?,
+    val profileImageUrl: String?,
 )
 
-// Campos em camelCase pois o backend Spring retorna assim por padrão
 data class UserDto(
     val id: String?,
     val email: String?,

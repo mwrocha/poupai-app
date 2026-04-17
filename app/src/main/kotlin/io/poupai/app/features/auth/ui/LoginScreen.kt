@@ -54,6 +54,8 @@ fun LoginScreen(
         focusedLabelColor = MaterialTheme.colorScheme.primary,
         unfocusedLabelColor = Color(0xFF9E9E9E),
         cursorColor = MaterialTheme.colorScheme.primary,
+        focusedTextColor = Color(0xFF754AA8),      // ← texto dos forms
+        unfocusedTextColor = Color(0xFF311E46),
     )
 
     Box(

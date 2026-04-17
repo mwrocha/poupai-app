@@ -28,7 +28,7 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             delay(1500) // Tempo mínimo do splash
 
-            val isLoggedIn = authRepository.isLoggedIn()
+            val isLoggedIn = false
             if (isLoggedIn) {
                 val user = authRepository.getCurrentUser()
                 _userName.value = "${user?.firstName} ${user?.lastName}"

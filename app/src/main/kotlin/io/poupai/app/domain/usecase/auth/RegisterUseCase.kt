@@ -8,9 +8,26 @@ import javax.inject.Inject
 class RegisterUseCase @Inject constructor(
     private val authRepository: AuthRepository,
 ) {
-    suspend operator fun invoke(email: String, password: String): Resource<User> {
+    suspend operator fun invoke(
+        email: String,
+        password: String,
+        username: String = "",
+        firstName: String = "",
+        lastName: String = "",
+        birthDate: String = "",
+        profileImagePath: String? = null,
+    ): Resource<User> {
         if (email.isBlank()) return Resource.Error("E-mail não pode ser vazio")
         if (password.length < 6) return Resource.Error("Senha deve ter no mínimo 6 caracteres")
-        return authRepository.register(email, password)
+
+        return authRepository.register(
+            email = email,
+            password = password,
+            username = username,
+            firstName = firstName,
+            lastName = lastName,
+            birthDate = birthDate,
+            profileImagePath = profileImagePath,
+        )
     }
 }

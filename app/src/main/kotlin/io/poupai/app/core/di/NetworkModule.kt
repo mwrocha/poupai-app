@@ -4,6 +4,8 @@ import io.poupai.app.data.remote.api.AuthApi
 import io.poupai.app.data.remote.api.FinanceApi
 import io.poupai.app.data.remote.api.InvestmentApi
 import io.poupai.app.data.remote.api.TransactionApi
+import io.poupai.app.data.remote.api.UploadApi
+import io.poupai.app.data.remote.api.UserApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,8 +21,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // 10.0.2.2 = localhost do PC visto pelo emulador Android
-    // Quando for para produção, trocar pela URL real da API
     private const val BASE_URL = "http://192.168.0.5:8080/"
 
     @Provides
@@ -34,6 +34,7 @@ object NetworkModule {
             )
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 
@@ -51,6 +52,16 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserApi(retrofit: Retrofit): UserApi =
+        retrofit.create(UserApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUploadApi(retrofit: Retrofit): UploadApi =
+        retrofit.create(UploadApi::class.java)
 
     @Provides
     @Singleton

@@ -23,7 +23,7 @@ fun SavingsChart(
 ) {
     if (data.isEmpty()) return
 
-    val maxValue = data.maxOrNull() ?: 1.0
+    val maxValue = data.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
 
     Row(
         modifier = modifier

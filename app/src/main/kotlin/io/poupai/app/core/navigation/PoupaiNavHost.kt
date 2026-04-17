@@ -89,7 +89,6 @@ fun PoupaiNavHost() {
             )
         }
 
-        // ─── Tela de boas-vindas pós-login ───
         composable(
             route = Route.WelcomeAfterLogin.route,
             arguments = listOf(navArgument("userName") { type = NavType.StringType }),

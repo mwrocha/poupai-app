@@ -16,10 +16,6 @@ import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "poupai_prefs")
 
-/**
- * Gerenciador de preferências persistentes usando Jetpack DataStore.
- * Armazena token de autenticação, ID do usuário, e flags do app.
- */
 @Singleton
 class PreferencesManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -28,74 +24,67 @@ class PreferencesManager @Inject constructor(
     companion object {
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
         private val KEY_USER_ID = stringPreferencesKey("user_id")
+        private val KEY_FIRST_NAME = stringPreferencesKey("first_name")
+        private val KEY_PROFILE_IMAGE_URL = stringPreferencesKey("profile_image_url")
         private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val KEY_BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
     }
 
     // ─── Auth Token ───
-
-    val authToken: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[KEY_AUTH_TOKEN]
-    }
+    val authToken: Flow<String?> = context.dataStore.data.map { it[KEY_AUTH_TOKEN] }
 
     suspend fun saveAuthToken(token: String) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_AUTH_TOKEN] = token
-        }
+        context.dataStore.edit { it[KEY_AUTH_TOKEN] = token }
     }
 
-    suspend fun clearAuthToken() {
-        context.dataStore.edit { prefs ->
-            prefs.remove(KEY_AUTH_TOKEN)
-        }
-    }
-
-    suspend fun getAuthTokenSync(): String? {
-        return context.dataStore.data.first()[KEY_AUTH_TOKEN]
-    }
+    suspend fun getAuthTokenSync(): String? =
+        context.dataStore.data.first()[KEY_AUTH_TOKEN]
 
     // ─── User ID ───
-
-    val userId: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[KEY_USER_ID]
-    }
+    val userId: Flow<String?> = context.dataStore.data.map { it[KEY_USER_ID] }
 
     suspend fun saveUserId(id: String) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_USER_ID] = id
-        }
+        context.dataStore.edit { it[KEY_USER_ID] = id }
     }
 
-    suspend fun getUserIdSync(): String? {
-        return context.dataStore.data.first()[KEY_USER_ID]
+    suspend fun getUserIdSync(): String? =
+        context.dataStore.data.first()[KEY_USER_ID]
+
+    // ─── First Name ───
+    suspend fun saveFirstName(name: String) {
+        context.dataStore.edit { it[KEY_FIRST_NAME] = name }
     }
+
+    suspend fun getFirstNameSync(): String? =
+        context.dataStore.data.first()[KEY_FIRST_NAME]
+
+    // ─── Profile Image URL ───
+    suspend fun saveProfileImageUrl(url: String) {
+        context.dataStore.edit { it[KEY_PROFILE_IMAGE_URL] = url }
+    }
+
+    suspend fun getProfileImageUrlSync(): String? =
+        context.dataStore.data.first()[KEY_PROFILE_IMAGE_URL]
 
     // ─── Onboarding ───
-
-    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[KEY_ONBOARDING_COMPLETED] ?: false
+    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map {
+        it[KEY_ONBOARDING_COMPLETED] ?: false
     }
 
     suspend fun setOnboardingCompleted() {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_ONBOARDING_COMPLETED] = true
-        }
+        context.dataStore.edit { it[KEY_ONBOARDING_COMPLETED] = true }
     }
 
     // ─── Biometric ───
-
-    val isBiometricEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[KEY_BIOMETRIC_ENABLED] ?: false
+    val isBiometricEnabled: Flow<Boolean> = context.dataStore.data.map {
+        it[KEY_BIOMETRIC_ENABLED] ?: false
     }
 
     suspend fun setBiometricEnabled(enabled: Boolean) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_BIOMETRIC_ENABLED] = enabled
-        }
+        context.dataStore.edit { it[KEY_BIOMETRIC_ENABLED] = enabled }
     }
 
-    // ─── Logout completo ───
-
+    // ─── Logout ───
     suspend fun clearAll() {
         context.dataStore.edit { it.clear() }
     }
