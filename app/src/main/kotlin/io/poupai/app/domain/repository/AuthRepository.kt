@@ -14,6 +14,8 @@ interface AuthRepository {
         lastName: String = "",
         birthDate: String = "",
         profileImagePath: String? = null,
+        cpf: String? = null,
+        phone: String? = null,
     ): Resource<User>
 
     suspend fun logout()
