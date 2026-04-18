@@ -7,6 +7,8 @@ data class RegisterProfileUiState(
     val firstName: String = "",
     val lastName: String = "",
     val birthDate: String = "",
+    val cpf: String = "",
+    val phone: String = "",
     val profileImageUri: Uri? = null,
     val profileImagePath: String? = null,
     val isLoading: Boolean = false,

@@ -36,7 +36,7 @@ class RegisterViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    // ─── Step 1: Credenciais ──────────────────────────────────────────────
+    // ─── Step 1: Credenciais ───
 
     private val _credentialsState = MutableStateFlow(RegisterCredentialsUiState())
     val credentialsState: StateFlow<RegisterCredentialsUiState> = _credentialsState.asStateFlow()
@@ -67,12 +67,11 @@ class RegisterViewModel @Inject constructor(
         _credentialsState.update { it.copy(isSuccess = true, errorMessage = null) }
     }
 
-    // ─── Step 2: Perfil ───────────────────────────────────────────────────
+    // ─── Step 2: Perfil ───
 
     private val _profileState = MutableStateFlow(RegisterProfileUiState())
     val profileState: StateFlow<RegisterProfileUiState> = _profileState.asStateFlow()
 
-    // Uri da imagem selecionada — usada para preview na tela
     private var selectedImageUri: Uri? = null
 
     fun onUsernameChanged(username: String) {
@@ -89,6 +88,17 @@ class RegisterViewModel @Inject constructor(
 
     fun onBirthDateChanged(date: String) {
         _profileState.update { it.copy(birthDate = date, errorMessage = null) }
+    }
+
+    // CPF e phone: guarda apenas dígitos, máscara cuida da exibição
+    fun onCpfChanged(value: String) {
+        val digits = value.filter { it.isDigit() }.take(11)
+        _profileState.update { it.copy(cpf = digits) }
+    }
+
+    fun onPhoneChanged(value: String) {
+        val digits = value.filter { it.isDigit() }.take(11)
+        _profileState.update { it.copy(phone = digits) }
     }
 
     fun onImageSelected(uri: Uri) {
@@ -117,13 +127,11 @@ class RegisterViewModel @Inject constructor(
         viewModelScope.launch {
             _profileState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // 1. Faz upload da imagem se selecionada
             var profileImageUrl: String? = null
             selectedImageUri?.let { uri ->
                 profileImageUrl = uploadImage(uri)
             }
 
-            // 2. Registra o usuário com todos os dados
             when (val result = registerUseCase(
                 email = registerSession.email,
                 password = registerSession.password,
@@ -132,6 +140,8 @@ class RegisterViewModel @Inject constructor(
                 lastName = profile.lastName,
                 birthDate = convertedDate.orEmpty(),
                 profileImagePath = profileImageUrl,
+                cpf = profile.cpf.ifBlank { null },
+                phone = profile.phone.ifBlank { null },
             )) {
                 is Resource.Success -> {
                     registerSession.clear()
@@ -149,17 +159,15 @@ class RegisterViewModel @Inject constructor(
         return try {
             val tempId = UUID.randomUUID().toString()
             val file = uriToFile(uri)
-
             val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
             val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
             val tempIdBody = tempId.toRequestBody("text/plain".toMediaTypeOrNull())
-
             val response = uploadApi.uploadProfileImageRegister(body, tempIdBody)
             if (response.isSuccessful && response.body()?.success == true) {
                 response.body()?.data?.get("url")
             } else null
         } catch (e: Exception) {
-            null // Upload falhou — prossegue sem foto
+            null
         }
     }
 
@@ -167,9 +175,7 @@ class RegisterViewModel @Inject constructor(
         val inputStream = context.contentResolver.openInputStream(uri)
             ?: throw RuntimeException("Não foi possível abrir a imagem")
         val tempFile = File(context.cacheDir, "profile_${UUID.randomUUID()}.jpg")
-        FileOutputStream(tempFile).use { output ->
-            inputStream.copyTo(output)
-        }
+        FileOutputStream(tempFile).use { output -> inputStream.copyTo(output) }
         return tempFile
     }
 
