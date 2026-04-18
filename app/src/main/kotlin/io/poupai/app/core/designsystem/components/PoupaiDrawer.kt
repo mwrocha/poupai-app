@@ -44,6 +44,7 @@ fun PoupaiDrawerContent(
     selectedRoute: String?,
     onItemClick: (String) -> Unit,
     onLogout: () -> Unit,
+    onAvatarClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -53,17 +54,20 @@ fun PoupaiDrawerContent(
             .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 32.dp),
     ) {
-        // ─── Header: avatar + nome ───
+        // ─── Header: avatar clicável + nome ───
         Row(
             modifier = Modifier.padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Avatar com foto ou inicial
             Box(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .then(
+                        if (onAvatarClick != null) Modifier.clickable { onAvatarClick() }
+                        else Modifier
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 if (!profileImageUrl.isNullOrBlank()) {
@@ -85,7 +89,10 @@ fun PoupaiDrawerContent(
 
             Spacer(Modifier.width(16.dp))
 
-            Column {
+            Column(
+                modifier = if (onAvatarClick != null) Modifier.clickable { onAvatarClick() }
+                else Modifier
+            ) {
                 Text(
                     text = userName,
                     style = MaterialTheme.typography.titleMedium,
@@ -128,8 +135,7 @@ fun PoupaiDrawerContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    item.icon,
-                    item.label,
+                    item.icon, item.label,
                     tint = if (isSelected) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp),
@@ -143,8 +149,7 @@ fun PoupaiDrawerContent(
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
-                    Icons.Default.ChevronRight,
-                    null,
+                    Icons.Default.ChevronRight, null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.size(20.dp),
                 )
@@ -160,7 +165,6 @@ fun PoupaiDrawerContent(
 
         Spacer(Modifier.height(16.dp))
 
-        // ─── Botão sair ───
         OutlinedButton(
             onClick = onLogout,
             modifier = Modifier
