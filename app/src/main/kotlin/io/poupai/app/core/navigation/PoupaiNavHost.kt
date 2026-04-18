@@ -24,6 +24,13 @@ import io.poupai.app.features.transactions.ui.TransactionsScreen
 fun PoupaiNavHost() {
     val navController = rememberNavController()
 
+    // Navega para o Welcome limpando toda a pilha — usado no logout
+    fun navigateToLogin() {
+        navController.navigate(Route.Welcome.route) {
+            popUpTo(0) { inclusive = true }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Route.Splash.route,
@@ -111,6 +118,7 @@ fun PoupaiNavHost() {
                 onNavigateToFinances = { navController.navigate(Route.Finances.route) },
                 onNavigateToInvestments = { navController.navigate(Route.Investments.route) },
                 onNavigateToProfile = { navController.navigate(Route.Profile.route) },
+                onLogout = { navigateToLogin() },
             )
         }
 
@@ -131,7 +139,10 @@ fun PoupaiNavHost() {
         }
 
         composable(Route.Profile.route) {
-            ProfileScreen(onNavigateBack = { navController.popBackStack() })
+            ProfileScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onLogout = { navigateToLogin() },
+            )
         }
     }
 }
