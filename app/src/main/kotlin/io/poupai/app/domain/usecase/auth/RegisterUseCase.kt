@@ -16,6 +16,8 @@ class RegisterUseCase @Inject constructor(
         lastName: String = "",
         birthDate: String = "",
         profileImagePath: String? = null,
+        cpf: String? = null,
+        phone: String? = null,
     ): Resource<User> {
         if (email.isBlank()) return Resource.Error("E-mail não pode ser vazio")
         if (password.length < 6) return Resource.Error("Senha deve ter no mínimo 6 caracteres")
@@ -28,6 +30,8 @@ class RegisterUseCase @Inject constructor(
             lastName = lastName,
             birthDate = birthDate,
             profileImagePath = profileImagePath,
+            cpf = cpf,
+            phone = phone,
         )
     }
 }
