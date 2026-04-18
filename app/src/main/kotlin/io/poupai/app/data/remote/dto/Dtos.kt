@@ -19,6 +19,8 @@ data class RegisterRequest(
     val lastName: String?,
     val birthDate: String?,
     val profileImageUrl: String?,
+    val cpf: String?,      // ← precisa ter
+    val phone: String?,    // ← precisa ter
 )
 
 data class UserDto(
@@ -29,7 +31,24 @@ data class UserDto(
     val lastName: String?,
     val birthDate: String?,
     val profileImageUrl: String?,
+    val cpf: String?,
+    val phone: String?,
     val token: String?,
+)
+
+data class UpdateProfileRequest(
+    val username: String?,
+    val firstName: String?,
+    val lastName: String?,
+    val birthDate: String?,
+    val profileImageUrl: String?,
+    val cpf: String?,
+    val phone: String?,
+)
+
+data class UpdateEmailRequest(
+    val newEmail: String,
+    val currentPassword: String,
 )
 
 data class CreateTransactionRequest(
