@@ -94,5 +94,4 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
-    implementation(libs.vico.compose)
 }
