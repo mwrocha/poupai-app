@@ -45,6 +45,8 @@ class AuthRepositoryImpl @Inject constructor(
         lastName: String,
         birthDate: String,
         profileImagePath: String?,
+        cpf: String?,
+        phone: String?,
     ): Resource<User> {
         return try {
             val response = authApi.register(
@@ -56,6 +58,8 @@ class AuthRepositoryImpl @Inject constructor(
                     lastName = lastName.ifBlank { null },
                     birthDate = birthDate.ifBlank { null },
                     profileImageUrl = profileImagePath,
+                    cpf = cpf,
+                    phone = phone,
                 )
             )
             val apiResponse = response.body()
