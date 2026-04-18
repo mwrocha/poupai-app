@@ -11,17 +11,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import io.poupai.app.core.designsystem.components.PoupaiDrawerContent
 import io.poupai.app.core.theme.Purple40
@@ -47,7 +48,6 @@ fun DashboardScreen(
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Recarrega dados sempre que a tela volta ao foco (ex: voltando de Transações)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -58,6 +58,9 @@ fun DashboardScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // Alpha 0 quando drawer está aberto — mantém o espaço, some visualmente
+    val headerAlpha = if (drawerState.isOpen) 0f else 1f
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -66,6 +69,10 @@ fun DashboardScreen(
                 userHandle = "",
                 profileImageUrl = uiState.profileImageUrl,
                 selectedRoute = "dashboard",
+                onAvatarClick = {
+                    scope.launch { drawerState.close() }
+                    onNavigateToProfile()
+                },
                 onItemClick = { route ->
                     scope.launch { drawerState.close() }
                     when (route) {
@@ -85,13 +92,14 @@ fun DashboardScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // ─── Header roxo ───
+            // ─── Header roxo — layout estável, só o conteúdo some via alpha ───
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(240.dp)
                     .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
-                    .padding(24.dp),
+                    .padding(24.dp)
+                    .alpha(headerAlpha),
             ) {
                 IconButton(
                     onClick = { scope.launch { drawerState.open() } },
@@ -141,7 +149,7 @@ fun DashboardScreen(
                 }
             }
 
-            // ─── Card poupança com gráfico ───
+            // ─── Card poupança ───
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
