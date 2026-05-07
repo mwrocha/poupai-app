@@ -82,9 +82,9 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
 // ─── Investment Mappers ───
 
 fun InvestmentDto.toDomain(): Investment = Investment(
-    id = id,
-    name = name,
-    type = when (type.uppercase()) {
+    id = id.orEmpty(),
+    name = name.orEmpty(),
+    type = when (type?.uppercase()) {
         "RENDA_VARIAVEL" -> InvestmentType.RENDA_VARIAVEL
         "RENDA_FIXA" -> InvestmentType.RENDA_FIXA
         "CRIPTOMOEDAS" -> InvestmentType.CRIPTOMOEDAS
