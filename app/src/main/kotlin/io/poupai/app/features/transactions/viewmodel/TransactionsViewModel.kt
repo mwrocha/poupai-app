@@ -3,9 +3,12 @@ package io.poupai.app.features.transactions.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.poupai.app.core.network.Resource
+import io.poupai.app.domain.model.Transaction
 import io.poupai.app.domain.model.TransactionType
+import io.poupai.app.domain.repository.TransactionRepository
 import io.poupai.app.domain.usecase.transaction.AddTransactionUseCase
 import io.poupai.app.domain.usecase.transaction.GetTransactionsUseCase
+import io.poupai.app.features.transactions.state.TransactionFilter
 import io.poupai.app.features.transactions.state.TransactionsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +24,7 @@ import javax.inject.Inject
 class TransactionsViewModel @Inject constructor(
     private val getTransactionsUseCase: GetTransactionsUseCase,
     private val addTransactionUseCase: AddTransactionUseCase,
+    private val transactionRepository: TransactionRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionsUiState())
@@ -30,7 +34,7 @@ class TransactionsViewModel @Inject constructor(
         loadTransactions()
     }
 
-    private fun loadTransactions() {
+    fun loadTransactions() {
         viewModelScope.launch {
             getTransactionsUseCase().collect { result ->
                 when (result) {
@@ -49,7 +53,7 @@ class TransactionsViewModel @Inject constructor(
                                 balance = income - expense,
                                 incomeTotal = income,
                                 expenseTotal = expense,
-                                recentTransactions = transactions,
+                                allTransactions = transactions,
                             )
                         }
                     }
@@ -60,6 +64,63 @@ class TransactionsViewModel @Inject constructor(
             }
         }
     }
+
+    // ─── Filtros ───
+
+    fun onFilterChanged(filter: TransactionFilter) {
+        _uiState.update { it.copy(activeFilter = filter) }
+    }
+
+    fun onMonthChanged(month: Int, year: Int) {
+        _uiState.update { it.copy(selectedMonth = month, selectedYear = year) }
+    }
+
+    fun onPreviousMonth() {
+        val state = _uiState.value
+        val date = LocalDate.of(state.selectedYear, state.selectedMonth, 1).minusMonths(1)
+        _uiState.update { it.copy(selectedMonth = date.monthValue, selectedYear = date.year) }
+    }
+
+    fun onNextMonth() {
+        val state = _uiState.value
+        val date = LocalDate.of(state.selectedYear, state.selectedMonth, 1).plusMonths(1)
+        _uiState.update { it.copy(selectedMonth = date.monthValue, selectedYear = date.year) }
+    }
+
+    // ─── Exclusão ───
+
+    fun onDeleteRequest(transaction: Transaction) {
+        _uiState.update {
+            it.copy(showDeleteDialog = true, transactionToDelete = transaction)
+        }
+    }
+
+    fun onDeleteCancel() {
+        _uiState.update { it.copy(showDeleteDialog = false, transactionToDelete = null) }
+    }
+
+    fun onDeleteConfirm() {
+        val transaction = _uiState.value.transactionToDelete ?: return
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    showDeleteDialog = false,
+                    transactionToDelete = null,
+                    deletingId = transaction.id,
+                )
+            }
+            when (transactionRepository.deleteTransaction(transaction.id)) {
+                is Resource.Success -> loadTransactions()
+                is Resource.Error -> _uiState.update {
+                    it.copy(deletingId = null, errorMessage = "Erro ao deletar transação")
+                }
+                is Resource.Loading -> Unit
+            }
+            _uiState.update { it.copy(deletingId = null) }
+        }
+    }
+
+    // ─── Formulário ───
 
     fun onShowAddSheet() {
         val today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
@@ -80,25 +141,20 @@ class TransactionsViewModel @Inject constructor(
         _uiState.update { it.copy(showAddSheet = false) }
     }
 
-    fun onFormTitleChanged(value: String) {
+    fun onFormTitleChanged(value: String) =
         _uiState.update { it.copy(formTitle = value, formError = null) }
-    }
 
-    fun onFormAmountChanged(value: String) {
+    fun onFormAmountChanged(value: String) =
         _uiState.update { it.copy(formAmount = value, formError = null) }
-    }
 
-    fun onFormTypeChanged(type: TransactionType) {
+    fun onFormTypeChanged(type: TransactionType) =
         _uiState.update { it.copy(formType = type) }
-    }
 
-    fun onFormCategoryChanged(value: String) {
+    fun onFormCategoryChanged(value: String) =
         _uiState.update { it.copy(formCategory = value, formError = null) }
-    }
 
-    fun onFormDateChanged(value: String) {
+    fun onFormDateChanged(value: String) =
         _uiState.update { it.copy(formDate = value, formError = null) }
-    }
 
     fun onAddTransaction() {
         val state = _uiState.value
@@ -106,10 +162,8 @@ class TransactionsViewModel @Inject constructor(
             _uiState.update { it.copy(formError = "Preencha todos os campos") }
             return
         }
-
         viewModelScope.launch {
             _uiState.update { it.copy(formIsLoading = true) }
-
             val result = addTransactionUseCase(
                 title = state.formTitle,
                 amount = state.formAmount.replace(",", ".").toDouble(),
@@ -117,7 +171,6 @@ class TransactionsViewModel @Inject constructor(
                 category = state.formCategory,
                 date = convertDate(state.formDate),
             )
-
             when (result) {
                 is Resource.Success -> {
                     _uiState.update { it.copy(showAddSheet = false, formIsLoading = false) }
