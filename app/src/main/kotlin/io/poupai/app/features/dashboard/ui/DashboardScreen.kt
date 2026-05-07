@@ -32,6 +32,7 @@ import io.poupai.app.features.dashboard.components.SavingsChart
 import io.poupai.app.features.dashboard.viewmodel.DashboardViewModel
 import kotlinx.coroutines.launch
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -39,6 +40,7 @@ fun DashboardScreen(
     onNavigateToTags: () -> Unit,
     onNavigateToFinances: () -> Unit,
     onNavigateToInvestments: () -> Unit,
+    onNavigateToGoals: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onLogout: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel(),
@@ -80,6 +82,7 @@ fun DashboardScreen(
                         "finances" -> onNavigateToFinances()
                         "investments" -> onNavigateToInvestments()
                         "tags" -> onNavigateToTags()
+                        "goals" -> onNavigateToGoals()
                         "profile" -> onNavigateToProfile()
                     }
                 },
