@@ -2,11 +2,13 @@ package io.poupai.app.core.di
 
 import io.poupai.app.data.repository.AuthRepositoryImpl
 import io.poupai.app.data.repository.FinanceRepositoryImpl
+import io.poupai.app.data.repository.GoalRepositoryImpl
 import io.poupai.app.data.repository.InvestmentRepositoryImpl
 import io.poupai.app.data.repository.TransactionRepositoryImpl
 import io.poupai.app.data.repository.UserRepositoryImpl
 import io.poupai.app.domain.repository.AuthRepository
 import io.poupai.app.domain.repository.FinanceRepository
+import io.poupai.app.domain.repository.GoalRepository
 import io.poupai.app.domain.repository.InvestmentRepository
 import io.poupai.app.domain.repository.TransactionRepository
 import io.poupai.app.domain.repository.UserRepository
@@ -20,23 +22,21 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    @Binds
-    @Singleton
+    @Binds @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
-    @Binds
-    @Singleton
+    @Binds @Singleton
     abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 
-    @Binds
-    @Singleton
+    @Binds @Singleton
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
 
-    @Binds
-    @Singleton
+    @Binds @Singleton
     abstract fun bindFinanceRepository(impl: FinanceRepositoryImpl): FinanceRepository
 
-    @Binds
-    @Singleton
+    @Binds @Singleton
     abstract fun bindInvestmentRepository(impl: InvestmentRepositoryImpl): InvestmentRepository
+
+    @Binds @Singleton
+    abstract fun bindGoalRepository(impl: GoalRepositoryImpl): GoalRepository
 }
