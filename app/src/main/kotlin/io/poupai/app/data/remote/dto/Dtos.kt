@@ -19,8 +19,8 @@ data class RegisterRequest(
     val lastName: String?,
     val birthDate: String?,
     val profileImageUrl: String?,
-    val cpf: String?,      // ← precisa ter
-    val phone: String?,    // ← precisa ter
+    val cpf: String?,
+    val phone: String?,
 )
 
 data class UserDto(
@@ -70,12 +70,19 @@ data class TransactionDto(
 )
 
 data class InvestmentDto(
-    val id: String,
+    val id: String?,
+    val name: String?,
+    val type: String?,
+    val currentValue: Double,
+    val investedValue: Double,
+    val profitability: Double,
+)
+
+data class CreateInvestmentRequest(
     val name: String,
     val type: String,
     val currentValue: Double,
     val investedValue: Double,
-    val profitability: Double,
 )
 
 data class FinanceSummaryDto(
