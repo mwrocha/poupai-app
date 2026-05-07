@@ -19,6 +19,7 @@ import io.poupai.app.features.splash.ui.SplashScreen
 import io.poupai.app.features.splash.ui.WelcomeAfterLoginScreen
 import io.poupai.app.features.tags.ui.TagsScreen
 import io.poupai.app.features.transactions.ui.TransactionsScreen
+import io.poupai.app.features.goals.ui.GoalsScreen
 
 @Composable
 fun PoupaiNavHost() {
@@ -117,6 +118,7 @@ fun PoupaiNavHost() {
                 onNavigateToTags = { navController.navigate(Route.Tags.route) },
                 onNavigateToFinances = { navController.navigate(Route.Finances.route) },
                 onNavigateToInvestments = { navController.navigate(Route.Investments.route) },
+                onNavigateToGoals = { navController.navigate(Route.Goals.route) },
                 onNavigateToProfile = { navController.navigate(Route.Profile.route) },
                 onLogout = { navigateToLogin() },
             )
@@ -143,6 +145,12 @@ fun PoupaiNavHost() {
                 onNavigateBack = { navController.popBackStack() },
                 onLogout = { navigateToLogin() },
             )
+
         }
+
+        composable(Route.Goals.route) {
+            GoalsScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
     }
 }
