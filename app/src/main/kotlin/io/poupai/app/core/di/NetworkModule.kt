@@ -3,6 +3,7 @@ package io.poupai.app.core.di
 import io.poupai.app.core.network.AuthInterceptor
 import io.poupai.app.data.remote.api.AuthApi
 import io.poupai.app.data.remote.api.FinanceApi
+import io.poupai.app.data.remote.api.GoalApi         // ← novo
 import io.poupai.app.data.remote.api.InvestmentApi
 import io.poupai.app.data.remote.api.TransactionApi
 import io.poupai.app.data.remote.api.UploadApi
@@ -22,7 +23,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://192.168.0.5:8080/"
+    private const val BASE_URL = "http://10.0.2.2:8080/"
 
     @Provides
     @Singleton
@@ -79,4 +80,9 @@ object NetworkModule {
     @Singleton
     fun provideInvestmentApi(retrofit: Retrofit): InvestmentApi =
         retrofit.create(InvestmentApi::class.java)
+
+    @Provides                                            // ← novo
+    @Singleton
+    fun provideGoalApi(retrofit: Retrofit): GoalApi =
+        retrofit.create(GoalApi::class.java)
 }
