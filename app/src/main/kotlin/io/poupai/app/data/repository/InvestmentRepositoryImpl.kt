@@ -3,12 +3,14 @@ package io.poupai.app.data.repository
 import io.poupai.app.core.network.Resource
 import io.poupai.app.data.mapper.toDomain
 import io.poupai.app.data.remote.api.InvestmentApi
+import io.poupai.app.data.remote.dto.CreateInvestmentRequest
 import io.poupai.app.domain.model.Investment
 import io.poupai.app.domain.model.InvestmentType
 import io.poupai.app.domain.repository.InvestmentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
+
 
 class InvestmentRepositoryImpl @Inject constructor(
     private val investmentApi: InvestmentApi,
@@ -49,8 +51,7 @@ class InvestmentRepositoryImpl @Inject constructor(
         return try {
             val response = investmentApi.getInvestments()
             if (response.isSuccessful && response.body() != null) {
-                val total = response.body()!!.sumOf { it.investedValue }
-                Resource.Success(total)
+                Resource.Success(response.body()!!.sumOf { it.investedValue })
             } else {
                 Resource.Error("Erro ao calcular total investido")
             }
@@ -63,13 +64,36 @@ class InvestmentRepositoryImpl @Inject constructor(
         return try {
             val response = investmentApi.getInvestments()
             if (response.isSuccessful && response.body() != null) {
-                val total = response.body()!!.sumOf { it.currentValue - it.investedValue }
-                Resource.Success(total)
+                Resource.Success(response.body()!!.sumOf { it.currentValue - it.investedValue })
             } else {
                 Resource.Error("Erro ao calcular rentabilidade")
             }
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Erro")
+        }
+    }
+
+    override suspend fun createInvestment(
+        name: String,
+        type: InvestmentType,
+        currentValue: Double,
+        investedValue: Double,
+    ): Resource<Investment> {
+        return try {
+            val request = CreateInvestmentRequest(
+                name = name,
+                type = type.name,
+                currentValue = currentValue,
+                investedValue = investedValue,
+            )
+            val response = investmentApi.createInvestment(request)
+            if (response.isSuccessful && response.body() != null) {
+                Resource.Success(response.body()!!.toDomain())
+            } else {
+                Resource.Error("Erro ao salvar investimento")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Erro de conexão")
         }
     }
 }
