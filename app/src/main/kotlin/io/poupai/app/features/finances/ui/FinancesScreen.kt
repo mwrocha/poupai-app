@@ -44,7 +44,10 @@ import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.features.finances.state.FinancesUiState
+import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.features.finances.viewmodel.FinancesViewModel
+
+private const val HIDDEN = "••••"
 
 // ─── Dados locais para os gráficos ───
 
@@ -81,7 +84,7 @@ fun FinancesScreen(
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(Modifier.weight(1f))
-                Spacer(Modifier.size(48.dp))
+                EyeToggleIcon(hideValues = uiState.hideValues, onToggle = viewModel::toggleHideValues)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -142,14 +145,14 @@ private fun FinancesSummaryCards(uiState: FinancesUiState) {
         SummaryCard(
             modifier = Modifier.weight(1f),
             label = "Receitas",
-            value = totalIncome.toBRL(),
+            value = if (uiState.hideValues) HIDDEN else totalIncome.toBRL(),
             icon = { Icon(Icons.Default.TrendingUp, null, tint = GreenPositive, modifier = Modifier.size(20.dp)) },
             valueColor = GreenPositive,
         )
         SummaryCard(
             modifier = Modifier.weight(1f),
             label = "Despesas",
-            value = totalExpense.toBRL(),
+            value = if (uiState.hideValues) HIDDEN else totalExpense.toBRL(),
             icon = { Icon(Icons.Default.TrendingDown, null, tint = RedNegative, modifier = Modifier.size(20.dp)) },
             valueColor = RedNegative,
         )
@@ -177,7 +180,7 @@ private fun FinancesSummaryCards(uiState: FinancesUiState) {
                     color = Color(0xFF6B6B6B),
                 )
                 Text(
-                    balance.toBRL(),
+                    if (uiState.hideValues) HIDDEN else balance.toBRL(),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = if (balance >= 0) GreenPositive else RedNegative,
