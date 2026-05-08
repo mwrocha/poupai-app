@@ -4,8 +4,6 @@ import io.poupai.app.core.network.Resource
 import io.poupai.app.domain.model.Investment
 import io.poupai.app.domain.model.InvestmentType
 import kotlinx.coroutines.flow.Flow
-import io.poupai.app.domain.repository.InvestmentRepository  // ← precisa estar aqui
-
 
 interface InvestmentRepository {
     fun getInvestments(): Flow<Resource<List<Investment>>>
@@ -18,4 +16,12 @@ interface InvestmentRepository {
         currentValue: Double,
         investedValue: Double,
     ): Resource<Investment>
+    suspend fun updateInvestment(
+        id: String,
+        name: String,
+        type: InvestmentType,
+        currentValue: Double,
+        investedValue: Double,
+    ): Resource<Investment>
+    suspend fun deleteInvestment(id: String): Resource<Unit>
 }
