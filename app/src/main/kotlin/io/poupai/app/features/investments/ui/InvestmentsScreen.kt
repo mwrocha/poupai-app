@@ -46,7 +46,10 @@ import io.poupai.app.core.theme.RedNegative
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.Investment
 import io.poupai.app.domain.model.InvestmentType
+import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.features.investments.viewmodel.InvestmentsViewModel
+
+private const val HIDDEN = "••••"
 
 private val typeColor = mapOf(
     InvestmentType.RENDA_VARIAVEL to Color(0xFF503173),
@@ -121,7 +124,7 @@ fun InvestmentsScreen(
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.weight(1f))
-                    Spacer(Modifier.size(48.dp))
+                    EyeToggleIcon(hideValues = uiState.hideValues, onToggle = viewModel::toggleHideValues)
                 }
             }
 
@@ -139,6 +142,7 @@ fun InvestmentsScreen(
                             totalInvested = totalInvested,
                             totalCurrent = totalCurrent,
                             totalProfit = totalProfit,
+                            hideValues = uiState.hideValues,
                         )
                     }
 
@@ -153,9 +157,9 @@ fun InvestmentsScreen(
                         }
                     }
 
-                    item { InvestmentSection("Renda Variável", InvestmentType.RENDA_VARIAVEL, uiState.rendaVariavel) }
-                    item { InvestmentSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa) }
-                    item { InvestmentSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas) }
+                    item { InvestmentSection("Renda Variável", InvestmentType.RENDA_VARIAVEL, uiState.rendaVariavel, uiState.hideValues) }
+                    item { InvestmentSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa, uiState.hideValues) }
+                    item { InvestmentSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas, uiState.hideValues) }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
             }
@@ -255,7 +259,7 @@ fun InvestmentsScreen(
 }
 
 @Composable
-private fun InvestmentSummaryCard(totalInvested: Double, totalCurrent: Double, totalProfit: Double) {
+private fun InvestmentSummaryCard(totalInvested: Double, totalCurrent: Double, totalProfit: Double, hideValues: Boolean = false) {
     val profitPercent = if (totalInvested > 0) (totalProfit / totalInvested) * 100 else 0.0
     val isPositive = totalProfit >= 0
 
@@ -273,12 +277,12 @@ private fun InvestmentSummaryCard(totalInvested: Double, totalCurrent: Double, t
             Column {
                 Text("Patrimônio Total", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.75f))
                 Spacer(Modifier.height(4.dp))
-                Text(totalCurrent.toBRL(), style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(if (hideValues) HIDDEN else totalCurrent.toBRL(), style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(12.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text("Investido", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-                        Text(totalInvested.toBRL(), style = MaterialTheme.typography.bodyMedium, color = Color.White)
+                        Text(if (hideValues) HIDDEN else totalInvested.toBRL(), style = MaterialTheme.typography.bodyMedium, color = Color.White)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("Rendimento", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
@@ -380,7 +384,7 @@ private fun AllocationLegendRow(label: String, percent: Double, color: Color) {
 }
 
 @Composable
-private fun InvestmentSection(title: String, type: InvestmentType, investments: List<Investment>) {
+private fun InvestmentSection(title: String, type: InvestmentType, investments: List<Investment>, hideValues: Boolean = false) {
     var expanded by remember { mutableStateOf(true) }
     val sectionColor = typeColor[type] ?: Purple40
 
@@ -406,7 +410,7 @@ private fun InvestmentSection(title: String, type: InvestmentType, investments: 
                     Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text("${investments.size} ativo${if (investments.size != 1) "s" else ""}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
                 }
-                Text(investments.sumOf { it.currentValue }.toBRL(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = sectionColor)
+                Text(if (hideValues) HIDDEN else investments.sumOf { it.currentValue }.toBRL(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = sectionColor)
                 Spacer(Modifier.width(8.dp))
                 Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = Color(0xFF9E9E9E), modifier = Modifier.size(20.dp))
             }
@@ -420,7 +424,7 @@ private fun InvestmentSection(title: String, type: InvestmentType, investments: 
                         }
                     } else {
                         investments.forEachIndexed { index, investment ->
-                            InvestmentItemRow(investment, sectionColor)
+                            InvestmentItemRow(investment, sectionColor, hideValues)
                             if (index < investments.lastIndex) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF5F5F5))
                         }
                     }
@@ -431,7 +435,7 @@ private fun InvestmentSection(title: String, type: InvestmentType, investments: 
 }
 
 @Composable
-private fun InvestmentItemRow(investment: Investment, accentColor: Color) {
+private fun InvestmentItemRow(investment: Investment, accentColor: Color, hideValues: Boolean = false) {
     val profit = investment.currentValue - investment.investedValue
     val profitPercent = if (investment.investedValue > 0) (profit / investment.investedValue) * 100 else 0.0
     val isPositive = profit >= 0
@@ -446,10 +450,10 @@ private fun InvestmentItemRow(investment: Investment, accentColor: Color) {
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(investment.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("Investido: ${investment.investedValue.toBRL()}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
+            Text("Investido: ${if (hideValues) HIDDEN else investment.investedValue.toBRL()}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(investment.currentValue.toBRL(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            Text(if (hideValues) HIDDEN else investment.currentValue.toBRL(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown, null, tint = if (isPositive) GreenPositive else RedNegative, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(2.dp))
