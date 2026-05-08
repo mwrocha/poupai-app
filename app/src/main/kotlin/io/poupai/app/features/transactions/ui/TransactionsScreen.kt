@@ -31,10 +31,13 @@ import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.features.transactions.components.TransactionItem
 import io.poupai.app.features.transactions.state.TransactionFilter
+import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.features.transactions.viewmodel.TransactionsViewModel
 import java.time.Month
 import java.time.format.TextStyle
 import java.util.Locale
+
+private const val HIDDEN = "••••"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,10 +111,10 @@ fun TransactionsScreen(
                         Spacer(Modifier.weight(1f))
                         Text("Transações", style = MaterialTheme.typography.titleLarge, color = Color.White)
                         Spacer(Modifier.weight(1f))
-                        Spacer(Modifier.size(48.dp))
+                        EyeToggleIcon(hideValues = uiState.hideValues, onToggle = viewModel::toggleHideValues)
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text(uiState.balance.toBRL(), style = MaterialTheme.typography.displayLarge, color = Color.White)
+                    Text(if (uiState.hideValues) HIDDEN else uiState.balance.toBRL(), style = MaterialTheme.typography.displayLarge, color = Color.White)
                     Spacer(Modifier.height(4.dp))
                     Text("Saldo atual", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
                     Spacer(Modifier.height(16.dp))
@@ -135,7 +138,7 @@ fun TransactionsScreen(
                         Icon(Icons.Default.Add, "Receitas", tint = GreenPositive, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(uiState.incomeTotal.toBRL(), style = MaterialTheme.typography.titleMedium)
+                            Text(if (uiState.hideValues) HIDDEN else uiState.incomeTotal.toBRL(), style = MaterialTheme.typography.titleMedium)
                             Text("Receitas", style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -144,7 +147,7 @@ fun TransactionsScreen(
                         Icon(Icons.Default.Remove, "Despesas", tint = RedNegative, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(uiState.expenseTotal.toBRL(), style = MaterialTheme.typography.titleMedium)
+                            Text(if (uiState.hideValues) HIDDEN else uiState.expenseTotal.toBRL(), style = MaterialTheme.typography.titleMedium)
                             Text("Despesas", style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
