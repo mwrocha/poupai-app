@@ -32,6 +32,7 @@ val drawerMenuItems = listOf(
     DrawerMenuItem(Icons.Default.SwapHoriz,      "Transações",        "transactions"),
     DrawerMenuItem(Icons.Default.Sell,           "Tags",              "tags"),
     DrawerMenuItem(Icons.Default.TrackChanges,   "Metas",             "goals"),
+    DrawerMenuItem(Icons.Default.EmojiEvents,    "Conquistas",        "gamification"),
     DrawerMenuItem(Icons.Default.Person,         "Perfil",            "profile"),
     DrawerMenuItem(Icons.Default.Settings,       "Configurações",     "settings"),
 )
