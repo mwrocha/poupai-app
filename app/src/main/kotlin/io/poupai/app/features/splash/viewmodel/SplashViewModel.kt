@@ -2,6 +2,7 @@ package io.poupai.app.features.splash.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.poupai.app.core.util.PreferencesManager
 import io.poupai.app.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -14,6 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val preferencesManager: PreferencesManager,
 ) : ViewModel() {
 
     enum class Destination { ONBOARDING, DASHBOARD }
@@ -28,11 +30,10 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             delay(1500) // Tempo mínimo do splash
 
-            val isLoggedIn = false
+            val isLoggedIn = authRepository.isLoggedIn()
             if (isLoggedIn) {
-                val user = authRepository.getCurrentUser()
-                _userName.value = "${user?.firstName} ${user?.lastName}"
-                delay(1000) // Mostrar saudação por 1s
+                val firstName = preferencesManager.getFirstNameSync().orEmpty()
+                _userName.value = firstName
                 _destination.value = Destination.DASHBOARD
             } else {
                 _destination.value = Destination.ONBOARDING
