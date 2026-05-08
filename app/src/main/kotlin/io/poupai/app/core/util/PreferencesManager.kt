@@ -28,6 +28,10 @@ class PreferencesManager @Inject constructor(
         private val KEY_PROFILE_IMAGE_URL = stringPreferencesKey("profile_image_url")
         private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val KEY_BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
+
+        // ─── Settings ───
+        val KEY_THEME = stringPreferencesKey("app_theme")       // "light" | "dark" | "system"
+        val KEY_HIDE_VALUES = booleanPreferencesKey("hide_values")
     }
 
     // ─── Auth Token ───
@@ -84,8 +88,39 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[KEY_BIOMETRIC_ENABLED] = enabled }
     }
 
+    // ─── Theme ───
+    val appTheme: Flow<String> = context.dataStore.data.map {
+        it[KEY_THEME] ?: "system"
+    }
+
+    suspend fun saveTheme(theme: String) {
+        context.dataStore.edit { it[KEY_THEME] = theme }
+    }
+
+    suspend fun getThemeSync(): String =
+        context.dataStore.data.first()[KEY_THEME] ?: "system"
+
+    // ─── Hide Values ───
+    val hideValues: Flow<Boolean> = context.dataStore.data.map {
+        it[KEY_HIDE_VALUES] ?: false
+    }
+
+    suspend fun saveHideValues(hide: Boolean) {
+        context.dataStore.edit { it[KEY_HIDE_VALUES] = hide }
+    }
+
+    suspend fun getHideValuesSync(): Boolean =
+        context.dataStore.data.first()[KEY_HIDE_VALUES] ?: false
+
     // ─── Logout ───
     suspend fun clearAll() {
-        context.dataStore.edit { it.clear() }
+        context.dataStore.edit { prefs ->
+            // Preserva apenas as preferências de UI ao fazer logout
+            val theme = prefs[KEY_THEME]
+            val hideValues = prefs[KEY_HIDE_VALUES]
+            prefs.clear()
+            theme?.let { prefs[KEY_THEME] = it }
+            hideValues?.let { prefs[KEY_HIDE_VALUES] = it }
+        }
     }
 }
