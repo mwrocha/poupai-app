@@ -12,6 +12,7 @@ data class TransactionsUiState(
     val allTransactions: List<Transaction> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val hideValues: Boolean = false,
 
     // ─── Filtros ───
     val activeFilter: TransactionFilter = TransactionFilter.ALL,
@@ -40,7 +41,6 @@ data class TransactionsUiState(
                 formCategory.isNotBlank() &&
                 formDate.isNotBlank()
 
-    // Transações filtradas por tipo e mês
     val filteredTransactions: List<Transaction>
         get() {
             val byMonth = allTransactions.filter { t ->
