@@ -15,14 +15,14 @@ class FinanceRepositoryImpl @Inject constructor(
         emit(Resource.Loading)
         try {
             val response = financeApi.getFinanceSummary(months)
-            if (response.isSuccessful && response.body() != null) {
-                val dto = response.body()!!
+            val data = response.body()?.data
+            if (response.isSuccessful && data != null) {
                 emit(
                     Resource.Success(
                         FinanceRepository.FinanceSummary(
-                            incomeHistory = dto.incomeHistory,
-                            expenseHistory = dto.expenseHistory,
-                            profitHistory = dto.profitHistory,
+                            incomeHistory = data.incomeHistory,
+                            expenseHistory = data.expenseHistory,
+                            profitHistory = data.profitHistory,
                         )
                     )
                 )
