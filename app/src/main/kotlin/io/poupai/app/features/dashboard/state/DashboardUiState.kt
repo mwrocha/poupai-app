@@ -1,7 +1,7 @@
 package io.poupai.app.features.dashboard.state
 
 data class MonthData(
-    val label: String,   // "Jan", "Fev", etc.
+    val label: String,
     val income: Double,
     val expense: Double,
 )
@@ -13,4 +13,5 @@ data class DashboardUiState(
     val monthlyData: List<MonthData> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val hideValues: Boolean = false,
 )
