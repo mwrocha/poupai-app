@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.AsyncImage
+import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PoupaiDrawerContent
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
@@ -32,6 +33,7 @@ import io.poupai.app.features.dashboard.components.SavingsChart
 import io.poupai.app.features.dashboard.viewmodel.DashboardViewModel
 import kotlinx.coroutines.launch
 
+private const val HIDDEN = "••••"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +44,8 @@ fun DashboardScreen(
     onNavigateToInvestments: () -> Unit,
     onNavigateToGoals: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToGamification: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -52,15 +56,12 @@ fun DashboardScreen(
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.loadDashboard()
-            }
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.loadDashboard()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Alpha 0 quando drawer está aberto — mantém o espaço, some visualmente
     val headerAlpha = if (drawerState.isOpen) 0f else 1f
 
     ModalNavigationDrawer(
@@ -84,6 +85,8 @@ fun DashboardScreen(
                         "tags" -> onNavigateToTags()
                         "goals" -> onNavigateToGoals()
                         "profile" -> onNavigateToProfile()
+                        "settings" -> onNavigateToSettings()
+                        "gamification" -> onNavigateToGamification()
                     }
                 },
                 onLogout = {
@@ -94,8 +97,6 @@ fun DashboardScreen(
         },
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-
-            // ─── Header roxo — layout estável, só o conteúdo some via alpha ───
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -104,6 +105,7 @@ fun DashboardScreen(
                     .padding(24.dp)
                     .alpha(headerAlpha),
             ) {
+                // ─── Menu ───
                 IconButton(
                     onClick = { scope.launch { drawerState.open() } },
                     modifier = Modifier.align(Alignment.TopStart),
@@ -111,92 +113,81 @@ fun DashboardScreen(
                     Icon(Icons.Default.Menu, "Menu", tint = Color.White)
                 }
 
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.3f))
-                        .clickable { onNavigateToProfile() },
-                    contentAlignment = Alignment.Center,
+                // ─── Olho + Avatar ───
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (!uiState.profileImageUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = uiState.profileImageUrl,
-                            contentDescription = "Foto de perfil",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Text(
-                            text = uiState.userName.trim().firstOrNull()
-                                ?.uppercaseChar()?.toString() ?: "?",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
+                    EyeToggleIcon(
+                        hideValues = uiState.hideValues,
+                        onToggle = viewModel::toggleHideValues,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.3f))
+                            .clickable { onNavigateToProfile() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (!uiState.profileImageUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = uiState.profileImageUrl,
+                                contentDescription = "Foto de perfil",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                            )
+                        } else {
+                            Text(
+                                text = uiState.userName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
 
                 Column(modifier = Modifier.align(Alignment.BottomStart)) {
-                    Text(
-                        text = "BEM-VINDO,",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
-                    )
-                    Text(
-                        text = "${uiState.userName.trim().uppercase()}.",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = Color.White,
-                    )
+                    Text("BEM-VINDO,", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
+                    Text("${uiState.userName.trim().uppercase()}.", style = MaterialTheme.typography.headlineLarge, color = Color.White)
                 }
             }
 
-            // ─── Card poupança ───
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        "Quanto você já poupou",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF6B6B6B),
-                    )
+                    Text("Quanto você já poupou", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF6B6B6B))
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        uiState.totalSaved.toBRL(),
+                        text = if (uiState.hideValues) HIDDEN else uiState.totalSaved.toBRL(),
                         style = MaterialTheme.typography.displayLarge,
                         color = Color(0xFF1C1B1F),
                     )
                     Spacer(Modifier.height(16.dp))
-                    SavingsChart(data = uiState.monthlyData)
+                    if (uiState.hideValues) {
+                        Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                            Text("Valores ocultos", style = MaterialTheme.typography.bodySmall, color = Color(0xFFBDBDBD))
+                        }
+                    } else {
+                        SavingsChart(data = uiState.monthlyData)
+                    }
                 }
             }
 
             Spacer(Modifier.height(8.dp))
 
-            // ─── Card analise ───
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .clickable { onNavigateToFinances() },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).clickable { onNavigateToFinances() },
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
-                Text(
-                    "Analise os\nseus números.",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                    modifier = Modifier.padding(20.dp),
-                )
+                Text("Analise os\nseus números.", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.padding(20.dp))
             }
         }
     }
