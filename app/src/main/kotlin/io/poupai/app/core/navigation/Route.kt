@@ -9,7 +9,6 @@ sealed class Route(val route: String) {
     data object RegisterCredentials : Route("register/credentials")
     data object RegisterProfile : Route("register/profile")
 
-    // Recebe o nome do usuário como argumento na URL
     data object WelcomeAfterLogin : Route("welcome_after_login/{userName}") {
         fun createRoute(userName: String) = "welcome_after_login/$userName"
     }
@@ -22,4 +21,5 @@ sealed class Route(val route: String) {
     data object Profile : Route("profile")
     data object Goals : Route("goals")
     data object Settings : Route("settings")
+    data object Gamification : Route("gamification")
 }
