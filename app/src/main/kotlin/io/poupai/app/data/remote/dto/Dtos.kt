@@ -69,24 +69,4 @@ data class TransactionDto(
     val tagId: String?,
 )
 
-data class InvestmentDto(
-    val id: String?,
-    val name: String?,
-    val type: String?,
-    val currentValue: Double,
-    val investedValue: Double,
-    val profitability: Double,
-)
 
-data class CreateInvestmentRequest(
-    val name: String,
-    val type: String,
-    val currentValue: Double,
-    val investedValue: Double,
-)
-
-data class FinanceSummaryDto(
-    val incomeHistory: List<Double>,
-    val expenseHistory: List<Double>,
-    val profitHistory: List<Double>,
-)
