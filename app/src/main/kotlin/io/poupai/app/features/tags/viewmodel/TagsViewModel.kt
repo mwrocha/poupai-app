@@ -3,12 +3,16 @@ package io.poupai.app.features.tags.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.poupai.app.core.network.Resource
+import io.poupai.app.domain.model.Tag
+import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.domain.repository.TagRepository
+import io.poupai.app.domain.repository.TransactionRepository
 import io.poupai.app.features.tags.state.TagsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -17,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TagsViewModel @Inject constructor(
     private val tagRepository: TagRepository,
+    private val transactionRepository: TransactionRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TagsUiState())
@@ -50,6 +55,36 @@ class TagsViewModel @Inject constructor(
                         it.copy(isLoading = false, errorMessage = result.message)
                     }
                 }
+            }
+        }
+    }
+
+    fun onTagSelected(tag: Tag) {
+        _uiState.update { it.copy(selectedTag = tag, tagTransactions = emptyList(), isLoadingDetail = true) }
+        loadTagTransactions(tag)
+    }
+
+    fun onDismissDetail() {
+        _uiState.update { it.copy(selectedTag = null, tagTransactions = emptyList()) }
+    }
+
+    private fun loadTagTransactions(tag: Tag) {
+        val state = _uiState.value
+        viewModelScope.launch {
+            // Reutiliza o endpoint de transações por mês e filtra por categoria no client
+            val result = transactionRepository
+                .getTransactionsByMonth(state.selectedYear, state.selectedMonth)
+                .first { it !is Resource.Loading }
+
+            if (result is Resource.Success) {
+                val filtered = result.data.filter { t ->
+                    t.type == TransactionType.EXPENSE &&
+                            t.category.trim().equals(tag.name.trim(), ignoreCase = true)
+                }.sortedByDescending { it.date }
+
+                _uiState.update { it.copy(tagTransactions = filtered, isLoadingDetail = false) }
+            } else {
+                _uiState.update { it.copy(isLoadingDetail = false) }
             }
         }
     }
