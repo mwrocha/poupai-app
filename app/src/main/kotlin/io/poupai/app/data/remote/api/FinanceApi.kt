@@ -12,4 +12,10 @@ interface FinanceApi {
     suspend fun getFinanceSummary(
         @Query("months") months: Int = 6,
     ): Response<ApiResponse<FinanceSummaryDto>>
+
+    @GET("finances/summary/period")
+    suspend fun getFinanceSummaryByPeriod(
+        @Query("month") month: Int,
+        @Query("year") year: Int,
+    ): Response<ApiResponse<FinanceSummaryDto>>
 }
