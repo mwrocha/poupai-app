@@ -46,9 +46,7 @@ class TransactionsViewModel @Inject constructor(
     }
 
     fun toggleHideValues() {
-        viewModelScope.launch {
-            preferencesManager.saveHideValues(!_uiState.value.hideValues)
-        }
+        viewModelScope.launch { preferencesManager.saveHideValues(!_uiState.value.hideValues) }
     }
 
     fun loadTransactions() {
@@ -71,6 +69,7 @@ class TransactionsViewModel @Inject constructor(
         }
     }
 
+    // ─── Filtros ───
     fun onFilterChanged(filter: TransactionFilter) = _uiState.update { it.copy(activeFilter = filter) }
 
     fun onPreviousMonth() {
@@ -85,6 +84,7 @@ class TransactionsViewModel @Inject constructor(
         _uiState.update { it.copy(selectedMonth = date.monthValue, selectedYear = date.year) }
     }
 
+    // ─── Excluir ───
     fun onDeleteRequest(transaction: Transaction) =
         _uiState.update { it.copy(showDeleteDialog = true, transactionToDelete = transaction) }
 
@@ -95,15 +95,13 @@ class TransactionsViewModel @Inject constructor(
         val transaction = _uiState.value.transactionToDelete ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(showDeleteDialog = false, transactionToDelete = null, deletingId = transaction.id) }
-            when (transactionRepository.deleteTransaction(transaction.id)) {
-                is Resource.Success -> loadTransactions()
-                is Resource.Error -> _uiState.update { it.copy(deletingId = null, errorMessage = "Erro ao deletar transação") }
-                is Resource.Loading -> Unit
-            }
+            transactionRepository.deleteTransaction(transaction.id)
             _uiState.update { it.copy(deletingId = null) }
+            loadTransactions()
         }
     }
 
+    // ─── Adicionar ───
     fun onShowAddSheet() {
         val today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
         _uiState.update {
@@ -115,7 +113,7 @@ class TransactionsViewModel @Inject constructor(
     fun onDismissSheet() = _uiState.update { it.copy(showAddSheet = false) }
     fun onFormTitleChanged(value: String) = _uiState.update { it.copy(formTitle = value, formError = null) }
     fun onFormAmountChanged(value: String) = _uiState.update { it.copy(formAmount = value, formError = null) }
-    fun onFormTypeChanged(type: TransactionType) = _uiState.update { it.copy(formType = type) }
+    fun onFormTypeChanged(type: TransactionType) = _uiState.update { it.copy(formType = type, formCategory = "") }
     fun onFormCategoryChanged(value: String) = _uiState.update { it.copy(formCategory = value, formError = null) }
     fun onFormDateChanged(value: String) = _uiState.update { it.copy(formDate = value, formError = null) }
 
@@ -134,6 +132,63 @@ class TransactionsViewModel @Inject constructor(
             when (result) {
                 is Resource.Success -> { _uiState.update { it.copy(showAddSheet = false, formIsLoading = false) }; loadTransactions() }
                 is Resource.Error -> _uiState.update { it.copy(formIsLoading = false, formError = result.message) }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    // ─── Editar ───
+    fun onEditRequest(transaction: Transaction) {
+        val dateStr = try {
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val parsed = sdf.parse(transaction.date.toString().substring(0, 10))
+            val outSdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+            outSdf.format(parsed!!)
+        } catch (e: Exception) { "" }
+
+        _uiState.update {
+            it.copy(
+                showEditSheet = true,
+                editingTransaction = transaction,
+                editTitle = transaction.title,
+                editAmount = transaction.amount.toString(),
+                editType = transaction.type,
+                editCategory = transaction.category,
+                editDate = dateStr,
+                editError = null,
+            )
+        }
+    }
+
+    fun onDismissEditSheet() = _uiState.update {
+        it.copy(showEditSheet = false, editingTransaction = null, editTitle = "",
+            editAmount = "", editCategory = "", editDate = "", editError = null)
+    }
+
+    fun onEditTitleChanged(value: String) = _uiState.update { it.copy(editTitle = value, editError = null) }
+    fun onEditAmountChanged(value: String) = _uiState.update { it.copy(editAmount = value, editError = null) }
+    fun onEditTypeChanged(type: TransactionType) = _uiState.update { it.copy(editType = type, editCategory = "") }
+    fun onEditCategoryChanged(value: String) = _uiState.update { it.copy(editCategory = value, editError = null) }
+    fun onEditDateChanged(value: String) = _uiState.update { it.copy(editDate = value, editError = null) }
+
+    fun onUpdateTransaction() {
+        val state = _uiState.value
+        val transaction = state.editingTransaction ?: return
+        if (!state.isEditValid) { _uiState.update { it.copy(editError = "Preencha todos os campos") }; return }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(editIsLoading = true) }
+            val result = transactionRepository.updateTransaction(
+                id = transaction.id,
+                title = state.editTitle,
+                amount = state.editAmount.replace(",", ".").toDouble(),
+                type = state.editType,
+                category = state.editCategory,
+                date = convertDate(state.editDate),
+            )
+            when (result) {
+                is Resource.Success -> { onDismissEditSheet(); loadTransactions() }
+                is Resource.Error -> _uiState.update { it.copy(editIsLoading = false, editError = result.message) }
                 is Resource.Loading -> Unit
             }
         }
