@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,13 +40,17 @@ fun SettingsScreen(
         AboutDialog(onDismiss = viewModel::onDismissAboutDialog)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7)),
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
-                .padding(24.dp)
-                .padding(top = 8.dp),
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNavigateBack) {
@@ -61,6 +66,7 @@ fun SettingsScreen(
         SettingsContent(
             uiState = uiState,
             onThemeChanged = viewModel::onThemeChanged,
+            onNotificationsChanged = viewModel::onNotificationsChanged,
             onShowAbout = viewModel::onShowAboutDialog,
         )
     }
@@ -70,13 +76,14 @@ fun SettingsScreen(
 private fun SettingsContent(
     uiState: SettingsUiState,
     onThemeChanged: (String) -> Unit,
+    onNotificationsChanged: (Boolean) -> Unit,
     onShowAbout: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 20.dp)
             .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -89,7 +96,7 @@ private fun SettingsContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -100,7 +107,7 @@ private fun SettingsContent(
                             else -> Icons.Default.BrightnessAuto
                         },
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = Purple40,
                         modifier = Modifier.size(22.dp),
                     )
                     Spacer(Modifier.width(12.dp))
@@ -115,12 +122,45 @@ private fun SettingsContent(
                             label = { Text(label, fontSize = 13.sp) },
                             modifier = Modifier.weight(1f),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                selectedContainerColor = Purple40.copy(alpha = 0.12f),
+                                selectedLabelColor = Purple40,
                             ),
                         )
                     }
                 }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // ─── Notificações ───
+        SettingsSectionTitle("Notificações")
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Default.Notifications, null, tint = Purple40, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Lembrete diário", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Text("Recebe um lembrete às 20h para registrar transações",
+                        style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
+                }
+                Switch(
+                    checked = uiState.notificationsEnabled,
+                    onCheckedChange = onNotificationsChanged,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Purple40,
+                    ),
+                )
             }
         }
 
@@ -133,7 +173,7 @@ private fun SettingsContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
         ) {
             SettingsRowItem(icon = Icons.Default.Info, title = "Sobre o Poupaí", subtitle = "Versão 1.0.0", onClick = onShowAbout)
         }
@@ -148,11 +188,8 @@ private fun AboutDialog(onDismiss: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Versão 1.0.0", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    "Seu assistente financeiro pessoal. Controle gastos, acompanhe investimentos e alcance suas metas financeiras.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text("Seu assistente financeiro pessoal. Controle gastos, acompanhe investimentos e alcance suas metas financeiras.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(4.dp))
                 Text("Desenvolvido com ❤️", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -166,7 +203,7 @@ private fun SettingsSectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.primary,
+        color = Color(0xFF6B6B6B),
         fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
     )
@@ -181,11 +218,11 @@ private fun SettingsRowItem(icon: ImageVector, title: String, subtitle: String? 
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        Icon(imageVector = icon, contentDescription = null, tint = Purple40, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
         }
     }
 }
