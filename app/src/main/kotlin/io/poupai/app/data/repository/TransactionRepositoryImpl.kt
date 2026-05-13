@@ -6,6 +6,7 @@ import io.poupai.app.data.mapper.toDomain
 import io.poupai.app.data.mapper.toEntity
 import io.poupai.app.data.remote.api.TransactionApi
 import io.poupai.app.data.remote.dto.CreateTransactionRequest
+import io.poupai.app.data.remote.dto.UpdateTransactionRequest
 import io.poupai.app.domain.model.Transaction
 import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.domain.repository.TransactionRepository
@@ -20,15 +21,12 @@ class TransactionRepositoryImpl @Inject constructor(
 ) : TransactionRepository {
 
     override fun getTransactions(): Flow<Resource<List<Transaction>>> = flow {
-        // 1. Emite cache local primeiro
         val cached = transactionDao.getAllTransactionsOnce()
         if (cached.isNotEmpty()) {
             emit(Resource.Success(cached.map { it.toDomain() }))
         } else {
             emit(Resource.Loading)
         }
-
-        // 2. Sincroniza com a API
         try {
             val response = transactionApi.getTransactions()
             val apiResponse = response.body()
@@ -38,14 +36,10 @@ class TransactionRepositoryImpl @Inject constructor(
                 transactionDao.insertAll(remote.map { it.toEntity() })
                 emit(Resource.Success(remote.map { it.toDomain() }))
             } else {
-                if (cached.isEmpty()) {
-                    emit(Resource.Error("Erro ao carregar transações"))
-                }
+                if (cached.isEmpty()) emit(Resource.Error("Erro ao carregar transações"))
             }
         } catch (e: Exception) {
-            if (cached.isEmpty()) {
-                emit(Resource.Error(e.message ?: "Erro de conexão"))
-            }
+            if (cached.isEmpty()) emit(Resource.Error(e.message ?: "Erro de conexão"))
         }
     }
 
@@ -55,21 +49,11 @@ class TransactionRepositoryImpl @Inject constructor(
         }
 
     override suspend fun addTransaction(
-        title: String,
-        amount: Double,
-        type: TransactionType,
-        category: String,
-        date: String,
+        title: String, amount: Double, type: TransactionType, category: String, date: String,
     ): Resource<Transaction> {
         return try {
             val response = transactionApi.createTransaction(
-                CreateTransactionRequest(
-                    title = title,
-                    amount = amount,
-                    type = type.name,
-                    category = category,
-                    date = date,
-                )
+                CreateTransactionRequest(title = title, amount = amount, type = type.name, category = category, date = date)
             )
             val apiResponse = response.body()
             if (response.isSuccessful && apiResponse?.success == true && apiResponse.data != null) {
@@ -78,6 +62,27 @@ class TransactionRepositoryImpl @Inject constructor(
                 Resource.Success(transaction)
             } else {
                 Resource.Error(apiResponse?.message ?: "Erro ao criar transação")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Erro de conexão")
+        }
+    }
+
+    override suspend fun updateTransaction(
+        id: String, title: String, amount: Double, type: TransactionType, category: String, date: String,
+    ): Resource<Transaction> {
+        return try {
+            val response = transactionApi.updateTransaction(
+                id,
+                UpdateTransactionRequest(title = title, amount = amount, type = type.name, category = category, date = date),
+            )
+            val apiResponse = response.body()
+            if (response.isSuccessful && apiResponse?.success == true && apiResponse.data != null) {
+                val transaction = apiResponse.data.toDomain()
+                transactionDao.insertTransaction(transaction.toEntity())
+                Resource.Success(transaction)
+            } else {
+                Resource.Error(apiResponse?.message ?: "Erro ao atualizar transação")
             }
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Erro de conexão")
@@ -98,24 +103,16 @@ class TransactionRepositoryImpl @Inject constructor(
             val income = transactionDao.getTotalIncome() ?: 0.0
             val expense = transactionDao.getTotalExpense() ?: 0.0
             Resource.Success(income - expense)
-        } catch (e: Exception) {
-            Resource.Error(e.message ?: "Erro ao calcular saldo")
-        }
+        } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
     }
 
     override suspend fun getIncomeTotal(): Resource<Double> {
-        return try {
-            Resource.Success(transactionDao.getTotalIncome() ?: 0.0)
-        } catch (e: Exception) {
-            Resource.Error(e.message ?: "Erro")
-        }
+        return try { Resource.Success(transactionDao.getTotalIncome() ?: 0.0) }
+        catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
     }
 
     override suspend fun getExpenseTotal(): Resource<Double> {
-        return try {
-            Resource.Success(transactionDao.getTotalExpense() ?: 0.0)
-        } catch (e: Exception) {
-            Resource.Error(e.message ?: "Erro")
-        }
+        return try { Resource.Success(transactionDao.getTotalExpense() ?: 0.0) }
+        catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
     }
 }
