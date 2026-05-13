@@ -95,18 +95,20 @@ class InvestmentRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addEntry(
-        investmentId: String, type: EntryType, shares: Double?, sharePrice: Double?,
-        newCurrentValue: Double?, notes: String?, date: String,
+        investmentId: String, type: EntryType,
+        shares: Double?, sharePrice: Double?,
+        newCurrentValue: Double?,
+        adjustedShares: Double?, adjustedAveragePrice: Double?,
+        notes: String?, date: String,
     ): Resource<InvestmentEntry> = try {
         val data = investmentApi.addEntry(
             CreateEntryRequest(
-                investmentId = investmentId,
-                type = type.name,
-                shares = shares,
-                sharePrice = sharePrice,
+                investmentId = investmentId, type = type.name,
+                shares = shares, sharePrice = sharePrice,
                 newCurrentValue = newCurrentValue,
-                notes = notes,
-                date = date
+                adjustedShares = adjustedShares,
+                adjustedAveragePrice = adjustedAveragePrice,
+                notes = notes, date = date,
             )
         ).body()?.data
         if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao salvar lançamento")
@@ -190,6 +192,7 @@ private fun EntryDto.toDomain() = InvestmentEntry(
     shares = shares, sharePrice = sharePrice, totalValue = totalValue,
     previousShares = previousShares, previousAveragePrice = previousAveragePrice,
     newAveragePrice = newAveragePrice, newTotalShares = newTotalShares,
+    adjustedShares = adjustedShares, adjustedAveragePrice = adjustedAveragePrice,
     notes = notes, date = date,
 )
 
