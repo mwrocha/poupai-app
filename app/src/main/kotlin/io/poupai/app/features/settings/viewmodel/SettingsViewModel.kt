@@ -2,6 +2,7 @@ package io.poupai.app.features.settings.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.poupai.app.core.notification.NotificationScheduler
 import io.poupai.app.core.util.PreferencesManager
 import io.poupai.app.features.settings.state.SettingsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
+    private val notificationScheduler: NotificationScheduler,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -26,10 +28,18 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(theme = theme) }
             }
         }
+        // Verifica se o lembrete já está agendado
+        _uiState.update { it.copy(notificationsEnabled = notificationScheduler.isReminderScheduled()) }
     }
 
     fun onThemeChanged(theme: String) {
         viewModelScope.launch { preferencesManager.saveTheme(theme) }
+    }
+
+    fun onNotificationsChanged(enabled: Boolean) {
+        _uiState.update { it.copy(notificationsEnabled = enabled) }
+        if (enabled) notificationScheduler.scheduleDailyReminder()
+        else notificationScheduler.cancelReminder()
     }
 
     fun onShowAboutDialog() = _uiState.update { it.copy(showAboutDialog = true) }
