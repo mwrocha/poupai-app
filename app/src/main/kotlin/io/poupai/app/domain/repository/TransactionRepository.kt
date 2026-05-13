@@ -15,6 +15,14 @@ interface TransactionRepository {
         category: String,
         date: String,
     ): Resource<Transaction>
+    suspend fun updateTransaction(
+        id: String,
+        title: String,
+        amount: Double,
+        type: TransactionType,
+        category: String,
+        date: String,
+    ): Resource<Transaction>
     suspend fun deleteTransaction(id: String): Resource<Unit>
     suspend fun getTotalBalance(): Resource<Double>
     suspend fun getIncomeTotal(): Resource<Double>
