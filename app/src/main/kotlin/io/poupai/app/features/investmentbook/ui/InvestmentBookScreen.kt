@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -117,8 +116,7 @@ fun InvestmentBookScreen(
                 } else {
                     item {
                         Text("${uiState.totalEntries} lançamento${if (uiState.totalEntries != 1L) "s" else ""}",
-                            fontSize = 12.sp, color = Color(0xFF9E9E9E),
-                            modifier = Modifier.padding(horizontal = 4.dp))
+                            fontSize = 12.sp, color = Color(0xFF9E9E9E), modifier = Modifier.padding(horizontal = 4.dp))
                     }
                     item {
                         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
@@ -150,8 +148,7 @@ fun InvestmentBookScreen(
     if (uiState.showAddSheet) {
         ModalBottomSheet(onDismissRequest = viewModel::onDismissSheet, sheetState = sheetState) {
             AddEntryForm(
-                uiState = uiState,
-                fieldColors = fieldColors,
+                uiState = uiState, fieldColors = fieldColors,
                 onToggleNewAsset = viewModel::onToggleNewAsset,
                 onInvestmentSelected = viewModel::onFormInvestmentSelected,
                 onNewAssetNameChanged = viewModel::onNewAssetNameChanged,
@@ -160,6 +157,8 @@ fun InvestmentBookScreen(
                 onSharesChanged = viewModel::onFormSharesChanged,
                 onSharePriceChanged = viewModel::onFormSharePriceChanged,
                 onNewCurrentValueChanged = viewModel::onFormNewCurrentValueChanged,
+                onAdjustedSharesChanged = viewModel::onFormAdjustedSharesChanged,
+                onAdjustedAvgPriceChanged = viewModel::onFormAdjustedAvgPriceChanged,
                 onNotesChanged = viewModel::onFormNotesChanged,
                 onDateChanged = viewModel::onFormDateChanged,
                 onSave = viewModel::onSaveEntry,
@@ -207,7 +206,6 @@ private fun BookFilters(uiState: InvestmentBookUiState, viewModel: InvestmentBoo
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.FilterList, null, tint = Color(0xFF9E9E9E), modifier = Modifier.size(16.dp))
             Text("Filtrar:", fontSize = 12.sp, color = Color(0xFF9E9E9E))
-
             if (uiState.selectedInvestmentName != null) {
                 FilterChip(selected = true, onClick = { viewModel.onFilterInvestment(null, null) },
                     label = { Text(uiState.selectedInvestmentName, fontSize = 11.sp) },
@@ -217,14 +215,12 @@ private fun BookFilters(uiState: InvestmentBookUiState, viewModel: InvestmentBoo
                 FilterChip(selected = false, onClick = { showInvestmentPicker = !showInvestmentPicker },
                     label = { Text("Ativo", fontSize = 11.sp) })
             }
-
             if (uiState.selectedInvestmentId != null || uiState.selectedMonth != null) {
                 TextButton(onClick = viewModel::onClearFilters, contentPadding = PaddingValues(horizontal = 8.dp)) {
                     Text("Limpar", fontSize = 11.sp, color = RedNegative)
                 }
             }
         }
-
         if (showInvestmentPicker && uiState.investments.isNotEmpty()) {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -253,11 +249,13 @@ private fun EntryRow(entry: InvestmentEntry, onDelete: () -> Unit) {
         EntryType.APORTE -> GreenPositive to "📥"
         EntryType.RESGATE -> RedNegative to "📤"
         EntryType.ATUALIZACAO_VALOR -> Purple40 to "📊"
+        EntryType.AJUSTE_POSICAO -> Color(0xFFFF9800) to "⚖️"
     }
     val typeLabel = when (entry.type) {
         EntryType.APORTE -> "Aporte"
         EntryType.RESGATE -> "Resgate"
         EntryType.ATUALIZACAO_VALOR -> "Atualização"
+        EntryType.AJUSTE_POSICAO -> "Ajuste"
     }
 
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -277,13 +275,20 @@ private fun EntryRow(entry: InvestmentEntry, onDelete: () -> Unit) {
                 }
                 Text(entry.date, fontSize = 11.sp, color = Color(0xFF9E9E9E))
             }
-            if (entry.type != EntryType.ATUALIZACAO_VALOR && (entry.shares ?: 0.0) > 0) {
-                Text("${String.format("%.2f", entry.shares)} cotas × ${entry.sharePrice?.toBRL() ?: "—"}",
-                    fontSize = 10.sp, color = Color(0xFF9E9E9E))
-            }
-            if (entry.newAveragePrice != null && entry.newAveragePrice > 0 && entry.type == EntryType.APORTE) {
-                Text("Novo PM: ${entry.newAveragePrice.toBRL()}", fontSize = 10.sp,
-                    color = color, fontWeight = FontWeight.SemiBold)
+            when (entry.type) {
+                EntryType.APORTE, EntryType.RESGATE -> {
+                    if ((entry.shares ?: 0.0) > 0)
+                        Text("${String.format("%.2f", entry.shares)} cotas × ${entry.sharePrice?.toBRL() ?: "—"}",
+                            fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                    if (entry.type == EntryType.APORTE && (entry.newAveragePrice ?: 0.0) > 0)
+                        Text("Novo PM: ${entry.newAveragePrice?.toBRL()}", fontSize = 10.sp,
+                            color = color, fontWeight = FontWeight.SemiBold)
+                }
+                EntryType.AJUSTE_POSICAO -> {
+                    Text("${String.format("%.2f", entry.adjustedShares ?: 0.0)} cotas — PM ${entry.adjustedAveragePrice?.toBRL() ?: "—"}",
+                        fontSize = 10.sp, color = color, fontWeight = FontWeight.SemiBold)
+                }
+                else -> Unit
             }
             entry.notes?.let {
                 Text(it, fontSize = 10.sp, color = Color(0xFF9E9E9E), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -316,6 +321,8 @@ private fun AddEntryForm(
     onSharesChanged: (String) -> Unit,
     onSharePriceChanged: (String) -> Unit,
     onNewCurrentValueChanged: (String) -> Unit,
+    onAdjustedSharesChanged: (String) -> Unit,
+    onAdjustedAvgPriceChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
     onDateChanged: (String) -> Unit,
     onSave: () -> Unit,
@@ -327,34 +334,27 @@ private fun AddEntryForm(
 
         Text("Novo Lançamento", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-        // ─── Toggle: ativo existente vs novo ativo ───
+        // ─── Toggle ativo existente / novo ativo ───
         Row(modifier = Modifier.fillMaxWidth()) {
             listOf(false to "Ativo existente", true to "Novo ativo").forEach { (isNew, label) ->
-                FilterChip(
-                    selected = uiState.isNewAsset == isNew,
-                    onClick = { onToggleNewAsset(isNew) },
+                FilterChip(selected = uiState.isNewAsset == isNew, onClick = { onToggleNewAsset(isNew) },
                     label = { Text(label, fontSize = 12.sp) },
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Purple40.copy(alpha = 0.12f),
-                        selectedLabelColor = Purple40),
-                )
+                        selectedContainerColor = Purple40.copy(alpha = 0.12f), selectedLabelColor = Purple40))
             }
         }
 
         if (uiState.isNewAsset) {
-            // ─── Campos de novo ativo ───
             TextField(value = uiState.newAssetName, onValueChange = onNewAssetNameChanged,
                 label = { Text("Nome do ativo") }, placeholder = { Text("Ex: PETR4, Tesouro IPCA+...") },
                 singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
 
             Text("Categoria", style = MaterialTheme.typography.labelMedium, color = Color(0xFF9E9E9E))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(
-                    InvestmentType.RENDA_VARIAVEL to "Renda Variável",
+                listOf(InvestmentType.RENDA_VARIAVEL to "Renda Variável",
                     InvestmentType.RENDA_FIXA to "Renda Fixa",
-                    InvestmentType.CRIPTOMOEDAS to "Cripto",
-                ).forEach { (type, label) ->
+                    InvestmentType.CRIPTOMOEDAS to "Cripto").forEach { (type, label) ->
                     val typeColor = when (type) {
                         InvestmentType.RENDA_VARIAVEL -> Color(0xFF503173)
                         InvestmentType.RENDA_FIXA -> Color(0xFF4CAF50)
@@ -363,59 +363,46 @@ private fun AddEntryForm(
                     FilterChip(selected = uiState.newAssetType == type, onClick = { onNewAssetTypeChanged(type) },
                         label = { Text(label, fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = typeColor.copy(alpha = 0.15f),
-                            selectedLabelColor = typeColor))
+                            selectedContainerColor = typeColor.copy(alpha = 0.15f), selectedLabelColor = typeColor))
                 }
             }
         } else {
-            // ─── Seletor de ativo existente ───
             OutlinedCard(modifier = Modifier.fillMaxWidth().clickable { showInvestmentPicker = !showInvestmentPicker },
                 shape = RoundedCornerShape(12.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Ativo", fontSize = 11.sp, color = Color(0xFF9E9E9E))
-                        Text(
-                            if (uiState.formInvestmentName.isNotBlank()) uiState.formInvestmentName else "Selecione o ativo",
+                        Text(if (uiState.formInvestmentName.isNotBlank()) uiState.formInvestmentName else "Selecione o ativo",
                             fontSize = 14.sp,
-                            color = if (uiState.formInvestmentName.isNotBlank()) Color(0xFF1C1B1F) else Color(0xFFBDBDBD),
-                        )
+                            color = if (uiState.formInvestmentName.isNotBlank()) Color(0xFF1C1B1F) else Color(0xFFBDBDBD))
                     }
                 }
             }
-
             if (showInvestmentPicker) {
-                if (uiState.investments.isEmpty()) {
-                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp)) {
-                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                            Text("Nenhum ativo cadastrado. Use \'Novo ativo\'.",
-                                fontSize = 12.sp, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
-                        }
-                    }
-                } else {
-                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp)) {
-                        Column {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp)) {
+                    Column {
+                        if (uiState.investments.isEmpty()) {
+                            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                Text("Nenhum ativo. Use 'Novo ativo'.", fontSize = 12.sp,
+                                    color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
+                            }
+                        } else {
                             uiState.investments.forEach { inv ->
                                 Row(modifier = Modifier.fillMaxWidth()
                                     .clickable { onInvestmentSelected(inv.id, inv.name); showInvestmentPicker = false }
                                     .padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(inv.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                        Text(
-                                            when (inv.type) {
-                                                InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
-                                                InvestmentType.RENDA_FIXA -> "Renda Fixa"
-                                                InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
-                                            },
-                                            fontSize = 11.sp, color = Color(0xFF9E9E9E),
-                                        )
+                                        Text(when (inv.type) {
+                                            InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
+                                            InvestmentType.RENDA_FIXA -> "Renda Fixa"
+                                            InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
+                                        }, fontSize = 11.sp, color = Color(0xFF9E9E9E))
                                     }
-                                    if (inv.averagePrice > 0) {
+                                    if (inv.averagePrice > 0)
                                         Text("PM: ${inv.averagePrice.toBRL()}", fontSize = 11.sp, color = Purple40)
-                                    }
                                 }
                                 HorizontalDivider(color = Color(0xFFF5F5F5))
                             }
@@ -429,13 +416,14 @@ private fun AddEntryForm(
 
         // ─── Tipo de lançamento ───
         Text("Tipo", style = MaterialTheme.typography.labelMedium, color = Color(0xFF9E9E9E))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(EntryType.APORTE to "Aporte", EntryType.RESGATE to "Resgate",
-                EntryType.ATUALIZACAO_VALOR to "Atualização").forEach { (type, label) ->
+                EntryType.ATUALIZACAO_VALOR to "Atualização", EntryType.AJUSTE_POSICAO to "Ajuste").forEach { (type, label) ->
                 val color = when (type) {
                     EntryType.APORTE -> GreenPositive
                     EntryType.RESGATE -> RedNegative
                     EntryType.ATUALIZACAO_VALOR -> Purple40
+                    EntryType.AJUSTE_POSICAO -> Color(0xFFFF9800)
                 }
                 FilterChip(selected = uiState.formType == type, onClick = { onTypeChanged(type) },
                     label = { Text(label, fontSize = 11.sp) },
@@ -444,7 +432,7 @@ private fun AddEntryForm(
             }
         }
 
-        // ─── Campos condicionais ───
+        // ─── Campos condicionais por tipo ───
         when (uiState.formType) {
             EntryType.APORTE, EntryType.RESGATE -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -461,11 +449,9 @@ private fun AddEntryForm(
                     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
                         colors = CardDefaults.cardColors(containerColor = Purple40.copy(alpha = 0.08f)),
                         elevation = CardDefaults.cardElevation(0.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Total da operação", fontSize = 12.sp, color = Purple40)
-                            Text(uiState.formTotalValue.toBRL(), fontSize = 12.sp,
-                                color = Purple40, fontWeight = FontWeight.Bold)
+                            Text(uiState.formTotalValue.toBRL(), fontSize = 12.sp, color = Purple40, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -476,14 +462,48 @@ private fun AddEntryForm(
                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(), colors = fieldColors)
             }
+            EntryType.AJUSTE_POSICAO -> {
+                // ─── Card explicativo ───
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800).copy(alpha = 0.08f)),
+                    elevation = CardDefaults.cardElevation(0.dp)) {
+                    Text(
+                        "Use para migrar ativos existentes. Informe a posição atual (cotas e PM) " +
+                                "e os próximos aportes recalcularão o PM automaticamente.",
+                        fontSize = 11.sp, color = Color(0xFFE65100),
+                        modifier = Modifier.padding(12.dp), lineHeight = 16.sp,
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextField(value = uiState.formAdjustedShares, onValueChange = onAdjustedSharesChanged,
+                        label = { Text("Qtd cotas atual") }, placeholder = { Text("0") },
+                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f), colors = fieldColors)
+                    TextField(value = uiState.formAdjustedAveragePrice, onValueChange = onAdjustedAvgPriceChanged,
+                        label = { Text("PM atual (R$)") }, placeholder = { Text("0,00") },
+                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f), colors = fieldColors)
+                }
+                if (uiState.formAdjustedTotalValue > 0) {
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800).copy(alpha = 0.08f)),
+                        elevation = CardDefaults.cardElevation(0.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Posição total", fontSize = 12.sp, color = Color(0xFFE65100))
+                            Text(uiState.formAdjustedTotalValue.toBRL(), fontSize = 12.sp,
+                                color = Color(0xFFE65100), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
 
         TextField(value = uiState.formDate, onValueChange = onDateChanged,
-            label = { Text("Data (yyyy-MM-dd)") }, placeholder = { Text("2026-05-12") },
+            label = { Text("Data (yyyy-MM-dd)") }, placeholder = { Text("2026-05-13") },
             singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
 
         TextField(value = uiState.formNotes, onValueChange = onNotesChanged,
-            label = { Text("Observação (opcional)") }, placeholder = { Text("Ex: Compra regular mensal...") },
+            label = { Text("Observação (opcional)") }, placeholder = { Text("Ex: Migração de posição...") },
             singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
 
         uiState.formError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) }
