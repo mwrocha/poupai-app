@@ -210,9 +210,11 @@ class InvestmentBookViewModel @Inject constructor(
             if (state.formInvestmentId.isBlank()) {
                 _uiState.update { it.copy(formError = "Selecione o ativo") }; return
             }
-            saveEntry(
-                state.formInvestmentId, state, shares, price, newValue, adjShares, adjAvgPrice
-            )
+            viewModelScope.launch {
+                saveEntry(
+                    state.formInvestmentId, state, shares, price, newValue, adjShares, adjAvgPrice
+                )
+            }
         }
     }
 
@@ -238,11 +240,12 @@ class InvestmentBookViewModel @Inject constructor(
 
             when (createResult) {
                 is Resource.Success -> {
-                    saveEntry(
-                        createResult.data.id, state, shares, price, newValue, adjShares, adjAvgPrice
-                    )
+                    _uiState.update { it.copy(isSaving = false) }
+                    onDismissSheet()
                     loadInvestments()
+                    loadEntries()
                 }
+
 
                 is Resource.Error -> _uiState.update {
                     it.copy(
@@ -255,37 +258,34 @@ class InvestmentBookViewModel @Inject constructor(
         }
     }
 
-    private fun saveEntry(
+    private suspend fun saveEntry(
         investmentId: String, state: InvestmentBookUiState,
         shares: Double?, price: Double?, newValue: Double?,
         adjShares: Double?, adjAvgPrice: Double?,
     ) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
-            val result = investmentRepository.addEntry(
-                investmentId = investmentId,
-                type = state.formType,
-                shares = shares,
-                sharePrice = price,
-                newCurrentValue = newValue,
-                adjustedShares = adjShares,
-                adjustedAveragePrice = adjAvgPrice,
-                notes = state.formNotes.ifBlank { null },
-                date = state.formDate,
-            )
-            when (result) {
-                is Resource.Success -> {
-                    _uiState.update { it.copy(isSaving = false) }; onDismissSheet(); loadEntries()
-                }
-
-                is Resource.Error -> _uiState.update {
-                    it.copy(
-                        isSaving = false, formError = result.message
-                    )
-                }
-
-                is Resource.Loading -> Unit
+        _uiState.update { it.copy(isSaving = true) }
+        val result = investmentRepository.addEntry(
+            investmentId = investmentId,
+            type = state.formType,
+            shares = shares,
+            sharePrice = price,
+            newCurrentValue = newValue,
+            adjustedShares = adjShares,
+            adjustedAveragePrice = adjAvgPrice,
+            notes = state.formNotes.ifBlank { null },
+            date = state.formDate,
+        )
+        when (result) {
+            is Resource.Success -> {
+                _uiState.update { it.copy(isSaving = false) }
+                onDismissSheet()
+                loadInvestments()
+                loadEntries()
             }
+            is Resource.Error -> _uiState.update {
+                it.copy(isSaving = false, formError = result.message)
+            }
+            is Resource.Loading -> Unit
         }
     }
 
