@@ -1,7 +1,12 @@
 package io.poupai.app.features.investments.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
@@ -35,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.filled.Delete
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
@@ -64,7 +72,6 @@ fun InvestmentsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Registra o observer para recarregar ao voltar de outra tela
     DisposableEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.addObserver(viewModel)
         onDispose { lifecycleOwner.lifecycle.removeObserver(viewModel) }
@@ -75,35 +82,21 @@ fun InvestmentsScreen(
     val totalCurrent = allInvestments.sumOf { it.currentValue }
     val totalProfit = totalCurrent - totalInvested
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F7))
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
 
         // ─── Header ───
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
-                .padding(horizontal = 20.dp)
-                .padding(top = 16.dp, bottom = 16.dp),
-        ) {
+        Box(modifier = Modifier.fillMaxWidth()
+            .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
+            .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
-                Text(
-                    "Investimentos",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Investimentos", style = MaterialTheme.typography.titleLarge,
+                    color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                EyeToggleIcon(
-                    hideValues = uiState.hideValues, onToggle = viewModel::toggleHideValues
-                )
+                EyeToggleIcon(hideValues = uiState.hideValues, onToggle = viewModel::toggleHideValues)
             }
         }
 
@@ -119,36 +112,14 @@ fun InvestmentsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f),
             ) {
-                item {
-                    InvestmentSummaryCard(
-                        totalInvested, totalCurrent, totalProfit, uiState.hideValues
-                    )
-                }
+                item { InvestmentSummaryCard(totalInvested, totalCurrent, totalProfit, uiState.hideValues) }
 
                 // ─── Atalhos rápidos ───
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard(
-                            Modifier.weight(1f),
-                            Icons.Default.Book,
-                            "Lançamentos",
-                            Purple40,
-                            onNavigateToBook
-                        )
-                        QuickCard(
-                            Modifier.weight(1f),
-                            Icons.Default.MonetizationOn,
-                            "Dividendos",
-                            GreenPositive,
-                            onNavigateToDividends
-                        )
-                        QuickCard(
-                            Modifier.weight(1f),
-                            Icons.Default.BarChart,
-                            "Rebalancear",
-                            Color(0xFFFF9800),
-                            onNavigateToRebalance
-                        )
+                        QuickCard(Modifier.weight(1f), Icons.Default.Book, "Lançamentos", Purple40, onNavigateToBook)
+                        QuickCard(Modifier.weight(1f), Icons.Default.MonetizationOn, "Dividendos", GreenPositive, onNavigateToDividends)
+                        QuickCard(Modifier.weight(1f), Icons.Default.BarChart, "Rebalancear", Color(0xFFFF9800), onNavigateToRebalance)
                     }
                 }
 
@@ -156,51 +127,22 @@ fun InvestmentsScreen(
                 uiState.benchmark?.let { benchmark ->
                     item {
                         val isBeating = benchmark.vsCdi >= 0
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
+                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(1.dp)
-                        ) {
+                            elevation = CardDefaults.cardElevation(1.dp)) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "vs CDI",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("vs CDI", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                     Spacer(Modifier.weight(1f))
-                                    Text(
-                                        "Atualizado: ${benchmark.lastUpdated}",
-                                        fontSize = 10.sp,
-                                        color = Color(0xFF9E9E9E)
-                                    )
+                                    Text("Atualizado: ${benchmark.lastUpdated}", fontSize = 10.sp, color = Color(0xFF9E9E9E))
                                 }
                                 Spacer(Modifier.height(12.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    BenchmarkStat(
-                                        "Sua carteira",
-                                        "${String.format("%.2f", benchmark.portfolioReturn)}%",
-                                        if (isBeating) GreenPositive else RedNegative
-                                    )
-                                    BenchmarkStat(
-                                        "CDI anual",
-                                        "${String.format("%.2f", benchmark.cdiRateYear)}%",
-                                        Color(0xFF6B6B6B)
-                                    )
-                                    BenchmarkStat(
-                                        "Diferença", "${if (isBeating) "+" else ""}${
-                                            String.format(
-                                                "%.2f", benchmark.vsCdi
-                                            )
-                                        }%", if (isBeating) GreenPositive else RedNegative
-                                    )
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    BenchmarkStat("Sua carteira", "${String.format("%.2f", benchmark.portfolioReturn)}%",
+                                        if (isBeating) GreenPositive else RedNegative)
+                                    BenchmarkStat("CDI anual", "${String.format("%.2f", benchmark.cdiRateYear)}%", Color(0xFF6B6B6B))
+                                    BenchmarkStat("Diferença", "${if (isBeating) "+" else ""}${String.format("%.2f", benchmark.vsCdi)}%",
+                                        if (isBeating) GreenPositive else RedNegative)
                                 }
                             }
                         }
@@ -218,38 +160,15 @@ fun InvestmentsScreen(
                 }
 
                 item {
-                    Text(
-                        "Seus ativos",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF6B6B6B)
-                    )
+                    Text("Seus ativos", style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold, color = Color(0xFF6B6B6B))
                 }
 
-                item {
-                    AssetSection(
-                        "Renda Variável",
-                        InvestmentType.RENDA_VARIAVEL,
-                        uiState.rendaVariavel,
-                        uiState.hideValues
-                    )
-                }
-                item {
-                    AssetSection(
-                        "Renda Fixa",
-                        InvestmentType.RENDA_FIXA,
-                        uiState.rendaFixa,
-                        uiState.hideValues
-                    )
-                }
-                item {
-                    AssetSection(
-                        "Criptomoedas",
-                        InvestmentType.CRIPTOMOEDAS,
-                        uiState.criptomoedas,
-                        uiState.hideValues
-                    )
-                }
+                // ─── Seções com expand/collapse ───
+                item { AssetSection("Renda Variável", InvestmentType.RENDA_VARIAVEL, uiState.rendaVariavel,
+                    uiState.hideValues, onDelete = viewModel::onDeleteInvestment) }
+                item { AssetSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa, uiState.hideValues, onDelete = viewModel::onDeleteInvestment) }
+                item { AssetSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas, uiState.hideValues, onDelete = viewModel::onDeleteInvestment) }
 
                 item { Spacer(Modifier.height(32.dp)) }
             }
@@ -260,27 +179,14 @@ fun InvestmentsScreen(
 // ─── COMPOSABLES ───
 
 @Composable
-private fun QuickCard(
-    modifier: Modifier, icon: ImageVector, title: String, color: Color, onClick: () -> Unit
-) {
-    Card(
-        modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+private fun QuickCard(modifier: Modifier, icon: ImageVector, title: String, color: Color, onClick: () -> Unit) {
+    Card(modifier = modifier.clickable { onClick() }, shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        elevation = CardDefaults.cardElevation(0.dp)) {
+        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
             Spacer(Modifier.height(4.dp))
-            Text(
-                title,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = color,
-                textAlign = TextAlign.Center
-            )
+            Text(title, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color, textAlign = TextAlign.Center)
         }
     }
 }
@@ -294,63 +200,33 @@ private fun BenchmarkStat(label: String, value: String, color: Color) {
 }
 
 @Composable
-private fun InvestmentSummaryCard(
-    totalInvested: Double, totalCurrent: Double, totalProfit: Double, hideValues: Boolean
-) {
+private fun InvestmentSummaryCard(totalInvested: Double, totalCurrent: Double, totalProfit: Double, hideValues: Boolean) {
     val profitPercent = if (totalInvested > 0) (totalProfit / totalInvested) * 100 else 0.0
     val isPositive = totalProfit >= 0
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(listOf(PurpleDark, Purple40)),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .padding(20.dp)
-        ) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(4.dp)) {
+        Box(modifier = Modifier.fillMaxWidth()
+            .background(brush = Brush.linearGradient(listOf(PurpleDark, Purple40)), shape = RoundedCornerShape(20.dp))
+            .padding(20.dp)) {
             Column {
                 Text("Patrimônio Total", fontSize = 12.sp, color = Color.White.copy(alpha = 0.75f))
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    if (hideValues) HIDDEN else totalCurrent.toBRL(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(if (hideValues) HIDDEN else totalCurrent.toBRL(),
+                    style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text("Investido", fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f))
-                        Text(
-                            if (hideValues) HIDDEN else totalInvested.toBRL(),
-                            fontSize = 14.sp,
-                            color = Color.White
-                        )
+                        Text(if (hideValues) HIDDEN else totalInvested.toBRL(), fontSize = 14.sp, color = Color.White)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("Rendimento", fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
-                                null,
-                                tint = if (isPositive) Color(0xFF81C784) else Color(0xFFEF9A9A),
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown, null,
+                                tint = if (isPositive) Color(0xFF81C784) else Color(0xFFEF9A9A), modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(
-                                "${if (isPositive) "+" else ""}${"%.1f".format(profitPercent)}%",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isPositive) Color(0xFF81C784) else Color(0xFFEF9A9A)
-                            )
+                            Text("${if (isPositive) "+" else ""}${"%.1f".format(profitPercent)}%",
+                                fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                                color = if (isPositive) Color(0xFF81C784) else Color(0xFFEF9A9A))
                         }
                     }
                 }
@@ -360,57 +236,23 @@ private fun InvestmentSummaryCard(
 }
 
 @Composable
-private fun AllocationDonutCard(
-    rendaVariavel: Double, rendaFixa: Double, criptomoedas: Double, total: Double
-) {
+private fun AllocationDonutCard(rendaVariavel: Double, rendaFixa: Double, criptomoedas: Double, total: Double) {
     if (total <= 0) return
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(1.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                "Alocação",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                "Distribuição por categoria",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF9E9E9E)
-            )
+            Text("Alocação", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Distribuição por categoria", style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
             Spacer(Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
-            ) {
-                DonutChart(
-                    listOf(rendaVariavel, rendaFixa, criptomoedas),
-                    listOf(
-                        typeColor[InvestmentType.RENDA_VARIAVEL]!!,
-                        typeColor[InvestmentType.RENDA_FIXA]!!,
-                        typeColor[InvestmentType.CRIPTOMOEDAS]!!
-                    ),
-                    modifier = Modifier.size(110.dp),
-                )
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                DonutChart(listOf(rendaVariavel, rendaFixa, criptomoedas),
+                    listOf(typeColor[InvestmentType.RENDA_VARIAVEL]!!, typeColor[InvestmentType.RENDA_FIXA]!!, typeColor[InvestmentType.CRIPTOMOEDAS]!!),
+                    modifier = Modifier.size(110.dp))
                 Spacer(Modifier.width(20.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    LegendRow(
-                        "Renda Variável",
-                        rendaVariavel / total * 100,
-                        typeColor[InvestmentType.RENDA_VARIAVEL]!!
-                    )
-                    LegendRow(
-                        "Renda Fixa",
-                        rendaFixa / total * 100,
-                        typeColor[InvestmentType.RENDA_FIXA]!!
-                    )
-                    LegendRow(
-                        "Cripto",
-                        criptomoedas / total * 100,
-                        typeColor[InvestmentType.CRIPTOMOEDAS]!!
-                    )
+                    LegendRow("Renda Variável", rendaVariavel / total * 100, typeColor[InvestmentType.RENDA_VARIAVEL]!!)
+                    LegendRow("Renda Fixa", rendaFixa / total * 100, typeColor[InvestmentType.RENDA_FIXA]!!)
+                    LegendRow("Cripto", criptomoedas / total * 100, typeColor[InvestmentType.CRIPTOMOEDAS]!!)
                 }
             }
         }
@@ -431,29 +273,15 @@ private fun DonutChart(values: List<Double>, colors: List<Color>, modifier: Modi
         var startAngle = -90f
         values.forEachIndexed { i, v ->
             val sweep = (v / total * 360f * animProgress).toFloat()
-            drawArc(
-                colors.getOrElse(i) { Color.Gray },
-                startAngle,
-                sweep,
-                false,
-                topLeft,
-                arcSize,
-                style = Stroke(strokeWidth, cap = StrokeCap.Butt)
-            )
+            drawArc(colors.getOrElse(i) { Color.Gray }, startAngle, sweep, false, topLeft, arcSize,
+                style = Stroke(strokeWidth, cap = StrokeCap.Butt))
             startAngle += sweep
         }
         startAngle = -90f
         values.forEach { v ->
             val sweep = (v / total * 360f * animProgress).toFloat()
-            drawArc(
-                Color(0xFFF5F5F7),
-                startAngle - 0.5f,
-                1f,
-                false,
-                topLeft,
-                arcSize,
-                style = Stroke(strokeWidth + 2.dp.toPx(), cap = StrokeCap.Butt)
-            )
+            drawArc(Color(0xFFF5F5F7), startAngle - 0.5f, 1f, false, topLeft, arcSize,
+                style = Stroke(strokeWidth + 2.dp.toPx(), cap = StrokeCap.Butt))
             startAngle += sweep
         }
     }
@@ -462,86 +290,108 @@ private fun DonutChart(values: List<Double>, colors: List<Color>, modifier: Modi
 @Composable
 private fun LegendRow(label: String, percent: Double, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
+        Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
         Spacer(Modifier.width(8.dp))
         Column {
             Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B6B6B))
-            Text(
-                "${"%.1f".format(percent)}%",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-                color = color
-            )
+            Text("${"%.1f".format(percent)}%", style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold, color = color)
         }
     }
 }
 
+// ─── SEÇÃO COM EXPAND/COLLAPSE ───
+
 @Composable
-private fun AssetSection(
-    title: String, type: InvestmentType, investments: List<Investment>, hideValues: Boolean
-) {
+private fun AssetSection(title: String, type: InvestmentType, investments: List<Investment>, hideValues: Boolean,onDelete: (String) -> Unit) {
     if (investments.isEmpty()) return
     val color = typeColor[type] ?: Purple40
+    var expanded by remember { mutableStateOf(true) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
+        colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(color.copy(alpha = 0.12f)), contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        when (type) {
-                            InvestmentType.RENDA_VARIAVEL -> "RV"
-                            InvestmentType.RENDA_FIXA -> "RF"
-                            else -> "₿"
-                        }, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color
-                    )
+            // ─── Header clicável ───
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center) {
+                    Text(when (type) {
+                        InvestmentType.RENDA_VARIAVEL -> "RV"
+                        InvestmentType.RENDA_FIXA -> "RF"
+                        else -> "₿"
+                    }, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color)
                 }
                 Spacer(Modifier.width(12.dp))
-                Text(
-                    title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    if (hideValues) HIDDEN else investments.sumOf { it.currentValue }.toBRL(),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = color
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text("${investments.size} ativo${if (investments.size != 1) "s" else ""}",
+                        fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                }
+                Text(if (hideValues) HIDDEN else investments.sumOf { it.currentValue }.toBRL(),
+                    fontSize = 13.sp, fontWeight = FontWeight.Bold, color = color)
+                Spacer(Modifier.width(8.dp))
+                Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    null, tint = Color(0xFF9E9E9E), modifier = Modifier.size(20.dp))
             }
-            HorizontalDivider(color = Color(0xFFF5F5F5))
-            investments.forEachIndexed { index, investment ->
-                AssetRow(investment = investment, accentColor = color, hideValues = hideValues)
-                if (index < investments.lastIndex) HorizontalDivider(
-                    color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp)
-                )
+
+            // ─── Lista animada ───
+            AnimatedVisibility(visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()) {
+                Column {
+                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                    investments.forEachIndexed { index, investment ->
+                        AssetRow(investment = investment, accentColor = color, hideValues = hideValues,
+                            onDelete = { onDelete(investment.id) })
+                        if (index < investments.lastIndex)
+                            HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun AssetRow(investment: Investment, accentColor: Color, hideValues: Boolean) {
+private fun AssetRow(
+    investment: Investment,
+    accentColor: Color,
+    hideValues: Boolean,
+    onDelete: () -> Unit
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Excluir ativo") },
+            text = { Text("Deseja excluir \"${investment.name}\"? Esta ação não pode ser desfeita.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Excluir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     val profit = investment.currentValue - investment.investedValue
     val profitPercent =
         if (investment.investedValue > 0) (profit / investment.investedValue) * 100 else 0.0
@@ -552,7 +402,9 @@ private fun AssetRow(investment: Investment, accentColor: Color, hideValues: Boo
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
+
         Row(verticalAlignment = Alignment.CenterVertically) {
+
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -567,7 +419,9 @@ private fun AssetRow(investment: Investment, accentColor: Color, hideValues: Boo
                     color = accentColor
                 )
             }
+
             Spacer(Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     investment.name,
@@ -577,84 +431,108 @@ private fun AssetRow(investment: Investment, accentColor: Color, hideValues: Boo
                     overflow = TextOverflow.Ellipsis,
                     color = Color(0xFF1C1B1F)
                 )
+
                 Text(
                     "Investido: ${if (hideValues) HIDDEN else investment.investedValue.toBRL()}",
                     fontSize = 11.sp,
                     color = Color(0xFF9E9E9E)
                 )
             }
+
             Column(horizontalAlignment = Alignment.End) {
+
                 Text(
                     if (hideValues) HIDDEN else investment.currentValue.toBRL(),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1C1B1F)
                 )
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
+
                     Icon(
                         if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
-                        null,
+                        contentDescription = null,
                         tint = if (isPositive) GreenPositive else RedNegative,
                         modifier = Modifier.size(12.dp)
                     )
+
                     Spacer(Modifier.width(2.dp))
+
                     Text(
                         "${if (isPositive) "+" else ""}${"%.1f".format(profitPercent)}%",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isPositive) GreenPositive else RedNegative
                     )
+
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Excluir",
+                            tint = Color(0xFFBDBDBD),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
-        if (investment.shares > 0 || investment.averagePrice > 0) {
+
+        if (
+            investment.shares > 0 ||
+            investment.averagePrice > 0 ||
+            investment.allocationTarget > 0
+        ) {
             Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (investment.shares > 0) Text(
-                    "${String.format("%.2f", investment.shares)} cotas",
-                    fontSize = 10.sp,
-                    color = Color(0xFF9E9E9E)
-                )
-                if (investment.averagePrice > 0) Text(
-                    "PM: ${if (hideValues) HIDDEN else investment.averagePrice.toBRL()}",
-                    fontSize = 10.sp,
-                    color = accentColor,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (investment.allocationTarget > 0) Text(
-                    "Alvo: ${String.format("%.1f", investment.allocationTarget)}%",
-                    fontSize = 10.sp,
-                    color = Color(0xFF9E9E9E)
-                )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                if (investment.shares > 0) {
+                    Text(
+                        "${String.format("%.2f", investment.shares)} cotas",
+                        fontSize = 10.sp,
+                        color = Color(0xFF9E9E9E)
+                    )
+                }
+
+                if (investment.averagePrice > 0) {
+                    Text(
+                        "PM: ${if (hideValues) HIDDEN else investment.averagePrice.toBRL()}",
+                        fontSize = 10.sp,
+                        color = accentColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                if (investment.allocationTarget > 0) {
+                    Text(
+                        "Alvo: ${String.format("%.1f", investment.allocationTarget)}%",
+                        fontSize = 10.sp,
+                        color = Color(0xFF9E9E9E)
+                    )
+                }
             }
         }
     }
 }
-
 @Composable
 private fun EmptyInvestmentsState(onNavigateToBook: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("📈", fontSize = 64.sp)
             Spacer(Modifier.height(16.dp))
-            Text(
-                "Nenhum investimento ainda",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text("Nenhum investimento ainda", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            Text(
-                "Registre seus primeiros aportes\nno livro contábil",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF9E9E9E),
-                textAlign = TextAlign.Center
-            )
+            Text("Registre seus primeiros aportes\nno livro contábil",
+                style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            Button(
-                onClick = onNavigateToBook,
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Purple40)
-            ) {
+            Button(onClick = onNavigateToBook, shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Purple40)) {
                 Icon(Icons.Default.Book, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Ir para Lançamentos")
