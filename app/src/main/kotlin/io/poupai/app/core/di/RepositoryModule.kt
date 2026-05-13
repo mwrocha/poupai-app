@@ -1,6 +1,7 @@
 package io.poupai.app.core.di
 
 import io.poupai.app.data.repository.AuthRepositoryImpl
+import io.poupai.app.data.repository.BrapiRepositoryImpl
 import io.poupai.app.data.repository.FinanceRepositoryImpl
 import io.poupai.app.data.repository.GamificationRepositoryImpl
 import io.poupai.app.data.repository.GoalRepositoryImpl
@@ -9,6 +10,7 @@ import io.poupai.app.data.repository.TagRepositoryImpl
 import io.poupai.app.data.repository.TransactionRepositoryImpl
 import io.poupai.app.data.repository.UserRepositoryImpl
 import io.poupai.app.domain.repository.AuthRepository
+import io.poupai.app.domain.repository.BrapiRepository
 import io.poupai.app.domain.repository.FinanceRepository
 import io.poupai.app.domain.repository.GamificationRepository
 import io.poupai.app.domain.repository.GoalRepository
@@ -49,4 +51,7 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindGamificationRepository(impl: GamificationRepositoryImpl): GamificationRepository
+
+    @Binds @Singleton
+    abstract fun bindBrapiRepository(impl: BrapiRepositoryImpl): BrapiRepository
 }
