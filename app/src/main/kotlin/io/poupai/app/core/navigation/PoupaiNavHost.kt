@@ -1,18 +1,21 @@
 package io.poupai.app.core.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.poupai.app.features.auth.ui.LoginScreen
 import io.poupai.app.features.auth.ui.WelcomeScreen
 import io.poupai.app.features.dashboard.ui.DashboardScreen
+import io.poupai.app.features.dividends.ui.DividendsScreen
 import io.poupai.app.features.finances.ui.FinancesScreen
 import io.poupai.app.features.gamification.ui.GamificationScreen
 import io.poupai.app.features.goals.ui.GoalsScreen
+import io.poupai.app.features.investmentbook.ui.InvestmentBookScreen
 import io.poupai.app.features.investments.ui.InvestmentsScreen
+import io.poupai.app.features.investments.ui.RebalanceScreen
 import io.poupai.app.features.onboarding.ui.OnboardingScreen
 import io.poupai.app.features.profile.ui.ProfileScreen
 import io.poupai.app.features.register.ui.RegisterCredentialsScreen
@@ -24,13 +27,10 @@ import io.poupai.app.features.tags.ui.TagsScreen
 import io.poupai.app.features.transactions.ui.TransactionsScreen
 
 @Composable
-fun PoupaiNavHost() {
-    val navController = rememberNavController()
+fun PoupaiNavHost(navController: NavHostController) {
 
     fun navigateToLogin() {
-        navController.navigate(Route.Welcome.route) {
-            popUpTo(0) { inclusive = true }
-        }
+        navController.navigate(Route.Welcome.route) { popUpTo(0) { inclusive = true } }
     }
 
     NavHost(navController = navController, startDestination = Route.Splash.route) {
@@ -39,25 +39,29 @@ fun PoupaiNavHost() {
             SplashScreen(
                 onNavigateToOnboarding = {
                     navController.navigate(Route.Onboarding.route) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
+                        popUpTo(
+                            Route.Splash.route
+                        ) { inclusive = true }
                     }
                 },
                 onNavigateToDashboard = {
                     navController.navigate(Route.Dashboard.route) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
+                        popUpTo(
+                            Route.Splash.route
+                        ) { inclusive = true }
                     }
                 },
             )
         }
 
         composable(Route.Onboarding.route) {
-            OnboardingScreen(
-                onFinish = {
-                    navController.navigate(Route.Welcome.route) {
-                        popUpTo(Route.Onboarding.route) { inclusive = true }
-                    }
-                },
-            )
+            OnboardingScreen(onFinish = {
+                navController.navigate(Route.Welcome.route) {
+                    popUpTo(
+                        Route.Onboarding.route
+                    ) { inclusive = true }
+                }
+            })
         }
 
         composable(Route.Welcome.route) {
@@ -97,15 +101,16 @@ fun PoupaiNavHost() {
         }
 
         composable(
-            route = Route.WelcomeAfterLogin.route,
-            arguments = listOf(navArgument("userName") { type = NavType.StringType }),
+            Route.WelcomeAfterLogin.route,
+            arguments = listOf(navArgument("userName") { type = NavType.StringType })
         ) { backStackEntry ->
-            val userName = backStackEntry.arguments?.getString("userName") ?: ""
             WelcomeAfterLoginScreen(
-                userName = userName,
+                userName = backStackEntry.arguments?.getString("userName") ?: "",
                 onFinished = {
                     navController.navigate(Route.Dashboard.route) {
-                        popUpTo(Route.WelcomeAfterLogin.route) { inclusive = true }
+                        popUpTo(Route.WelcomeAfterLogin.route) {
+                            inclusive = true
+                        }
                     }
                 },
             )
@@ -125,39 +130,33 @@ fun PoupaiNavHost() {
             )
         }
 
-        composable(Route.Transactions.route) {
-            TransactionsScreen(onNavigateBack = { navController.popBackStack() })
-        }
-
-        composable(Route.Tags.route) {
-            TagsScreen(onNavigateBack = { navController.popBackStack() })
-        }
-
-        composable(Route.Finances.route) {
-            FinancesScreen(onNavigateBack = { navController.popBackStack() })
-        }
+        composable(Route.Transactions.route) { TransactionsScreen(onNavigateBack = { navController.popBackStack() }) }
+        composable(Route.Tags.route) { TagsScreen(onNavigateBack = { navController.popBackStack() }) }
+        composable(Route.Finances.route) { FinancesScreen(onNavigateBack = { navController.popBackStack() }) }
 
         composable(Route.Investments.route) {
-            InvestmentsScreen(onNavigateBack = { navController.popBackStack() })
+            InvestmentsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToBook = { navController.navigate(Route.InvestmentBook.route) },
+                onNavigateToDividends = { navController.navigate(Route.Dividends.route) },
+                onNavigateToRebalance = { navController.navigate(Route.Rebalance.route) },
+            )
         }
+
+        composable(Route.InvestmentBook.route) {
+            InvestmentBookScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(Route.Dividends.route) { DividendsScreen(onNavigateBack = { navController.popBackStack() }) }
+        composable(Route.Rebalance.route) { RebalanceScreen(onNavigateBack = { navController.popBackStack() }) }
 
         composable(Route.Profile.route) {
             ProfileScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onLogout = { navigateToLogin() },
-            )
+                onLogout = { navigateToLogin() })
         }
-
-        composable(Route.Goals.route) {
-            GoalsScreen(onNavigateBack = { navController.popBackStack() })
-        }
-
-        composable(Route.Settings.route) {
-            SettingsScreen(onNavigateBack = { navController.popBackStack() })
-        }
-
-        composable(Route.Gamification.route) {
-            GamificationScreen(onNavigateBack = { navController.popBackStack() })
-        }
+        composable(Route.Goals.route) { GoalsScreen(onNavigateBack = { navController.popBackStack() }) }
+        composable(Route.Settings.route) { SettingsScreen(onNavigateBack = { navController.popBackStack() }) }
+        composable(Route.Gamification.route) { GamificationScreen(onNavigateBack = { navController.popBackStack() }) }
     }
 }
