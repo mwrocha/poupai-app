@@ -2,11 +2,8 @@ package io.poupai.app.data.mapper
 
 import io.poupai.app.data.local.entity.TransactionEntity
 import io.poupai.app.data.local.entity.UserEntity
-import io.poupai.app.data.remote.dto.InvestmentDto
 import io.poupai.app.data.remote.dto.TransactionDto
 import io.poupai.app.data.remote.dto.UserDto
-import io.poupai.app.domain.model.Investment
-import io.poupai.app.domain.model.InvestmentType
 import io.poupai.app.domain.model.Transaction
 import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.domain.model.User
@@ -68,7 +65,6 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     tagId = tagId,
 )
 
-// ─── Transaction domain → Entity (usado ao salvar resposta da API no Room) ───
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     id = id,
     title = title,
@@ -77,22 +73,6 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     category = category,
     date = date.time,
     tagId = tagId,
-)
-
-// ─── Investment Mappers ───
-
-fun InvestmentDto.toDomain(): Investment = Investment(
-    id = id.orEmpty(),
-    name = name.orEmpty(),
-    type = when (type?.uppercase()) {
-        "RENDA_VARIAVEL" -> InvestmentType.RENDA_VARIAVEL
-        "RENDA_FIXA" -> InvestmentType.RENDA_FIXA
-        "CRIPTOMOEDAS" -> InvestmentType.CRIPTOMOEDAS
-        else -> InvestmentType.RENDA_FIXA
-    },
-    currentValue = currentValue,
-    investedValue = investedValue,
-    profitability = profitability,
 )
 
 // ─── Util ───
