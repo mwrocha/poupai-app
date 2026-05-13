@@ -5,6 +5,19 @@ import io.poupai.app.domain.model.TransactionType
 
 enum class TransactionFilter { ALL, INCOME, EXPENSE }
 
+// Categorias pré-definidas separadas por tipo
+val EXPENSE_CATEGORIES = listOf(
+    "Alimentação", "Mercado", "Restaurante", "Transporte", "Combustível",
+    "Moradia", "Aluguel", "Condomínio", "Energia", "Água", "Internet",
+    "Saúde", "Farmácia", "Academia", "Educação", "Lazer", "Streaming",
+    "Vestuário", "Viagem", "Pet", "Presentes", "Outros",
+)
+
+val INCOME_CATEGORIES = listOf(
+    "Salário", "Freelance", "Dividendos", "Aluguel Recebido",
+    "Investimentos", "Bônus", "Presente", "Outros",
+)
+
 data class TransactionsUiState(
     val balance: Double = 0.0,
     val incomeTotal: Double = 0.0,
@@ -33,6 +46,17 @@ data class TransactionsUiState(
     val formDate: String = "",
     val formIsLoading: Boolean = false,
     val formError: String? = null,
+
+    // ─── Edição ───
+    val showEditSheet: Boolean = false,
+    val editingTransaction: Transaction? = null,
+    val editTitle: String = "",
+    val editAmount: String = "",
+    val editType: TransactionType = TransactionType.EXPENSE,
+    val editCategory: String = "",
+    val editDate: String = "",
+    val editIsLoading: Boolean = false,
+    val editError: String? = null,
 ) {
     val isFormValid: Boolean
         get() = formTitle.isNotBlank() &&
@@ -40,6 +64,13 @@ data class TransactionsUiState(
                 formAmount.replace(",", ".").toDoubleOrNull() != null &&
                 formCategory.isNotBlank() &&
                 formDate.isNotBlank()
+
+    val isEditValid: Boolean
+        get() = editTitle.isNotBlank() &&
+                editAmount.isNotBlank() &&
+                editAmount.replace(",", ".").toDoubleOrNull() != null &&
+                editCategory.isNotBlank() &&
+                editDate.isNotBlank()
 
     val filteredTransactions: List<Transaction>
         get() {
@@ -54,4 +85,10 @@ data class TransactionsUiState(
                 TransactionFilter.EXPENSE -> byMonth.filter { it.type == TransactionType.EXPENSE }
             }
         }
+
+    val currentCategories: List<String>
+        get() = if (formType == TransactionType.EXPENSE) EXPENSE_CATEGORIES else INCOME_CATEGORIES
+
+    val editCategories: List<String>
+        get() = if (editType == TransactionType.EXPENSE) EXPENSE_CATEGORIES else INCOME_CATEGORIES
 }
