@@ -23,23 +23,30 @@ data class InvestmentBookUiState(
 
     // ─── Formulário ───
     val showAddSheet: Boolean = false,
-
-    // Modo de seleção de ativo: false = selecionar existente, true = criar novo
     val isNewAsset: Boolean = false,
 
-    // Ativo existente selecionado
+    // Ativo existente
     val formInvestmentId: String = "",
     val formInvestmentName: String = "",
 
-    // Novo ativo a ser criado
+    // Novo ativo
     val newAssetName: String = "",
     val newAssetType: InvestmentType = InvestmentType.RENDA_VARIAVEL,
 
-    // Lançamento
+    // Tipo de lançamento
     val formType: EntryType = EntryType.APORTE,
+
+    // APORTE / RESGATE
     val formShares: String = "",
     val formSharePrice: String = "",
+
+    // ATUALIZACAO_VALOR
     val formNewCurrentValue: String = "",
+
+    // AJUSTE_POSICAO
+    val formAdjustedShares: String = "",
+    val formAdjustedAveragePrice: String = "",
+
     val formNotes: String = "",
     val formDate: String = LocalDate.now().toString(),
     val formError: String? = null,
@@ -56,10 +63,10 @@ data class InvestmentBookUiState(
             return shares * price
         }
 
-    val typeLabel: String
-        get() = when (newAssetType) {
-            InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
-            InvestmentType.RENDA_FIXA -> "Renda Fixa"
-            InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
+    val formAdjustedTotalValue: Double
+        get() {
+            val shares = formAdjustedShares.replace(",", ".").toDoubleOrNull() ?: 0.0
+            val price = formAdjustedAveragePrice.replace(",", ".").toDoubleOrNull() ?: 0.0
+            return shares * price
         }
 }
