@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -53,16 +54,14 @@ fun ProfileScreen(
     val fieldColors = TextFieldDefaults.colors(
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
-        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+        focusedIndicatorColor = Purple40,
         unfocusedIndicatorColor = Color(0xFFBDBDBD),
         focusedTextColor = Color(0xFF1C1B1F),
         unfocusedTextColor = Color(0xFF1C1B1F),
-        cursorColor = MaterialTheme.colorScheme.primary,
+        cursorColor = Purple40,
     )
 
-    val imagePicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { viewModel.onProfileImageSelected(it, context) }
     }
 
@@ -100,9 +99,7 @@ fun ProfileScreen(
                 ) { Text("Confirmar") }
             },
             dismissButton = {
-                TextButton(onClick = { showEmailDialog = false; currentPassword = "" }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { showEmailDialog = false; currentPassword = "" }) { Text("Cancelar") }
             },
         )
     }
@@ -117,31 +114,29 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFF5F5F7))
             .verticalScroll(rememberScrollState()),
     ) {
         // ─── Header ───
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
-                .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40))),
+                .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 40.dp),
         ) {
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-            ) {
-                Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                }
+                Spacer(Modifier.weight(1f))
+                Text("Meu Perfil", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.size(48.dp))
             }
-            Text(
-                "Meu Perfil",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Center),
-            )
         }
 
-        // ─── Avatar ───
+        // ─── Avatar flutuando sobre o header ───
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -153,7 +148,7 @@ fun ProfileScreen(
                     modifier = Modifier
                         .size(88.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(Purple40.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (!uiState.editProfileImageUrl.isNullOrBlank()) {
@@ -168,7 +163,7 @@ fun ProfileScreen(
                             text = uiState.firstName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = Purple40,
                         )
                     }
                 }
@@ -177,111 +172,121 @@ fun ProfileScreen(
                         .align(Alignment.BottomEnd)
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                        .background(Purple40)
                         .clickable { imagePicker.launch("image/*") },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.CameraAlt, "Trocar foto",
-                        tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.CameraAlt, "Trocar foto", tint = Color.White, modifier = Modifier.size(16.dp))
                 }
             }
         }
 
-        // ─── Campos ───
+        // ─── Nome exibido ───
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .offset(y = (-24).dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .offset(y = (-32).dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            EditableField(
-                label = "Usuário",
-                value = uiState.editUsername,
-                isEditing = uiState.editingField == "username",
-                onFieldClick = { viewModel.onFieldClick("username") },
-                onValueChange = viewModel::onUsernameChanged,
-                colors = fieldColors,
+            Text(
+                "${uiState.editFirstName} ${uiState.editLastName}".trim(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1C1B1F),
             )
-            EditableField(
-                label = "Nome",
-                value = uiState.editFirstName,
-                isEditing = uiState.editingField == "firstName",
-                onFieldClick = { viewModel.onFieldClick("firstName") },
-                onValueChange = viewModel::onFirstNameChanged,
-                colors = fieldColors,
-            )
-            EditableField(
-                label = "Sobrenome",
-                value = uiState.editLastName,
-                isEditing = uiState.editingField == "lastName",
-                onFieldClick = { viewModel.onFieldClick("lastName") },
-                onValueChange = viewModel::onLastNameChanged,
-                colors = fieldColors,
-            )
-            EditableField(
-                label = "Data de Nascimento",
-                value = uiState.editBirthDate,
-                isEditing = uiState.editingField == "birthDate",
-                onFieldClick = { viewModel.onFieldClick("birthDate") },
-                onValueChange = viewModel::onBirthDateChanged,
-                placeholder = "dd/MM/yyyy",
-                colors = fieldColors,
-            )
-            EditableField(
-                label = "E-mail",
-                value = uiState.editEmail,
-                isEditing = uiState.editingField == "email",
-                onFieldClick = { viewModel.onFieldClick("email") },
-                onValueChange = viewModel::onEmailChanged,
-                keyboardType = KeyboardType.Email,
-                colors = fieldColors,
-                trailingNote = if (uiState.emailChanged) "⚠ Exigirá novo login" else null,
-            )
-            EditableField(
-                label = "CPF",
-                value = uiState.editCpf,
-                isEditing = uiState.editingField == "cpf",
-                onFieldClick = { viewModel.onFieldClick("cpf") },
-                onValueChange = viewModel::onCpfChanged,
-                keyboardType = KeyboardType.Number,
-                placeholder = "000.000.000-00",
-                visualTransformation = CpfVisualTransformation(),
-                colors = fieldColors,
-            )
-            EditableField(
-                label = "Telefone",
-                value = uiState.editPhone,
-                isEditing = uiState.editingField == "phone",
-                onFieldClick = { viewModel.onFieldClick("phone") },
-                onValueChange = viewModel::onPhoneChanged,
-                keyboardType = KeyboardType.Number,
-                placeholder = "(00) 00000-0000",
-                visualTransformation = PhoneVisualTransformation(),
-                colors = fieldColors,
-                leadingText = "+55 ",
+            Text(
+                uiState.editEmail,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF6B6B6B),
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
-        // ─── Mensagens próximas ao botão salvar ───
-        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-            uiState.errorMessage?.let {
-                Text(
-                    it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 8.dp),
+        // ─── Seção: Informações pessoais ───
+        ProfileSectionTitle("Informações pessoais")
+
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+        ) {
+            Column {
+                EditableFieldRow("Usuário", uiState.editUsername, uiState.editingField == "username",
+                    { viewModel.onFieldClick("username") }, viewModel::onUsernameChanged, fieldColors)
+                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                EditableFieldRow("Nome", uiState.editFirstName, uiState.editingField == "firstName",
+                    { viewModel.onFieldClick("firstName") }, viewModel::onFirstNameChanged, fieldColors)
+                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                EditableFieldRow("Sobrenome", uiState.editLastName, uiState.editingField == "lastName",
+                    { viewModel.onFieldClick("lastName") }, viewModel::onLastNameChanged, fieldColors)
+                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                EditableFieldRow("Data de Nascimento", uiState.editBirthDate, uiState.editingField == "birthDate",
+                    { viewModel.onFieldClick("birthDate") }, viewModel::onBirthDateChanged, fieldColors,
+                    placeholder = "dd/MM/yyyy")
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // ─── Seção: Contato ───
+        ProfileSectionTitle("Contato e segurança")
+
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+        ) {
+            Column {
+                EditableFieldRow(
+                    label = "E-mail",
+                    value = uiState.editEmail,
+                    isEditing = uiState.editingField == "email",
+                    onFieldClick = { viewModel.onFieldClick("email") },
+                    onValueChange = viewModel::onEmailChanged,
+                    colors = fieldColors,
+                    keyboardType = KeyboardType.Email,
+                    trailingNote = if (uiState.emailChanged) "⚠ Novo login" else null,
+                )
+                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                EditableFieldRow(
+                    label = "CPF",
+                    value = uiState.editCpf,
+                    isEditing = uiState.editingField == "cpf",
+                    onFieldClick = { viewModel.onFieldClick("cpf") },
+                    onValueChange = viewModel::onCpfChanged,
+                    colors = fieldColors,
+                    keyboardType = KeyboardType.Number,
+                    placeholder = "000.000.000-00",
+                    visualTransformation = CpfVisualTransformation(),
+                )
+                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                EditableFieldRow(
+                    label = "Telefone",
+                    value = uiState.editPhone,
+                    isEditing = uiState.editingField == "phone",
+                    onFieldClick = { viewModel.onFieldClick("phone") },
+                    onValueChange = viewModel::onPhoneChanged,
+                    colors = fieldColors,
+                    keyboardType = KeyboardType.Number,
+                    placeholder = "(00) 00000-0000",
+                    visualTransformation = PhoneVisualTransformation(),
+                    leadingText = "+55 ",
                 )
             }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // ─── Mensagens ───
+        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+            uiState.errorMessage?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+            }
             uiState.successMessage?.let {
-                Text(
-                    it,
-                    color = Color(0xFF4CAF50),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                Text(it, color = Color(0xFF4CAF50), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
             }
         }
 
@@ -292,40 +297,40 @@ fun ProfileScreen(
                 else viewModel.onSave(onLogout = onLogout)
             },
             enabled = uiState.hasChanges && !uiState.isSaving,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF503173)),
+            colors = ButtonDefaults.buttonColors(containerColor = Purple40),
         ) {
-            if (uiState.isSaving) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-            } else {
-                Text("Salvar alterações", fontSize = 16.sp, color = Color.White)
-            }
+            if (uiState.isSaving) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+            else Text("Salvar alterações", fontSize = 16.sp, color = Color.White)
         }
 
         Spacer(Modifier.height(12.dp))
 
         OutlinedButton(
             onClick = { viewModel.onLogout(onLogout) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(56.dp),
             shape = RoundedCornerShape(16.dp),
-        ) {
-            Text("Sair")
-        }
+        ) { Text("Sair da conta") }
 
         Spacer(Modifier.height(32.dp))
     }
 }
 
+@Composable
+private fun ProfileSectionTitle(title: String) {
+    Text(
+        title,
+        style = MaterialTheme.typography.labelMedium,
+        color = Color(0xFF6B6B6B),
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditableField(
+private fun EditableFieldRow(
     label: String,
     value: String,
     isEditing: Boolean,
@@ -338,58 +343,45 @@ private fun EditableField(
     trailingNote: String? = null,
     leadingText: String? = null,
 ) {
-    val displayValue = if (visualTransformation != VisualTransformation.None && value.isNotBlank()) {
-        visualTransformation.filter(
-            androidx.compose.ui.text.AnnotatedString(value)
-        ).text.text
-    } else value
+    if (isEditing) {
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            placeholder = { Text(placeholder) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            visualTransformation = visualTransformation,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            colors = colors,
+            prefix = if (leadingText != null) { { Text(leadingText, color = Color(0xFF6B6B6B)) } } else null,
+            trailingIcon = if (trailingNote != null) { { Text(trailingNote, fontSize = 10.sp, color = Color(0xFFFF9800)) } } else null,
+        )
+    } else {
+        val displayValue = if (visualTransformation != VisualTransformation.None && value.isNotBlank()) {
+            visualTransformation.filter(androidx.compose.ui.text.AnnotatedString(value)).text.text
+        } else value
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        if (isEditing) {
-            TextField(
-                value = value,
-                onValueChange = onValueChange,
-                label = { Text(label) },
-                placeholder = { Text(placeholder) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                visualTransformation = visualTransformation,
-                modifier = Modifier.fillMaxWidth(),
-                colors = colors,
-                prefix = if (leadingText != null) {
-                    { Text(leadingText, color = Color(0xFF6B6B6B)) }
-                } else null,
-                trailingIcon = if (trailingNote != null) {
-                    { Text(trailingNote, fontSize = 10.sp, color = Color(0xFFFF9800)) }
-                } else null,
-            )
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onFieldClick() }
-                    .padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(label, style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        if (leadingText != null && displayValue.isNotBlank())
-                            "$leadingText$displayValue"
-                        else displayValue.ifBlank { placeholder.ifBlank { "—" } },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (displayValue.isBlank()) Color(0xFFBDBDBD)
-                        else MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Icon(Icons.Default.Edit, "Editar",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(18.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onFieldClick() }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    if (leadingText != null && displayValue.isNotBlank()) "$leadingText$displayValue"
+                    else displayValue.ifBlank { placeholder.ifBlank { "—" } },
+                    fontSize = 14.sp,
+                    color = if (displayValue.isBlank()) Color(0xFFBDBDBD) else Color(0xFF1C1B1F),
+                    fontWeight = if (displayValue.isNotBlank()) FontWeight.Medium else FontWeight.Normal,
+                )
             }
-            HorizontalDivider()
+            Icon(Icons.Default.ChevronRight, "Editar", tint = Color(0xFFBDBDBD), modifier = Modifier.size(18.dp))
         }
     }
 }
