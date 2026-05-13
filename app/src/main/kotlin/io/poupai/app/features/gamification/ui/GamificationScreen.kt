@@ -37,15 +37,18 @@ fun GamificationScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7)),
+    ) {
         // ─── Header ───
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
-                .padding(24.dp)
-                .padding(top = 8.dp),
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNavigateBack) {
@@ -67,194 +70,164 @@ fun GamificationScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Spacer(Modifier.height(4.dp))
+                // ─── Card de nível/pontos ───
+                LevelSummaryCard(points = uiState.totalPoints)
 
-                // ─── Cards de pontos e streak ───
+                // ─── Cards de streak ───
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    StatCard(
-                        modifier = Modifier.weight(1f),
-                        emoji = "⭐",
-                        value = "${uiState.totalPoints}",
-                        label = "Pontos",
-                        color = Color(0xFFFFB300),
-                    )
-                    StatCard(
-                        modifier = Modifier.weight(1f),
-                        emoji = "🔥",
-                        value = "${uiState.currentStreak}",
-                        label = "Dias seguidos",
-                        color = Color(0xFFFF5722),
-                    )
-                    StatCard(
-                        modifier = Modifier.weight(1f),
-                        emoji = "🏆",
-                        value = "${uiState.longestStreak}",
-                        label = "Recorde",
-                        color = Color(0xFF9C27B0),
-                    )
+                    StatCard(Modifier.weight(1f), "🔥", "${uiState.currentStreak}", "Dias seguidos", Color(0xFFFF5722))
+                    StatCard(Modifier.weight(1f), "🏆", "${uiState.longestStreak}", "Recorde", Color(0xFF9C27B0))
+                    StatCard(Modifier.weight(1f), "⭐", "${uiState.totalPoints}", "Pontos", Color(0xFFFFB300))
                 }
 
-                // ─── Progresso de pontos ───
-                PointsProgressCard(points = uiState.totalPoints)
+                Spacer(Modifier.height(4.dp))
 
-                // ─── Badges ───
-                Text(
-                    "Conquistas",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-
+                // ─── Título conquistas ───
                 val unlockedCount = uiState.badges.count { it.unlocked }
-                Text(
-                    "$unlockedCount de ${uiState.badges.size} desbloqueadas",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Conquistas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1B1F))
+                    Text("$unlockedCount/${uiState.badges.size}", fontSize = 12.sp, color = Color(0xFF9E9E9E))
+                }
 
+                // ─── Grid de badges ───
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.heightIn(max = 600.dp),
                     userScrollEnabled = false,
                 ) {
-                    items(uiState.badges) { badge ->
-                        BadgeCard(badge = badge)
-                    }
+                    items(uiState.badges) { badge -> BadgeCard(badge) }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun StatCard(
-    modifier: Modifier = Modifier,
-    emoji: String,
-    value: String,
-    label: String,
-    color: Color,
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(emoji, fontSize = 24.sp)
-            Spacer(Modifier.height(4.dp))
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-        }
-    }
-}
+// ─── CARD DE NÍVEL ───
 
 @Composable
-private fun PointsProgressCard(points: Int) {
-    // Níveis: 0, 100, 300, 600, 1000
+private fun LevelSummaryCard(points: Int) {
     val levels = listOf(0, 100, 300, 600, 1000)
     val levelNames = listOf("Iniciante", "Economizador", "Poupador", "Investidor", "Expert")
     val currentLevel = levels.indexOfLast { points >= it }.coerceAtLeast(0)
     val nextLevel = (currentLevel + 1).coerceAtMost(levels.lastIndex)
-    val currentLevelPoints = levels[currentLevel]
-    val nextLevelPoints = levels[nextLevel]
     val progress = if (currentLevel == levels.lastIndex) 1f
-    else ((points - currentLevelPoints).toFloat() / (nextLevelPoints - currentLevelPoints)).coerceIn(0f, 1f)
+    else ((points - levels[currentLevel]).toFloat() / (levels[nextLevel] - levels[currentLevel])).coerceIn(0f, 1f)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text("Nível atual", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(levelNames[currentLevel], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Purple40)
-                }
-                Box(
-                    modifier = Modifier.size(48.dp).clip(CircleShape).background(Purple40.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(brush = Brush.linearGradient(listOf(PurpleDark, Purple40)), shape = RoundedCornerShape(20.dp))
+                .padding(20.dp),
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.EmojiEvents, null, tint = Purple40, modifier = Modifier.size(28.dp))
+                    Column {
+                        Text("Nível atual", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                        Text(levelNames[currentLevel], style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                    Box(
+                        modifier = Modifier.size(52.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Default.EmojiEvents, null, tint = Color.White, modifier = Modifier.size(30.dp))
+                    }
                 }
-            }
 
-            if (currentLevel < levels.lastIndex) {
-                Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("$points pts", style = MaterialTheme.typography.bodySmall, color = Purple40, fontWeight = FontWeight.SemiBold)
-                    Text("$nextLevelPoints pts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (currentLevel < levels.lastIndex) {
+                    Spacer(Modifier.height(16.dp))
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                        color = Color.White,
+                        trackColor = Color.White.copy(alpha = 0.25f),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("$points pts", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                        Text("Próximo: ${levelNames[nextLevel]} (${levels[nextLevel]} pts)", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                    }
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Nível máximo atingido! 🎉", fontSize = 13.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                 }
-                Spacer(Modifier.height(6.dp))
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                    color = Purple40,
-                    trackColor = Purple40.copy(alpha = 0.12f),
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "Próximo nível: ${levelNames[nextLevel]}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Spacer(Modifier.height(8.dp))
-                Text("Nível máximo atingido! 🎉", style = MaterialTheme.typography.bodySmall, color = Purple40, fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
 
+// ─── CARD DE STAT ───
+
 @Composable
-private fun BadgeCard(badge: Badge) {
+private fun StatCard(modifier: Modifier, emoji: String, value: String, label: String, color: Color) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(if (badge.unlocked) 1f else 0.4f),
+        modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(if (badge.unlocked) 2.dp else 0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (badge.unlocked) Color.White else Color(0xFFF5F5F5),
-        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
     ) {
         Column(
             modifier = Modifier.padding(12.dp).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(if (badge.unlocked) badge.emoji else "🔒", fontSize = 28.sp)
+            Text(emoji, fontSize = 22.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
+            Text(label, fontSize = 10.sp, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center, lineHeight = 13.sp)
+        }
+    }
+}
+
+// ─── BADGE CARD ───
+
+@Composable
+private fun BadgeCard(badge: Badge) {
+    Card(
+        modifier = Modifier.fillMaxWidth().alpha(if (badge.unlocked) 1f else 0.45f),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(if (badge.unlocked) 1.dp else 0.dp),
+        colors = CardDefaults.cardColors(containerColor = if (badge.unlocked) Color.White else Color(0xFFEEEEEE)),
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(if (badge.unlocked) badge.emoji else "🔒", fontSize = 26.sp)
             Spacer(Modifier.height(6.dp))
             Text(
                 badge.title,
-                style = MaterialTheme.typography.labelSmall,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                color = if (badge.unlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (badge.unlocked) Color(0xFF1C1B1F) else Color(0xFF9E9E9E),
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
                 badge.description,
-                style = MaterialTheme.typography.labelSmall,
                 fontSize = 9.sp,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color(0xFF9E9E9E),
                 lineHeight = 12.sp,
             )
         }
