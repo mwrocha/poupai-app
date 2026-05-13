@@ -2,7 +2,7 @@ package io.poupai.app.domain.model
 
 enum class InvestmentType { RENDA_VARIAVEL, RENDA_FIXA, CRIPTOMOEDAS }
 
-enum class EntryType { APORTE, RESGATE, ATUALIZACAO_VALOR }
+enum class EntryType { APORTE, RESGATE, ATUALIZACAO_VALOR, AJUSTE_POSICAO }
 
 enum class DividendType { DIVIDENDO, JCP, RENDIMENTO, AMORTIZACAO, OUTROS }
 
@@ -38,6 +38,8 @@ data class InvestmentEntry(
     val previousAveragePrice: Double?,
     val newAveragePrice: Double?,
     val newTotalShares: Double?,
+    val adjustedShares: Double?,
+    val adjustedAveragePrice: Double?,
     val notes: String?,
     val date: String,
 )
