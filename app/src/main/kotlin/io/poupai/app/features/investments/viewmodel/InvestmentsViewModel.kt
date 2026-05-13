@@ -76,6 +76,13 @@ class InvestmentsViewModel @Inject constructor(
         }
     }
 
+    fun onDeleteInvestment(id: String) {
+        viewModelScope.launch {
+            investmentRepository.deleteInvestment(id)
+            loadAll()
+        }
+    }
+
     private fun loadBenchmark() {
         viewModelScope.launch {
             val result = investmentRepository.getBenchmark()
