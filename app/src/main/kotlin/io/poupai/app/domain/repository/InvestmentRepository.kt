@@ -25,9 +25,15 @@ interface InvestmentRepository {
         investmentId: String? = null, year: Int? = null, month: Int? = null,
     ): Resource<EntrySummary>
     suspend fun addEntry(
-        investmentId: String, type: EntryType,
-        shares: Double? = null, sharePrice: Double? = null,
-        newCurrentValue: Double? = null, notes: String? = null, date: String,
+        investmentId: String,
+        type: EntryType,
+        shares: Double? = null,
+        sharePrice: Double? = null,
+        newCurrentValue: Double? = null,
+        adjustedShares: Double? = null,
+        adjustedAveragePrice: Double? = null,
+        notes: String? = null,
+        date: String,
     ): Resource<InvestmentEntry>
     suspend fun deleteEntry(entryId: String): Resource<Unit>
 
