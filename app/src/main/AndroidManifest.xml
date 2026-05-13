@@ -5,6 +5,7 @@
 
     <!-- Acesso à galeria Android 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <!-- Acesso à galeria Android 12 e abaixo -->
     <uses-permission
