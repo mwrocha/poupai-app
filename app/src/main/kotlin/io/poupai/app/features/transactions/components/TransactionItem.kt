@@ -5,8 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.*import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +24,7 @@ import io.poupai.app.domain.model.TransactionType
 fun TransactionItem(
     transaction: Transaction,
     onDeleteClick: ((Transaction) -> Unit)? = null,
+    onEditClick: ((Transaction) -> Unit)? = null,
     isDeleting: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -102,6 +102,22 @@ fun TransactionItem(
                 style = MaterialTheme.typography.titleMedium,
                 color = amountColor,
             )
+
+            // ─── Botão editar ───
+            if (onEditClick != null) {
+                Spacer(Modifier.width(2.dp))
+                IconButton(
+                    onClick = { onEditClick(transaction) },
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        Icons.Default.EditNote,
+                        contentDescription = "Editar",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
 
             // ─── Botão deletar ───
             if (onDeleteClick != null) {
