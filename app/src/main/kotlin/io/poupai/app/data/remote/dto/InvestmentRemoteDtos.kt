@@ -41,10 +41,12 @@ data class SnapshotDto(
 
 data class CreateEntryRequest(
     val investmentId: String,
-    val type: String,           // APORTE, RESGATE, ATUALIZACAO_VALOR
+    val type: String,
     val shares: Double? = null,
     val sharePrice: Double? = null,
     val newCurrentValue: Double? = null,
+    val adjustedShares: Double? = null,       // AJUSTE_POSICAO
+    val adjustedAveragePrice: Double? = null, // AJUSTE_POSICAO
     val notes: String? = null,
     val date: String,
 )
@@ -61,6 +63,8 @@ data class EntryDto(
     val previousAveragePrice: Double?,
     val newAveragePrice: Double?,
     val newTotalShares: Double?,
+    val adjustedShares: Double?,
+    val adjustedAveragePrice: Double?,
     val notes: String?,
     val date: String,
 )
