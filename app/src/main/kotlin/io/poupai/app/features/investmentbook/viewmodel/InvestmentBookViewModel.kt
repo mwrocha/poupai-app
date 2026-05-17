@@ -2,12 +2,14 @@ package io.poupai.app.features.investmentbook.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.poupai.app.core.network.InvestmentEvents
 import io.poupai.app.core.network.Resource
 import io.poupai.app.domain.model.EntryType
 import io.poupai.app.domain.model.InvestmentEntry
 import io.poupai.app.domain.model.InvestmentType
 import io.poupai.app.domain.repository.InvestmentRepository
 import io.poupai.app.features.investmentbook.state.InvestmentBookUiState
+import io.poupai.app.features.investmentbook.state.InvestmentEntryFormState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,30 +38,26 @@ class InvestmentBookViewModel @Inject constructor(
     }
 
     fun loadEntries() {
-        val state = _uiState.value
+        val state = _uiState.value.listState
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(listState = it.listState.copy(isLoading = true)) }
             when (val result = investmentRepository.getEntries(
                 investmentId = state.selectedInvestmentId,
                 year = state.selectedYear,
                 month = state.selectedMonth,
             )) {
                 is Resource.Success -> _uiState.update {
-                    it.copy(
+                    it.copy(listState = it.listState.copy(
                         isLoading = false,
                         entries = result.data.entries,
                         totalAported = result.data.totalAported,
                         totalRescued = result.data.totalRescued,
-                        totalEntries = result.data.totalEntries
-                    )
+                        totalEntries = result.data.totalEntries,
+                    ))
                 }
-
                 is Resource.Error -> _uiState.update {
-                    it.copy(
-                        isLoading = false, errorMessage = result.message
-                    )
+                    it.copy(listState = it.listState.copy(isLoading = false, errorMessage = result.message))
                 }
-
                 is Resource.Loading -> Unit
             }
         }
@@ -68,25 +66,27 @@ class InvestmentBookViewModel @Inject constructor(
     private fun loadInvestments() {
         viewModelScope.launch {
             val result = investmentRepository.getInvestments().first { it !is Resource.Loading }
-            if (result is Resource.Success) _uiState.update { it.copy(investments = result.data) }
+            if (result is Resource.Success) _uiState.update {
+                it.copy(listState = it.listState.copy(investments = result.data))
+            }
         }
     }
 
     // ─── Filtros ───
 
     fun onFilterInvestment(id: String?, name: String?) {
-        _uiState.update { it.copy(selectedInvestmentId = id, selectedInvestmentName = name) }
+        _uiState.update { it.copy(listState = it.listState.copy(selectedInvestmentId = id, selectedInvestmentName = name)) }
         loadEntries()
     }
 
     fun onClearFilters() {
         _uiState.update {
-            it.copy(
+            it.copy(listState = it.listState.copy(
                 selectedInvestmentId = null,
                 selectedInvestmentName = null,
                 selectedMonth = null,
-                selectedYear = null
-            )
+                selectedYear = null,
+            ))
         }
         loadEntries()
     }
@@ -94,196 +94,221 @@ class InvestmentBookViewModel @Inject constructor(
     // ─── Formulário ───
 
     fun onShowAddSheet() = _uiState.update {
-        it.copy(
-            showAddSheet = true,
-            isNewAsset = false,
-            formInvestmentId = "",
-            formInvestmentName = "",
-            newAssetName = "",
-            newAssetType = InvestmentType.RENDA_VARIAVEL,
-            formType = EntryType.APORTE,
-            formShares = "",
-            formSharePrice = "",
-            formNewCurrentValue = "",
-            formAdjustedShares = "",
-            formAdjustedAveragePrice = "",
-            formNotes = "",
-            formDate = LocalDate.now().toString(),
-            formError = null
-        )
+        it.copy(formState = InvestmentEntryFormState(showSheet = true))
     }
 
-    fun onDismissSheet() = _uiState.update { it.copy(showAddSheet = false, formError = null) }
+    fun onDismissSheet() = _uiState.update {
+        it.copy(formState = it.formState.copy(showSheet = false, generalError = null))
+    }
 
     fun onToggleNewAsset(isNew: Boolean) = _uiState.update {
-        it.copy(
+        it.copy(formState = it.formState.copy(
             isNewAsset = isNew,
             formInvestmentId = "",
             formInvestmentName = "",
             newAssetName = "",
-            formError = null
-        )
+            generalError = null,
+        ))
     }
 
     fun onFormInvestmentSelected(id: String, name: String) = _uiState.update {
-        it.copy(
-            formInvestmentId = id, formInvestmentName = name, formError = null
-        )
+        it.copy(formState = it.formState.copy(
+            formInvestmentId = id,
+            formInvestmentName = name,
+            fieldErrors = it.formState.fieldErrors - "formInvestmentId",
+            generalError = null,
+        ))
     }
 
-    fun onNewAssetNameChanged(v: String) =
-        _uiState.update { it.copy(newAssetName = v, formError = null) }
+    fun onNewAssetNameChanged(v: String) = updateFormField("newAssetName", v) {
+        copy(newAssetName = v, generalError = null)
+    }
 
-    fun onNewAssetTypeChanged(type: InvestmentType) =
-        _uiState.update { it.copy(newAssetType = type) }
+    fun onNewAssetTypeChanged(type: InvestmentType) = _uiState.update {
+        it.copy(formState = it.formState.copy(newAssetType = type))
+    }
 
     fun onFormTypeChanged(type: EntryType) = _uiState.update {
-        it.copy(
+        it.copy(formState = it.formState.copy(
             formType = type,
             formShares = "",
             formSharePrice = "",
             formNewCurrentValue = "",
-            formAdjustedShares = "",
-            formAdjustedAveragePrice = ""
-        )
+            fieldErrors = emptyMap(),
+        ))
     }
 
-    fun onFormSharesChanged(v: String) =
-        _uiState.update { it.copy(formShares = v, formError = null) }
+    fun onFormSharesChanged(v: String) = updateFormField("formShares", v) {
+        copy(formShares = v, generalError = null)
+    }
 
-    fun onFormSharePriceChanged(v: String) =
-        _uiState.update { it.copy(formSharePrice = v, formError = null) }
+    fun onFormSharePriceChanged(v: String) = updateFormField("formSharePrice", v) {
+        copy(formSharePrice = v, generalError = null)
+    }
 
-    fun onFormNewCurrentValueChanged(v: String) =
-        _uiState.update { it.copy(formNewCurrentValue = v, formError = null) }
+    fun onFormNewCurrentValueChanged(v: String) = updateFormField("formNewCurrentValue", v) {
+        copy(formNewCurrentValue = v, generalError = null)
+    }
 
-    fun onFormAdjustedSharesChanged(v: String) =
-        _uiState.update { it.copy(formAdjustedShares = v, formError = null) }
+    fun onFormNotesChanged(v: String) = _uiState.update {
+        it.copy(formState = it.formState.copy(formNotes = v))
+    }
 
-    fun onFormAdjustedAvgPriceChanged(v: String) =
-        _uiState.update { it.copy(formAdjustedAveragePrice = v, formError = null) }
+    fun onFormDateChanged(v: String) = updateFormField("formDate", v) {
+        copy(formDate = v, generalError = null)
+    }
 
-    fun onFormNotesChanged(v: String) = _uiState.update { it.copy(formNotes = v) }
-    fun onFormDateChanged(v: String) = _uiState.update { it.copy(formDate = v) }
+    // ─── Validação reativa ───
+
+    private fun updateFormField(field: String, value: String, update: InvestmentEntryFormState.() -> InvestmentEntryFormState) {
+        _uiState.update { state ->
+            val currentForm = state.formState
+            val updatedForm = currentForm.update()
+            val newFieldErrors = if (currentForm.hasSubmittedOnce) {
+                val error = validateField(field, value)
+                if (error != null) updatedForm.fieldErrors + (field to error)
+                else updatedForm.fieldErrors - field
+            } else {
+                updatedForm.fieldErrors
+            }
+            state.copy(formState = updatedForm.copy(fieldErrors = newFieldErrors))
+        }
+    }
+
+    private fun validateField(field: String, value: String): String? {
+        return when (field) {
+            "newAssetName" -> if (value.isBlank()) "Informe o nome do ativo" else null
+            "formInvestmentId" -> if (value.isBlank()) "Selecione o ativo" else null
+            "formShares" -> {
+                val num = value.replace(",", ".").toDoubleOrNull()
+                if (num == null || num <= 0) "Informe a quantidade de cotas" else null
+            }
+            "formSharePrice" -> {
+                val num = value.replace(",", ".").toDoubleOrNull()
+                if (num == null || num <= 0) "Informe o preço por cota" else null
+            }
+            "formNewCurrentValue" -> {
+                val num = value.replace(",", ".").toDoubleOrNull()
+                if (num == null || num < 0) "Informe o novo valor" else null
+            }
+            "formDate" -> {
+                try { LocalDate.parse(value); null }
+                catch (_: Exception) { "Data inválida (use yyyy-MM-dd)" }
+            }
+            else -> null
+        }
+    }
+
+    private fun validateAll(form: InvestmentEntryFormState): Map<String, String> {
+        val errors = mutableMapOf<String, String>()
+        when (form.formType) {
+            EntryType.APORTE, EntryType.RESGATE -> {
+                validateField("formShares", form.formShares)?.let { errors["formShares"] = it }
+                validateField("formSharePrice", form.formSharePrice)?.let { errors["formSharePrice"] = it }
+            }
+            EntryType.ATUALIZACAO_VALOR -> {
+                validateField("formNewCurrentValue", form.formNewCurrentValue)?.let { errors["formNewCurrentValue"] = it }
+            }
+        }
+        if (form.isNewAsset) {
+            validateField("newAssetName", form.newAssetName)?.let { errors["newAssetName"] = it }
+        } else {
+            validateField("formInvestmentId", form.formInvestmentId)?.let { errors["formInvestmentId"] = it }
+        }
+        validateField("formDate", form.formDate)?.let { errors["formDate"] = it }
+        return errors
+    }
+
+    // ─── Salvar ───
 
     fun onSaveEntry() {
         val state = _uiState.value
-        val shares = state.formShares.replace(",", ".").toDoubleOrNull()
-        val price = state.formSharePrice.replace(",", ".").toDoubleOrNull()
-        val newValue = state.formNewCurrentValue.replace(",", ".").toDoubleOrNull()
-        val adjShares = state.formAdjustedShares.replace(",", ".").toDoubleOrNull()
-        val adjAvgPrice = state.formAdjustedAveragePrice.replace(",", ".").toDoubleOrNull()
+        val form = state.formState
 
-        // Validações por tipo
-        when (state.formType) {
-            EntryType.APORTE, EntryType.RESGATE -> {
-                if (shares == null || shares <= 0) {
-                    _uiState.update { it.copy(formError = "Informe a quantidade de cotas") }; return
-                }
-                if (price == null || price <= 0) {
-                    _uiState.update { it.copy(formError = "Informe o preço por cota") }; return
-                }
-            }
+        val allErrors = validateAll(form)
+        val hasErrors = allErrors.isNotEmpty()
 
-            EntryType.ATUALIZACAO_VALOR -> {
-                if (newValue == null || newValue < 0) {
-                    _uiState.update { it.copy(formError = "Informe o novo valor") }; return
-                }
-            }
-
-            EntryType.AJUSTE_POSICAO -> {
-                if (adjShares == null || adjShares < 0) {
-                    _uiState.update { it.copy(formError = "Informe a quantidade de cotas atual") }; return
-                }
-                if (adjAvgPrice == null || adjAvgPrice <= 0) {
-                    _uiState.update { it.copy(formError = "Informe o preço médio atual") }; return
-                }
-            }
+        _uiState.update {
+            it.copy(formState = it.formState.copy(
+                hasSubmittedOnce = true,
+                fieldErrors = allErrors,
+                generalError = if (hasErrors) "Verifique os campos acima" else null,
+            ))
         }
 
-        if (state.isNewAsset) {
-            if (state.newAssetName.isBlank()) {
-                _uiState.update { it.copy(formError = "Informe o nome do ativo") }; return
-            }
-            saveWithNewAsset(state, shares, price, newValue, adjShares, adjAvgPrice)
+        if (hasErrors) return
+
+        val shares = form.formShares.replace(",", ".").toDoubleOrNull()
+        val price = form.formSharePrice.replace(",", ".").toDoubleOrNull()
+        val newValue = form.formNewCurrentValue.replace(",", ".").toDoubleOrNull()
+
+        if (form.isNewAsset) {
+            saveWithNewAsset(form, shares, price, newValue)
         } else {
-            if (state.formInvestmentId.isBlank()) {
-                _uiState.update { it.copy(formError = "Selecione o ativo") }; return
-            }
             viewModelScope.launch {
-                saveEntry(
-                    state.formInvestmentId, state, shares, price, newValue, adjShares, adjAvgPrice
-                )
+                saveEntry(form.formInvestmentId, form, shares, price, newValue)
             }
         }
     }
 
     private fun saveWithNewAsset(
-        state: InvestmentBookUiState,
+        form: InvestmentEntryFormState,
         shares: Double?, price: Double?, newValue: Double?,
-        adjShares: Double?, adjAvgPrice: Double?,
     ) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
-            val investedValue = when (state.formType) {
-                EntryType.AJUSTE_POSICAO -> (adjShares ?: 0.0) * (adjAvgPrice ?: 0.0)
-                else -> if (shares != null && price != null) shares * price else 0.0
-            }
+            _uiState.update { it.copy(formState = it.formState.copy(isSaving = true)) }
+            val investedValue = if (shares != null && price != null) shares * price else 0.0
             val currentValue = newValue ?: investedValue
 
             val createResult = investmentRepository.createInvestment(
-                name = state.newAssetName.trim(), type = state.newAssetType,
+                name = form.newAssetName.trim(), type = form.newAssetType,
                 currentValue = currentValue, investedValue = investedValue,
-                shares = if (state.formType == EntryType.AJUSTE_POSICAO) adjShares else shares,
+                shares = shares,
                 allocationTarget = null,
             )
 
             when (createResult) {
                 is Resource.Success -> {
-                    _uiState.update { it.copy(isSaving = false) }
+                    _uiState.update { it.copy(formState = it.formState.copy(isSaving = false)) }
                     onDismissSheet()
                     loadInvestments()
                     loadEntries()
+                    InvestmentEvents.notifyEntriesChanged()
                 }
-
-
                 is Resource.Error -> _uiState.update {
-                    it.copy(
-                        isSaving = false, formError = createResult.message
-                    )
+                    it.copy(formState = it.formState.copy(isSaving = false, generalError = createResult.message))
                 }
-
                 is Resource.Loading -> Unit
             }
         }
     }
 
     private suspend fun saveEntry(
-        investmentId: String, state: InvestmentBookUiState,
+        investmentId: String, form: InvestmentEntryFormState,
         shares: Double?, price: Double?, newValue: Double?,
-        adjShares: Double?, adjAvgPrice: Double?,
     ) {
-        _uiState.update { it.copy(isSaving = true) }
+        _uiState.update { it.copy(formState = it.formState.copy(isSaving = true)) }
         val result = investmentRepository.addEntry(
             investmentId = investmentId,
-            type = state.formType,
+            type = form.formType,
             shares = shares,
             sharePrice = price,
             newCurrentValue = newValue,
-            adjustedShares = adjShares,
-            adjustedAveragePrice = adjAvgPrice,
-            notes = state.formNotes.ifBlank { null },
-            date = state.formDate,
+            adjustedShares = null,
+            adjustedAveragePrice = null,
+            notes = form.formNotes.ifBlank { null },
+            date = form.formDate,
         )
         when (result) {
             is Resource.Success -> {
-                _uiState.update { it.copy(isSaving = false) }
+                _uiState.update { it.copy(formState = it.formState.copy(isSaving = false)) }
                 onDismissSheet()
                 loadInvestments()
                 loadEntries()
+                InvestmentEvents.notifyEntriesChanged()
             }
             is Resource.Error -> _uiState.update {
-                it.copy(isSaving = false, formError = result.message)
+                it.copy(formState = it.formState.copy(isSaving = false, generalError = result.message))
             }
             is Resource.Loading -> Unit
         }
@@ -291,17 +316,22 @@ class InvestmentBookViewModel @Inject constructor(
 
     // ─── Exclusão ───
 
-    fun onDeleteRequest(entry: InvestmentEntry) =
-        _uiState.update { it.copy(showDeleteDialog = true, deletingEntry = entry) }
+    fun onDeleteRequest(entry: InvestmentEntry) = _uiState.update {
+        it.copy(listState = it.listState.copy(showDeleteDialog = true, deletingEntry = entry))
+    }
 
-    fun onDeleteCancel() =
-        _uiState.update { it.copy(showDeleteDialog = false, deletingEntry = null) }
+    fun onDeleteCancel() = _uiState.update {
+        it.copy(listState = it.listState.copy(showDeleteDialog = false, deletingEntry = null))
+    }
 
     fun onDeleteConfirm() {
-        val entry = _uiState.value.deletingEntry ?: return
+        val entry = _uiState.value.listState.deletingEntry ?: return
         viewModelScope.launch {
-            _uiState.update { it.copy(showDeleteDialog = false, deletingEntry = null) }
-            if (investmentRepository.deleteEntry(entry.id) is Resource.Success) loadEntries()
+            _uiState.update { it.copy(listState = it.listState.copy(showDeleteDialog = false, deletingEntry = null)) }
+            if (investmentRepository.deleteEntry(entry.id) is Resource.Success) {
+                loadEntries()
+                InvestmentEvents.notifyEntriesChanged()
+            }
         }
     }
 }
