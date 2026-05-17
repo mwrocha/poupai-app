@@ -78,6 +78,35 @@ class InvestmentRepositoryImpl @Inject constructor(
         Resource.Error(e.message ?: "Erro")
     }
 
+    override suspend fun updateAllocationTarget(id: String, target: Double): Resource<Investment> = try {
+        val data = investmentApi.updateInvestment(
+            id, UpdateInvestmentRequest(allocationTarget = target)
+        ).body()?.data
+        if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao atualizar alvo")
+    } catch (e: Exception) {
+        Resource.Error(e.message ?: "Erro")
+    }
+
+    override suspend fun editInvestment(
+        id: String,
+        name: String,
+        shares: Double,
+        averagePrice: Double,
+        investedValue: Double,
+    ): Resource<Investment> = try {
+        val data = investmentApi.updateInvestment(
+            id, UpdateInvestmentRequest(
+                name = name,
+                shares = shares,
+                averagePrice = averagePrice,
+                investedValue = investedValue,
+            )
+        ).body()?.data
+        if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao atualizar ativo")
+    } catch (e: Exception) {
+        Resource.Error(e.message ?: "Erro")
+    }
+
     override suspend fun deleteInvestment(id: String): Resource<Unit> = try {
         if (investmentApi.deleteInvestment(id).isSuccessful) Resource.Success(Unit)
         else Resource.Error("Erro ao excluir")
@@ -111,7 +140,20 @@ class InvestmentRepositoryImpl @Inject constructor(
                 notes = notes, date = date,
             )
         ).body()?.data
-        if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao salvar lançamento")
+        if (data != null) {
+            // Ao registrar uma atualização de valor, sincroniza o currentValue no backend
+            if (type == EntryType.ATUALIZACAO_VALOR && newCurrentValue != null) {
+                try {
+                    investmentApi.updateInvestment(
+                        investmentId,
+                        UpdateInvestmentRequest(currentValue = newCurrentValue),
+                    )
+                } catch (_: Exception) { /* ignora falha secundária */ }
+            }
+            Resource.Success(data.toDomain())
+        } else {
+            Resource.Error("Erro ao salvar lançamento")
+        }
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Erro")
     }
