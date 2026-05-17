@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -32,6 +33,11 @@ class PreferencesManager @Inject constructor(
         // ─── Settings ───
         val KEY_THEME = stringPreferencesKey("app_theme")       // "light" | "dark" | "system"
         val KEY_HIDE_VALUES = booleanPreferencesKey("hide_values")
+
+        // ─── Category Targets ───
+        private val KEY_TARGET_RV = doublePreferencesKey("category_target_rv")
+        private val KEY_TARGET_RF = doublePreferencesKey("category_target_rf")
+        private val KEY_TARGET_CRIPTO = doublePreferencesKey("category_target_cripto")
     }
 
     // ─── Auth Token ───
@@ -111,6 +117,23 @@ class PreferencesManager @Inject constructor(
 
     suspend fun getHideValuesSync(): Boolean =
         context.dataStore.data.first()[KEY_HIDE_VALUES] ?: false
+
+    // ─── Category Targets ───
+    val targetRV: Flow<Double> = context.dataStore.data.map { it[KEY_TARGET_RV] ?: 0.0 }
+    val targetRF: Flow<Double> = context.dataStore.data.map { it[KEY_TARGET_RF] ?: 0.0 }
+    val targetCripto: Flow<Double> = context.dataStore.data.map { it[KEY_TARGET_CRIPTO] ?: 0.0 }
+
+    suspend fun saveTargetRV(target: Double) {
+        context.dataStore.edit { it[KEY_TARGET_RV] = target }
+    }
+
+    suspend fun saveTargetRF(target: Double) {
+        context.dataStore.edit { it[KEY_TARGET_RF] = target }
+    }
+
+    suspend fun saveTargetCripto(target: Double) {
+        context.dataStore.edit { it[KEY_TARGET_CRIPTO] = target }
+    }
 
     // ─── Logout ───
     suspend fun clearAll() {
