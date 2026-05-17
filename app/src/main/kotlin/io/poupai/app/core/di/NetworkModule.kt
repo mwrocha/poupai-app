@@ -3,7 +3,6 @@ package io.poupai.app.core.di
 import android.os.Build
 import io.poupai.app.core.network.AuthInterceptor
 import io.poupai.app.data.remote.api.AuthApi
-import io.poupai.app.data.remote.api.BrapiApi
 import io.poupai.app.data.remote.api.FinanceApi
 import io.poupai.app.data.remote.api.GamificationApi
 import io.poupai.app.data.remote.api.GoalApi
@@ -21,7 +20,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -30,7 +28,6 @@ object NetworkModule {
 
     private const val EMULATOR_URL = "http://10.0.2.2:8080/"
     private const val DEVICE_URL   = "http://192.168.0.4:8080/"
-    private const val BRAPI_URL    = "https://brapi.dev/"
 
     private val BASE_URL: String
         get() = if (isEmulator()) EMULATOR_URL else DEVICE_URL
@@ -61,29 +58,10 @@ object NetworkModule {
             .build()
     }
 
-    // OkHttpClient sem AuthInterceptor para a brapi (não precisa de token de sessão)
-    @Provides @Singleton @Named("brapi")
-    fun provideBrapiOkHttpClient(): OkHttpClient {
-        return OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .build()
-    }
-
     @Provides @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
-    @Provides @Singleton @Named("brapi")
-    fun provideBrapiRetrofit(@Named("brapi") okHttpClient: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BRAPI_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -115,7 +93,4 @@ object NetworkModule {
 
     @Provides @Singleton
     fun provideGamificationApi(retrofit: Retrofit): GamificationApi = retrofit.create(GamificationApi::class.java)
-
-    @Provides @Singleton
-    fun provideBrapiApi(@Named("brapi") retrofit: Retrofit): BrapiApi = retrofit.create(BrapiApi::class.java)
 }
