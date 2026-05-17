@@ -15,6 +15,9 @@ data class UpdateInvestmentRequest(
     val name: String? = null,
     val currentValue: Double? = null,
     val allocationTarget: Double? = null,
+    val shares: Double? = null,
+    val averagePrice: Double? = null,
+    val investedValue: Double? = null,
 )
 
 data class InvestmentDto(
