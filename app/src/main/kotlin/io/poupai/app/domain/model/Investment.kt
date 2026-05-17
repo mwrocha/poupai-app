@@ -2,7 +2,7 @@ package io.poupai.app.domain.model
 
 enum class InvestmentType { RENDA_VARIAVEL, RENDA_FIXA, CRIPTOMOEDAS }
 
-enum class EntryType { APORTE, RESGATE, ATUALIZACAO_VALOR, AJUSTE_POSICAO }
+enum class EntryType { APORTE, RESGATE, ATUALIZACAO_VALOR }
 
 enum class DividendType { DIVIDENDO, JCP, RENDIMENTO, AMORTIZACAO, OUTROS }
 
