@@ -42,7 +42,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.text.input.KeyboardType
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
@@ -61,6 +67,7 @@ private val typeColor = mapOf(
     InvestmentType.CRIPTOMOEDAS to Color(0xFFFF9800),
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvestmentsScreen(
     onNavigateBack: () -> Unit,
@@ -81,8 +88,41 @@ fun InvestmentsScreen(
     val totalInvested = allInvestments.sumOf { it.investedValue }
     val totalCurrent = allInvestments.sumOf { it.currentValue }
     val totalProfit = totalCurrent - totalInvested
+    val profitPercent = if (totalInvested > 0) (totalProfit / totalInvested) * 100 else 0.0
+
+    val accumulatedCdi = remember(uiState.benchmark, allInvestments) {
+        val b = uiState.benchmark ?: return@remember 0.0
+        val earliestDate = allInvestments
+            .flatMap { it.history }
+            .minOfOrNull { snapshot -> snapshot.date }
+        val months = if (earliestDate != null) {
+            val start = java.time.LocalDate.parse(earliestDate)
+            val now = java.time.LocalDate.now()
+            java.time.temporal.ChronoUnit.MONTHS.between(start, now).toInt().coerceAtLeast(1)
+        } else {
+            12
+        }
+        val monthlyRate = b.cdiRateMonth / 100.0
+        (Math.pow(1.0 + monthlyRate, months.toDouble()) - 1.0) * 100.0
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+
+        uiState.errorMessage?.let { error ->
+            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(error, modifier = Modifier.weight(1f), fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onErrorContainer)
+                    TextButton(onClick = viewModel::clearError, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        Text("Ok", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+
+
 
         // ─── Header ───
         Box(modifier = Modifier.fillMaxWidth()
@@ -126,7 +166,12 @@ fun InvestmentsScreen(
                 // ─── Benchmark CDI ───
                 uiState.benchmark?.let { benchmark ->
                     item {
-                        val isBeating = benchmark.vsCdi >= 0
+                        val vsCdi = profitPercent - accumulatedCdi
+                        val vsCdiColor = when {
+                            vsCdi >= 0 -> GreenPositive
+                            profitPercent >= 0 -> Color(0xFFFF9800) // laranja: positivo mas abaixo do CDI
+                            else -> RedNegative
+                        }
                         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(1.dp)) {
@@ -138,11 +183,11 @@ fun InvestmentsScreen(
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    BenchmarkStat("Sua carteira", "${String.format("%.2f", benchmark.portfolioReturn)}%",
-                                        if (isBeating) GreenPositive else RedNegative)
-                                    BenchmarkStat("CDI anual", "${String.format("%.2f", benchmark.cdiRateYear)}%", Color(0xFF6B6B6B))
-                                    BenchmarkStat("Diferença", "${if (isBeating) "+" else ""}${String.format("%.2f", benchmark.vsCdi)}%",
-                                        if (isBeating) GreenPositive else RedNegative)
+                                    BenchmarkStat("Rentabilidade Total", "${String.format("%.2f", profitPercent)}%",
+                                        if (profitPercent >= 0) GreenPositive else RedNegative)
+                                    BenchmarkStat("CDI acumulado", "${String.format("%.2f", accumulatedCdi)}%", Color(0xFF6B6B6B))
+                                    BenchmarkStat("Diferença", "${if (vsCdi >= 0) "+" else ""}${String.format("%.2f", vsCdi)}%",
+                                        vsCdiColor)
                                 }
                             }
                         }
@@ -166,12 +211,33 @@ fun InvestmentsScreen(
 
                 // ─── Seções com expand/collapse ───
                 item { AssetSection("Renda Variável", InvestmentType.RENDA_VARIAVEL, uiState.rendaVariavel,
-                    uiState.hideValues, onDelete = viewModel::onDeleteInvestment) }
-                item { AssetSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa, uiState.hideValues, onDelete = viewModel::onDeleteInvestment) }
-                item { AssetSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas, uiState.hideValues, onDelete = viewModel::onDeleteInvestment) }
+                    uiState.hideValues, onDelete = viewModel::onDeleteInvestment, onEdit = viewModel::onShowEditSheet) }
+                item { AssetSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa, uiState.hideValues,
+                    onDelete = viewModel::onDeleteInvestment, onEdit = viewModel::onShowEditSheet) }
+                item { AssetSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas, uiState.hideValues,
+                    onDelete = viewModel::onDeleteInvestment, onEdit = viewModel::onShowEditSheet) }
 
                 item { Spacer(Modifier.height(32.dp)) }
             }
+        }
+    }
+
+    // ─── Edit bottom sheet ───
+    if (uiState.showEditSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = viewModel::onDismissEditSheet,
+            sheetState = sheetState,
+        ) {
+            EditInvestmentSheet(
+                uiState = uiState,
+                onDismiss = viewModel::onDismissEditSheet,
+                onNameChanged = viewModel::onEditNameChanged,
+                onSharesChanged = viewModel::onEditSharesChanged,
+                onAveragePriceChanged = viewModel::onEditAveragePriceChanged,
+                onInvestedValueChanged = viewModel::onEditInvestedValueChanged,
+                onSave = viewModel::onSaveEdit,
+            )
         }
     }
 }
@@ -303,7 +369,10 @@ private fun LegendRow(label: String, percent: Double, color: Color) {
 // ─── SEÇÃO COM EXPAND/COLLAPSE ───
 
 @Composable
-private fun AssetSection(title: String, type: InvestmentType, investments: List<Investment>, hideValues: Boolean,onDelete: (String) -> Unit) {
+private fun AssetSection(
+    title: String, type: InvestmentType, investments: List<Investment>,
+    hideValues: Boolean, onDelete: (String) -> Unit, onEdit: (Investment) -> Unit,
+) {
     if (investments.isEmpty()) return
     val color = typeColor[type] ?: Purple40
     var expanded by remember { mutableStateOf(true) }
@@ -347,7 +416,8 @@ private fun AssetSection(title: String, type: InvestmentType, investments: List<
                     HorizontalDivider(color = Color(0xFFF5F5F5))
                     investments.forEachIndexed { index, investment ->
                         AssetRow(investment = investment, accentColor = color, hideValues = hideValues,
-                            onDelete = { onDelete(investment.id) })
+                            onDelete = { onDelete(investment.id) },
+                            onEdit = { onEdit(investment) })
                         if (index < investments.lastIndex)
                             HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
                     }
@@ -362,7 +432,8 @@ private fun AssetRow(
     investment: Investment,
     accentColor: Color,
     hideValues: Boolean,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -467,6 +538,18 @@ private fun AssetRow(
                     )
 
                     IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = Purple40,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    IconButton(
                         onClick = { showDeleteDialog = true },
                         modifier = Modifier.size(32.dp)
                     ) {
@@ -520,6 +603,99 @@ private fun AssetRow(
         }
     }
 }
+// ─── EDIT BOTTOM SHEET ───
+
+@Composable
+private fun EditInvestmentSheet(
+    uiState: io.poupai.app.features.investments.state.InvestmentsUiState,
+    onDismiss: () -> Unit,
+    onNameChanged: (String) -> Unit,
+    onSharesChanged: (String) -> Unit,
+    onAveragePriceChanged: (String) -> Unit,
+    onInvestedValueChanged: (String) -> Unit,
+    onSave: () -> Unit,
+) {
+    val investment = uiState.editingInvestment ?: return
+    val hasShares = investment.shares > 0
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(top = 8.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text(
+            "Editar ativo",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+
+        OutlinedTextField(
+            value = uiState.editFormName,
+            onValueChange = onNameChanged,
+            label = { Text("Nome") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        )
+
+        if (hasShares) {
+            OutlinedTextField(
+                value = uiState.editFormShares,
+                onValueChange = onSharesChanged,
+                label = { Text("Cotas") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            )
+
+            OutlinedTextField(
+                value = uiState.editFormAveragePrice,
+                onValueChange = onAveragePriceChanged,
+                label = { Text("Preço médio (R$)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            )
+        }
+
+        OutlinedTextField(
+            value = uiState.editFormInvestedValue,
+            onValueChange = onInvestedValueChanged,
+            label = { Text("Valor investido (R$)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        )
+
+        uiState.editFormError?.let { err ->
+            Text(err, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+        }
+
+        Button(
+            onClick = onSave,
+            enabled = !uiState.isSavingEdit,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Purple40),
+        ) {
+            if (uiState.isSavingEdit) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Text("Salvar alterações", fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
 @Composable
 private fun EmptyInvestmentsState(onNavigateToBook: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
