@@ -6,7 +6,7 @@ import io.poupai.app.domain.model.InvestmentEntry
 import io.poupai.app.domain.model.InvestmentType
 import java.time.LocalDate
 
-data class InvestmentBookUiState(
+data class InvestmentBookListState(
     val entries: List<InvestmentEntry> = emptyList(),
     val investments: List<Investment> = emptyList(),
     val totalAported: Double = 0.0,
@@ -15,46 +15,40 @@ data class InvestmentBookUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
 
-    // ─── Filtros ───
     val selectedInvestmentId: String? = null,
     val selectedInvestmentName: String? = null,
     val selectedMonth: Int? = null,
     val selectedYear: Int? = null,
 
-    // ─── Formulário ───
-    val showAddSheet: Boolean = false,
+    val showDeleteDialog: Boolean = false,
+    val deletingEntry: InvestmentEntry? = null,
+)
+
+data class InvestmentEntryFormState(
+    val showSheet: Boolean = false,
     val isNewAsset: Boolean = false,
 
-    // Ativo existente
     val formInvestmentId: String = "",
     val formInvestmentName: String = "",
 
-    // Novo ativo
     val newAssetName: String = "",
     val newAssetType: InvestmentType = InvestmentType.RENDA_VARIAVEL,
 
-    // Tipo de lançamento
     val formType: EntryType = EntryType.APORTE,
 
-    // APORTE / RESGATE
     val formShares: String = "",
     val formSharePrice: String = "",
 
-    // ATUALIZACAO_VALOR
     val formNewCurrentValue: String = "",
-
-    // AJUSTE_POSICAO
-    val formAdjustedShares: String = "",
-    val formAdjustedAveragePrice: String = "",
 
     val formNotes: String = "",
     val formDate: String = LocalDate.now().toString(),
-    val formError: String? = null,
+
     val isSaving: Boolean = false,
 
-    // ─── Exclusão ───
-    val showDeleteDialog: Boolean = false,
-    val deletingEntry: InvestmentEntry? = null,
+    val hasSubmittedOnce: Boolean = false,
+    val fieldErrors: Map<String, String> = emptyMap(),
+    val generalError: String? = null,
 ) {
     val formTotalValue: Double
         get() {
@@ -63,10 +57,9 @@ data class InvestmentBookUiState(
             return shares * price
         }
 
-    val formAdjustedTotalValue: Double
-        get() {
-            val shares = formAdjustedShares.replace(",", ".").toDoubleOrNull() ?: 0.0
-            val price = formAdjustedAveragePrice.replace(",", ".").toDoubleOrNull() ?: 0.0
-            return shares * price
-        }
 }
+
+data class InvestmentBookUiState(
+    val listState: InvestmentBookListState = InvestmentBookListState(),
+    val formState: InvestmentEntryFormState = InvestmentEntryFormState(),
+)
