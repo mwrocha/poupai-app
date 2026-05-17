@@ -18,6 +18,14 @@ interface InvestmentRepository {
     suspend fun updateInvestment(
         id: String, name: String? = null, currentValue: Double? = null, allocationTarget: Double? = null,
     ): Resource<Investment>
+    suspend fun updateAllocationTarget(id: String, target: Double): Resource<Investment>
+    suspend fun editInvestment(
+        id: String,
+        name: String,
+        shares: Double,
+        averagePrice: Double,
+        investedValue: Double,
+    ): Resource<Investment>
     suspend fun deleteInvestment(id: String): Resource<Unit>
 
     // ─── Livro contábil ───
