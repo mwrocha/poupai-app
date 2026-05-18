@@ -21,6 +21,10 @@ sealed class Route(val route: String) {
     data object InvestmentBook : Route("investments/book")
     data object Dividends : Route("investments/dividends")
     data object Rebalance : Route("investments/rebalance")
+    data object Allocation : Route("investments/allocation")
+    data object InvestmentDetail : Route("investments/detail/{id}") {
+        fun createRoute(id: String) = "investments/detail/$id"
+    }
     data object Profile : Route("profile")
     data object Goals : Route("goals")
     data object Settings : Route("settings")
