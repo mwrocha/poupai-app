@@ -14,7 +14,9 @@ import io.poupai.app.features.finances.ui.FinancesScreen
 import io.poupai.app.features.gamification.ui.GamificationScreen
 import io.poupai.app.features.goals.ui.GoalsScreen
 import io.poupai.app.features.investmentbook.ui.InvestmentBookScreen
+import io.poupai.app.features.investmentdetail.ui.InvestmentDetailScreen
 import io.poupai.app.features.investments.ui.InvestmentsScreen
+import io.poupai.app.features.allocation.ui.AllocationScreen
 import io.poupai.app.features.investments.ui.RebalanceScreen
 import io.poupai.app.features.onboarding.ui.OnboardingScreen
 import io.poupai.app.features.profile.ui.ProfileScreen
@@ -140,7 +142,20 @@ fun PoupaiNavHost(navController: NavHostController) {
                 onNavigateToBook = { navController.navigate(Route.InvestmentBook.route) },
                 onNavigateToDividends = { navController.navigate(Route.Dividends.route) },
                 onNavigateToRebalance = { navController.navigate(Route.Rebalance.route) },
+                onNavigateToAllocation = { navController.navigate(Route.Allocation.route) },
+                onNavigateToDetail = { id -> navController.navigate(Route.InvestmentDetail.createRoute(id)) },
             )
+        }
+
+        composable(Route.Allocation.route) {
+            AllocationScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Route.InvestmentDetail.route,
+            arguments = listOf(navArgument("id") { type = NavType.StringType }),
+        ) {
+            InvestmentDetailScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Route.InvestmentBook.route) {
