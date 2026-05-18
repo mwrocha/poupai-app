@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -226,21 +229,42 @@ private fun BookFilters(
             }
         }
         if (showInvestmentPicker && listState.investments.isNotEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)) {
-                Column {
-                    listState.investments.forEach { inv ->
-                        Row(modifier = Modifier.fillMaxWidth()
-                            .clickable { viewModel.onFilterInvestment(inv.id, inv.name); showInvestmentPicker = false }
-                            .padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(inv.name, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                            Text(inv.type.name, fontSize = 10.sp, color = Color(0xFF9E9E9E))
+            AlertDialog(
+                onDismissRequest = { showInvestmentPicker = false },
+                title = { Text("Filtrar por ativo", fontWeight = FontWeight.SemiBold) },
+                text = {
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(listState.investments) { inv ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.onFilterInvestment(inv.id, inv.name)
+                                        showInvestmentPicker = false
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(inv.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.weight(1f), color = Color(0xFF1C1B1F))
+                                Text(when (inv.type) {
+                                    InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
+                                    InvestmentType.RENDA_FIXA -> "Renda Fixa"
+                                    InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
+                                }, fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                            }
+                            HorizontalDivider(color = Color(0xFFF5F5F5))
                         }
-                        HorizontalDivider(color = Color(0xFFF5F5F5))
                     }
-                }
-            }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showInvestmentPicker = false }) {
+                        Text("Cancelar")
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+            )
         }
     }
 }
@@ -386,36 +410,52 @@ private fun AddEntryForm(
                     modifier = Modifier.padding(start = 4.dp))
             }
             if (showInvestmentPicker) {
-                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(2.dp)) {
-                    Column {
+                AlertDialog(
+                    onDismissRequest = { showInvestmentPicker = false },
+                    title = { Text("Selecionar ativo", fontWeight = FontWeight.SemiBold) },
+                    text = {
                         if (investments.isEmpty()) {
-                            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                Text("Nenhum ativo. Use 'Novo ativo'.", fontSize = 12.sp,
-                                    color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
-                            }
+                            Text("Nenhum ativo cadastrado. Use 'Novo ativo'.",
+                                fontSize = 13.sp, color = Color(0xFF9E9E9E))
                         } else {
-                            investments.forEach { inv ->
-                                Row(modifier = Modifier.fillMaxWidth()
-                                    .clickable { onInvestmentSelected(inv.id, inv.name); showInvestmentPicker = false }
-                                    .padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(inv.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                        Text(when (inv.type) {
-                                            InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
-                                            InvestmentType.RENDA_FIXA -> "Renda Fixa"
-                                            InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
-                                        }, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(investments) { inv ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onInvestmentSelected(inv.id, inv.name)
+                                                showInvestmentPicker = false
+                                            }
+                                            .padding(vertical = 12.dp, horizontal = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(inv.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF1C1B1F))
+                                            Text(when (inv.type) {
+                                                InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
+                                                InvestmentType.RENDA_FIXA -> "Renda Fixa"
+                                                InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
+                                            }, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                                        }
+                                        if (inv.averagePrice > 0)
+                                            Text("PM: ${inv.averagePrice.toBRL()}", fontSize = 11.sp,
+                                                color = Purple40, fontWeight = FontWeight.SemiBold)
                                     }
-                                    if (inv.averagePrice > 0)
-                                        Text("PM: ${inv.averagePrice.toBRL()}", fontSize = 11.sp, color = Purple40)
+                                    HorizontalDivider(color = Color(0xFFF5F5F5))
                                 }
-                                HorizontalDivider(color = Color(0xFFF5F5F5))
                             }
                         }
-                    }
-                }
+                    },
+                    confirmButton = {},
+                    dismissButton = {
+                        TextButton(onClick = { showInvestmentPicker = false }) {
+                            Text("Cancelar")
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                )
             }
         }
 
