@@ -108,7 +108,14 @@ class InvestmentsViewModel @Inject constructor(
         viewModelScope.launch {
             investmentRepository.getInvestments().collect { result ->
                 when (result) {
-                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                    is Resource.Loading -> _uiState.update { state ->
+                        // Mostra o spinner apenas na carga inicial (sem dados ainda).
+                        // Em refreshes subsequentes (ex: onResume) mantém o conteúdo visível.
+                        val hasData = state.rendaVariavel.isNotEmpty()
+                            || state.rendaFixa.isNotEmpty()
+                            || state.criptomoedas.isNotEmpty()
+                        if (hasData) state else state.copy(isLoading = true)
+                    }
                     is Resource.Success -> {
                         val recalculated = recalculateProfitability(result.data)
                         val grouped = recalculated.groupBy { it.type }
