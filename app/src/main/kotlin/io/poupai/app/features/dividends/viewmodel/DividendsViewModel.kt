@@ -2,12 +2,12 @@ package io.poupai.app.features.dividends.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.poupai.app.core.network.Resource
 import io.poupai.app.domain.model.Dividend
 import io.poupai.app.domain.model.DividendType
 import io.poupai.app.domain.repository.InvestmentRepository
 import io.poupai.app.features.dividends.state.DividendsUiState
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,24 +34,26 @@ class DividendsViewModel @Inject constructor(
         loadInvestments()
     }
 
-    fun loadDividends() {
+    private fun loadDividends() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = investmentRepository.getDividends(
-                year = _uiState.value.selectedYear,
-                month = _uiState.value.selectedMonth,
-            )) {
+            // Mantém conteúdo visível em refreshes subsequentes (sem flash).
+            _uiState.update { state ->
+                if (state.allDividends.isEmpty()) state.copy(isLoading = true) else state
+            }
+            when (val result = investmentRepository.getDividends()) {
                 is Resource.Success -> _uiState.update {
                     it.copy(
                         isLoading = false,
-                        dividends = result.data.dividends,
+                        allDividends = result.data.dividends.sortedByDescending { d -> d.date },
                         totalReceived = result.data.totalReceived,
                         totalReceivedThisYear = result.data.totalReceivedThisYear,
                         totalReceivedThisMonth = result.data.totalReceivedThisMonth,
                         projectedAnnual = result.data.projectedAnnual,
                     )
                 }
-                is Resource.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                is Resource.Error -> _uiState.update {
+                    it.copy(isLoading = false, errorMessage = result.message)
+                }
                 is Resource.Loading -> Unit
             }
         }
@@ -66,22 +68,19 @@ class DividendsViewModel @Inject constructor(
         }
     }
 
-    fun onFilterMonth(month: Int?, year: Int?) {
-        _uiState.update { it.copy(selectedMonth = month, selectedYear = year) }
-        loadDividends()
-    }
-
-    fun onClearFilter() {
-        _uiState.update { it.copy(selectedMonth = null, selectedYear = null) }
-        loadDividends()
+    /** Filtro de ano para as analytics (null = todos). Operação client-side. */
+    fun onSelectYear(year: Int?) {
+        _uiState.update { it.copy(selectedYear = year) }
     }
 
     // ─── Formulário ───
 
     fun onShowAddSheet() = _uiState.update {
-        it.copy(showAddSheet = true, formInvestmentId = "", formInvestmentName = "",
+        it.copy(
+            showAddSheet = true, formInvestmentId = "", formInvestmentName = "",
             formAmount = "", formType = DividendType.DIVIDENDO,
-            formDate = LocalDate.now().toString(), formError = null)
+            formDate = LocalDate.now().toString(), formError = null,
+        )
     }
 
     fun onDismissSheet() = _uiState.update { it.copy(showAddSheet = false, formError = null) }
@@ -97,9 +96,15 @@ class DividendsViewModel @Inject constructor(
         val state = _uiState.value
         val amount = state.formAmount.replace(",", ".").toDoubleOrNull()
         when {
-            state.formInvestmentId.isBlank() -> { _uiState.update { it.copy(formError = "Selecione o ativo") }; return }
-            amount == null || amount <= 0 -> { _uiState.update { it.copy(formError = "Valor inválido") }; return }
-            state.formDate.isBlank() -> { _uiState.update { it.copy(formError = "Informe a data") }; return }
+            state.formInvestmentId.isBlank() -> {
+                _uiState.update { it.copy(formError = "Selecione o ativo") }; return
+            }
+            amount == null || amount <= 0 -> {
+                _uiState.update { it.copy(formError = "Valor inválido") }; return
+            }
+            state.formDate.isBlank() -> {
+                _uiState.update { it.copy(formError = "Informe a data") }; return
+            }
         }
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -110,7 +115,9 @@ class DividendsViewModel @Inject constructor(
                 date = state.formDate,
             )) {
                 is Resource.Success -> { onDismissSheet(); loadDividends() }
-                is Resource.Error -> _uiState.update { it.copy(isSaving = false, formError = "Erro ao salvar") }
+                is Resource.Error -> _uiState.update {
+                    it.copy(isSaving = false, formError = "Erro ao salvar")
+                }
                 is Resource.Loading -> Unit
             }
         }
@@ -121,7 +128,8 @@ class DividendsViewModel @Inject constructor(
     fun onDeleteRequest(dividend: Dividend) =
         _uiState.update { it.copy(showDeleteDialog = true, deletingDividend = dividend) }
 
-    fun onDeleteCancel() = _uiState.update { it.copy(showDeleteDialog = false, deletingDividend = null) }
+    fun onDeleteCancel() =
+        _uiState.update { it.copy(showDeleteDialog = false, deletingDividend = null) }
 
     fun onDeleteConfirm() {
         val dividend = _uiState.value.deletingDividend ?: return
