@@ -6,18 +6,21 @@ import io.poupai.app.domain.model.Investment
 import java.time.LocalDate
 
 data class DividendsUiState(
+    /** Lista completa, sem filtro de servidor — analytics derivam disto. */
+    val allDividends: List<Dividend> = emptyList(),
+    val investments: List<Investment> = emptyList(),
+
+    // Agregados retornados pelo servidor (sem filtro = all-time)
     val totalReceived: Double = 0.0,
     val totalReceivedThisYear: Double = 0.0,
     val totalReceivedThisMonth: Double = 0.0,
     val projectedAnnual: Double = 0.0,
-    val dividends: List<Dividend> = emptyList(),
-    val investments: List<Investment> = emptyList(),
+
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
 
-    // ─── Filtro de mês ───
-    val selectedMonth: Int? = null,
-    val selectedYear: Int? = null,
+    /** Ano selecionado para visualização das analytics. Null = "Todos". */
+    val selectedYear: Int? = LocalDate.now().year,
 
     // ─── Formulário ───
     val showAddSheet: Boolean = false,
