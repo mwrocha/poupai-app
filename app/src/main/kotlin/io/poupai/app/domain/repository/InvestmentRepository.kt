@@ -25,6 +25,7 @@ interface InvestmentRepository {
         shares: Double,
         averagePrice: Double,
         investedValue: Double,
+        currentValue: Double,
     ): Resource<Investment>
     suspend fun deleteInvestment(id: String): Resource<Unit>
 
