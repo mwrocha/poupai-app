@@ -45,15 +45,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.text.input.KeyboardType
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
+import io.poupai.app.core.designsystem.components.StaleChip
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
+import io.poupai.app.core.util.computeStaleInfo
+import io.poupai.app.core.util.needsAttention
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.Investment
 import io.poupai.app.domain.model.InvestmentType
@@ -74,6 +78,8 @@ fun InvestmentsScreen(
     onNavigateToBook: () -> Unit = {},
     onNavigateToDividends: () -> Unit = {},
     onNavigateToRebalance: () -> Unit = {},
+    onNavigateToAllocation: () -> Unit = {},
+    onNavigateToDetail: (String) -> Unit = {},
     viewModel: InvestmentsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -90,21 +96,9 @@ fun InvestmentsScreen(
     val totalProfit = totalCurrent - totalInvested
     val profitPercent = if (totalInvested > 0) (totalProfit / totalInvested) * 100 else 0.0
 
-    val accumulatedCdi = remember(uiState.benchmark, allInvestments) {
-        val b = uiState.benchmark ?: return@remember 0.0
-        val earliestDate = allInvestments
-            .flatMap { it.history }
-            .minOfOrNull { snapshot -> snapshot.date }
-        val months = if (earliestDate != null) {
-            val start = java.time.LocalDate.parse(earliestDate)
-            val now = java.time.LocalDate.now()
-            java.time.temporal.ChronoUnit.MONTHS.between(start, now).toInt().coerceAtLeast(1)
-        } else {
-            12
-        }
-        val monthlyRate = b.cdiRateMonth / 100.0
-        (Math.pow(1.0 + monthlyRate, months.toDouble()) - 1.0) * 100.0
-    }
+    // CDI acumulado é derivado do vsCdi que o backend já calcula com a taxa da BCB (série 4391, base 252).
+    // Não recomputamos localmente para evitar divergência de janela temporal e base de cálculo.
+    val accumulatedCdi = profitPercent - (uiState.benchmark?.vsCdi ?: 0.0)
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
 
@@ -166,7 +160,7 @@ fun InvestmentsScreen(
                 // ─── Benchmark CDI ───
                 uiState.benchmark?.let { benchmark ->
                     item {
-                        val vsCdi = profitPercent - accumulatedCdi
+                        val vsCdi = benchmark.vsCdi
                         val vsCdiColor = when {
                             vsCdi >= 0 -> GreenPositive
                             profitPercent >= 0 -> Color(0xFFFF9800) // laranja: positivo mas abaixo do CDI
@@ -201,7 +195,14 @@ fun InvestmentsScreen(
                         rendaFixa = uiState.rendaFixa.sumOf { it.currentValue },
                         criptomoedas = uiState.criptomoedas.sumOf { it.currentValue },
                         total = totalCurrent,
+                        onClick = onNavigateToAllocation,
                     )
+                }
+
+                // ─── Banner de dados desatualizados ───
+                val staleCount = allInvestments.count { it.computeStaleInfo().needsAttention() }
+                if (staleCount > 0) {
+                    item { StaleDataBanner(count = staleCount) }
                 }
 
                 item {
@@ -211,11 +212,14 @@ fun InvestmentsScreen(
 
                 // ─── Seções com expand/collapse ───
                 item { AssetSection("Renda Variável", InvestmentType.RENDA_VARIAVEL, uiState.rendaVariavel,
-                    uiState.hideValues, onDelete = viewModel::onDeleteInvestment, onEdit = viewModel::onShowEditSheet) }
+                    uiState.hideValues, onDelete = viewModel::onDeleteInvestment,
+                    onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
                 item { AssetSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa, uiState.hideValues,
-                    onDelete = viewModel::onDeleteInvestment, onEdit = viewModel::onShowEditSheet) }
+                    onDelete = viewModel::onDeleteInvestment,
+                    onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
                 item { AssetSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas, uiState.hideValues,
-                    onDelete = viewModel::onDeleteInvestment, onEdit = viewModel::onShowEditSheet) }
+                    onDelete = viewModel::onDeleteInvestment,
+                    onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
 
                 item { Spacer(Modifier.height(32.dp)) }
             }
@@ -302,9 +306,15 @@ private fun InvestmentSummaryCard(totalInvested: Double, totalCurrent: Double, t
 }
 
 @Composable
-private fun AllocationDonutCard(rendaVariavel: Double, rendaFixa: Double, criptomoedas: Double, total: Double) {
+private fun AllocationDonutCard(
+    rendaVariavel: Double,
+    rendaFixa: Double,
+    criptomoedas: Double,
+    total: Double,
+    onClick: () -> Unit = {},
+) {
     if (total <= 0) return
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }, shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(1.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Alocação", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -372,6 +382,7 @@ private fun LegendRow(label: String, percent: Double, color: Color) {
 private fun AssetSection(
     title: String, type: InvestmentType, investments: List<Investment>,
     hideValues: Boolean, onDelete: (String) -> Unit, onEdit: (Investment) -> Unit,
+    onItemClick: (String) -> Unit,
 ) {
     if (investments.isEmpty()) return
     val color = typeColor[type] ?: Purple40
@@ -417,7 +428,8 @@ private fun AssetSection(
                     investments.forEachIndexed { index, investment ->
                         AssetRow(investment = investment, accentColor = color, hideValues = hideValues,
                             onDelete = { onDelete(investment.id) },
-                            onEdit = { onEdit(investment) })
+                            onEdit = { onEdit(investment) },
+                            onClick = { onItemClick(investment.id) })
                         if (index < investments.lastIndex)
                             HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
                     }
@@ -434,6 +446,7 @@ private fun AssetRow(
     hideValues: Boolean,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
+    onClick: () -> Unit,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -471,6 +484,7 @@ private fun AssetRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
 
@@ -564,17 +578,18 @@ private fun AssetRow(
             }
         }
 
-        if (
-            investment.shares > 0 ||
-            investment.averagePrice > 0 ||
+        val staleInfo = remember(investment.history) { investment.computeStaleInfo() }
+        val hasStats = investment.shares > 0 || investment.averagePrice > 0 ||
             investment.allocationTarget > 0
-        ) {
-            Spacer(Modifier.height(4.dp))
+        val showStaleChip = staleInfo.needsAttention() ||
+            staleInfo.status == io.poupai.app.core.util.StaleStatus.NO_UPDATES
 
+        if (hasStats || showStaleChip) {
+            Spacer(Modifier.height(6.dp))
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-
                 if (investment.shares > 0) {
                     Text(
                         "${String.format("%.2f", investment.shares)} cotas",
@@ -582,7 +597,6 @@ private fun AssetRow(
                         color = Color(0xFF9E9E9E)
                     )
                 }
-
                 if (investment.averagePrice > 0) {
                     Text(
                         "PM: ${if (hideValues) HIDDEN else investment.averagePrice.toBRL()}",
@@ -591,7 +605,6 @@ private fun AssetRow(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-
                 if (investment.allocationTarget > 0) {
                     Text(
                         "Alvo: ${String.format("%.1f", investment.allocationTarget)}%",
@@ -599,6 +612,48 @@ private fun AssetRow(
                         color = Color(0xFF9E9E9E)
                     )
                 }
+                if (showStaleChip) {
+                    Spacer(Modifier.weight(1f))
+                    StaleChip(staleInfo)
+                }
+            }
+        }
+    }
+}
+
+// ─── BANNER DE DADOS DESATUALIZADOS ───
+
+@Composable
+private fun StaleDataBanner(count: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4E0)),
+        elevation = CardDefaults.cardElevation(0.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Default.Warning,
+                contentDescription = null,
+                tint = Color(0xFFE65100),
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "$count ativo${if (count != 1) "s" else ""} sem atualização recente",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFBF360C),
+                )
+                Text(
+                    "Atualize os preços para análises mais precisas",
+                    fontSize = 10.sp,
+                    color = Color(0xFFBF360C).copy(alpha = 0.75f),
+                )
             }
         }
     }
