@@ -1,5 +1,7 @@
 package io.poupai.app.features.dividends.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -32,8 +34,40 @@ import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.Dividend
 import io.poupai.app.domain.model.DividendType
+import io.poupai.app.domain.model.Investment
+import io.poupai.app.domain.model.InvestmentType
 import io.poupai.app.features.dividends.state.DividendsUiState
 import io.poupai.app.features.dividends.viewmodel.DividendsViewModel
+import java.time.LocalDate
+
+// ─── Helpers ───
+
+private val MONTHS_PT = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+    "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+private val typeColor = mapOf(
+    DividendType.DIVIDENDO to Color(0xFF2E7D32),
+    DividendType.JCP to Color(0xFF1565C0),
+    DividendType.RENDIMENTO to Color(0xFF6A1B9A),
+    DividendType.AMORTIZACAO to Color(0xFFE65100),
+    DividendType.OUTROS to Color(0xFF546E7A),
+)
+
+private val typeLabel = mapOf(
+    DividendType.DIVIDENDO to "Dividendo",
+    DividendType.JCP to "JCP",
+    DividendType.RENDIMENTO to "Rendimento",
+    DividendType.AMORTIZACAO to "Amortização",
+    DividendType.OUTROS to "Outros",
+)
+
+private fun yearOf(date: String): Int? =
+    runCatching { LocalDate.parse(date).year }.getOrNull()
+
+private fun monthOf(date: String): Int? =
+    runCatching { LocalDate.parse(date).monthValue }.getOrNull()
+
+// ─── MAIN SCREEN ───
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,31 +94,51 @@ fun DividendsScreen(
         AlertDialog(
             onDismissRequest = viewModel::onDeleteCancel,
             title = { Text("Excluir dividendo") },
-            text = { Text("Deseja excluir este registro de ${uiState.deletingDividend!!.amount.toBRL()} de ${uiState.deletingDividend!!.investmentName}?") },
+            text = {
+                Text("Deseja excluir o registro de ${uiState.deletingDividend!!.amount.toBRL()} " +
+                    "de ${uiState.deletingDividend!!.investmentName}?")
+            },
             confirmButton = {
-                Button(onClick = viewModel::onDeleteConfirm,
+                Button(
+                    onClick = viewModel::onDeleteConfirm,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) { Text("Excluir") }
             },
-            dismissButton = { TextButton(onClick = viewModel::onDeleteCancel) { Text("Cancelar") } },
+            dismissButton = {
+                TextButton(onClick = viewModel::onDeleteCancel) { Text("Cancelar") }
+            },
         )
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7)),
-    ) {
-        // ─── Header ───
+    // ─── Dados derivados do filtro ───
+    val dividendsInPeriod = remember(uiState.allDividends, uiState.selectedYear) {
+        if (uiState.selectedYear == null) uiState.allDividends
+        else uiState.allDividends.filter { yearOf(it.date) == uiState.selectedYear }
+    }
+    val totalInPeriod = dividendsInPeriod.sumOf { it.amount }
+    val availableYears = remember(uiState.allDividends) {
+        uiState.allDividends.mapNotNull { yearOf(it.date) }.distinct().sortedDescending()
+    }
+    val totalInvested = uiState.investments.sumOf { it.investedValue }
+    val dyPeriod = if (totalInvested > 0) totalInPeriod / totalInvested * 100.0 else 0.0
+
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+
+        // Header
         Box(
-            modifier = Modifier.fillMaxWidth()
-                .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
-                .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(PurpleDark, Purple40)))
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
-                Text("Dividendos", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Dividendos", style = MaterialTheme.typography.titleLarge,
+                    color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.size(48.dp))
             }
@@ -94,45 +148,115 @@ fun DividendsScreen(
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Purple40)
             }
+        } else if (uiState.allDividends.isEmpty()) {
+            EmptyState(onAdd = viewModel::onShowAddSheet)
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f),
             ) {
-                // ─── Card de resumo ───
-                item { DividendSummaryCard(uiState = uiState) }
 
-                if (uiState.dividends.isEmpty()) {
+                // 1. Hero card
+                item {
+                    HeroCard(
+                        totalInPeriod = totalInPeriod,
+                        countInPeriod = dividendsInPeriod.size,
+                        thisMonth = uiState.totalReceivedThisMonth,
+                        projectedAnnual = uiState.projectedAnnual,
+                        dyPeriod = dyPeriod,
+                        selectedYear = uiState.selectedYear,
+                    )
+                }
+
+                // 2. Year selector
+                if (availableYears.isNotEmpty()) {
                     item {
-                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                        YearSelector(
+                            availableYears = availableYears,
+                            selected = uiState.selectedYear,
+                            onSelect = viewModel::onSelectYear,
+                        )
+                    }
+                }
+
+                // 3. Bar chart
+                if (dividendsInPeriod.isNotEmpty()) {
+                    item {
+                        ChartCard(
+                            dividends = dividendsInPeriod,
+                            allDividends = uiState.allDividends,
+                            selectedYear = uiState.selectedYear,
+                        )
+                    }
+                }
+
+                // 4. Top payers
+                if (dividendsInPeriod.isNotEmpty()) {
+                    item {
+                        TopPayersCard(
+                            dividends = dividendsInPeriod,
+                            investments = uiState.investments,
+                            totalInPeriod = totalInPeriod,
+                        )
+                    }
+                }
+
+                // 5. Type breakdown
+                if (dividendsInPeriod.isNotEmpty()) {
+                    item {
+                        TypeBreakdownCard(
+                            dividends = dividendsInPeriod,
+                            totalInPeriod = totalInPeriod,
+                        )
+                    }
+                }
+
+                // 6. Recent list
+                item {
+                    Text(
+                        "Registros (${dividendsInPeriod.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF6B6B6B),
+                    )
+                }
+                if (dividendsInPeriod.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(1.dp)) {
-                            Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("💰", fontSize = 40.sp)
-                                    Spacer(Modifier.height(12.dp))
-                                    Text("Nenhum dividendo registrado", style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
-                                    Text("Toque em + para registrar", fontSize = 12.sp, color = Color(0xFFBDBDBD))
-                                }
+                            elevation = CardDefaults.cardElevation(1.dp),
+                        ) {
+                            Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "Nenhum dividendo neste período",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF9E9E9E),
+                                )
                             }
                         }
                     }
                 } else {
                     item {
-                        Text("Histórico", style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold, color = Color(0xFF6B6B6B))
-                    }
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(1.dp)) {
+                            elevation = CardDefaults.cardElevation(1.dp),
+                        ) {
                             Column {
-                                uiState.dividends.forEachIndexed { index, dividend ->
-                                    DividendRow(dividend = dividend, onDelete = { viewModel.onDeleteRequest(dividend) })
-                                    if (index < uiState.dividends.lastIndex) {
-                                        HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                                dividendsInPeriod.forEachIndexed { idx, dividend ->
+                                    DividendRow(
+                                        dividend = dividend,
+                                        onDelete = { viewModel.onDeleteRequest(dividend) },
+                                    )
+                                    if (idx < dividendsInPeriod.lastIndex) {
+                                        HorizontalDivider(
+                                            color = Color(0xFFF5F5F5),
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                        )
                                     }
                                 }
                             }
@@ -145,40 +269,85 @@ fun DividendsScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
-        FloatingActionButton(onClick = viewModel::onShowAddSheet, containerColor = GreenPositive,
-            shape = CircleShape, modifier = Modifier.padding(24.dp)) {
+        FloatingActionButton(
+            onClick = viewModel::onShowAddSheet,
+            containerColor = GreenPositive,
+            shape = CircleShape,
+            modifier = Modifier.padding(24.dp),
+        ) {
             Icon(Icons.Default.Add, "Registrar dividendo", tint = Color.White)
         }
     }
 
     if (uiState.showAddSheet) {
         ModalBottomSheet(onDismissRequest = viewModel::onDismissSheet, sheetState = sheetState) {
-            AddDividendForm(uiState = uiState, fieldColors = fieldColors,
+            AddDividendForm(
+                uiState = uiState,
+                fieldColors = fieldColors,
                 onInvestmentSelected = viewModel::onFormInvestmentSelected,
                 onAmountChanged = viewModel::onFormAmountChanged,
                 onTypeChanged = viewModel::onFormTypeChanged,
                 onDateChanged = viewModel::onFormDateChanged,
-                onSave = viewModel::onSaveDividend)
+                onSave = viewModel::onSaveDividend,
+            )
         }
     }
 }
 
+// ─── HERO CARD ───
+
 @Composable
-private fun DividendSummaryCard(uiState: DividendsUiState) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(4.dp)) {
-        Box(modifier = Modifier.fillMaxWidth()
-            .background(brush = Brush.linearGradient(listOf(Color(0xFF2E7D32), GreenPositive)), shape = RoundedCornerShape(20.dp))
-            .padding(20.dp)) {
+private fun HeroCard(
+    totalInPeriod: Double,
+    countInPeriod: Int,
+    thisMonth: Double,
+    projectedAnnual: Double,
+    dyPeriod: Double,
+    selectedYear: Int?,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.linearGradient(listOf(Color(0xFF1B5E20), GreenPositive)),
+                    shape = RoundedCornerShape(20.dp),
+                )
+                .padding(20.dp),
+        ) {
             Column {
-                Text("Total recebido", fontSize = 12.sp, color = Color.White.copy(alpha = 0.75f))
-                Spacer(Modifier.height(4.dp))
-                Text(uiState.totalReceived.toBRL(), style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    "Total recebido · ${selectedYear?.toString() ?: "Todos"}",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.65f),
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    totalInPeriod.toBRL(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "$countInPeriod pagamento${if (countInPeriod != 1) "s" else ""}",
+                    fontSize = 10.sp,
+                    color = Color.White.copy(alpha = 0.55f),
+                )
+
                 Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    DividendStatColumn("Este mês", uiState.totalReceivedThisMonth.toBRL())
-                    DividendStatColumn("Este ano", uiState.totalReceivedThisYear.toBRL())
-                    DividendStatColumn("Projeção anual", uiState.projectedAnnual.toBRL())
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    HeroStat("Este mês", thisMonth.toBRL())
+                    HeroStat("Projeção anual", projectedAnnual.toBRL())
+                    HeroStat(
+                        "DY do período",
+                        "${"%.2f".format(dyPeriod)}%",
+                        align = Alignment.End,
+                    )
                 }
             }
         }
@@ -186,54 +355,455 @@ private fun DividendSummaryCard(uiState: DividendsUiState) {
 }
 
 @Composable
-private fun DividendStatColumn(label: String, value: String) {
-    Column {
-        Text(label, fontSize = 11.sp, color = Color.White.copy(alpha = 0.65f))
-        Text(value, fontSize = 13.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+private fun HeroStat(
+    label: String,
+    value: String,
+    align: Alignment.Horizontal = Alignment.Start,
+) {
+    Column(horizontalAlignment = align) {
+        Text(label, fontSize = 10.sp, color = Color.White.copy(alpha = 0.55f))
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+    }
+}
+
+// ─── YEAR SELECTOR ───
+
+@Composable
+private fun YearSelector(
+    availableYears: List<Int>,
+    selected: Int?,
+    onSelect: (Int?) -> Unit,
+) {
+    val options: List<Pair<String, Int?>> =
+        availableYears.map { it.toString() to it } + ("Todos" to null)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        options.forEach { (label, year) ->
+            val isSelected = year == selected
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (isSelected) GreenPositive else Color.Transparent)
+                    .clickable { onSelect(year) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    fontSize = 12.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) Color.White else Color(0xFF9E9E9E),
+                )
+            }
+        }
+    }
+}
+
+// ─── CHART CARD ───
+
+@Composable
+private fun ChartCard(
+    dividends: List<Dividend>,
+    allDividends: List<Dividend>,
+    selectedYear: Int?,
+) {
+    val bars: List<Pair<String, Double>> = remember(dividends, selectedYear) {
+        if (selectedYear == null) {
+            // Por ano (uma barra por ano disponível, ordem crescente)
+            val years = allDividends.mapNotNull { yearOf(it.date) }.distinct().sorted()
+            years.map { y ->
+                val total = allDividends
+                    .filter { yearOf(it.date) == y }
+                    .sumOf { it.amount }
+                y.toString() to total
+            }
+        } else {
+            // Por mês do ano selecionado
+            (1..12).map { m ->
+                val total = dividends
+                    .filter { monthOf(it.date) == m }
+                    .sumOf { it.amount }
+                MONTHS_PT[m - 1] to total
+            }
+        }
+    }
+    val title = if (selectedYear == null) "Histórico por ano" else "Histórico mensal · $selectedYear"
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            val periodTotal = bars.sumOf { it.second }
+            Text(
+                if (periodTotal > 0)
+                    "Maior pagamento: ${(bars.maxByOrNull { it.second }?.let { "${it.first} · ${it.second.toBRL()}" } ?: "—")}"
+                else "Sem registros",
+                fontSize = 11.sp, color = Color(0xFF9E9E9E),
+            )
+            Spacer(Modifier.height(16.dp))
+            BarChart(
+                bars = bars,
+                modifier = Modifier.fillMaxWidth().height(140.dp),
+            )
+        }
     }
 }
 
 @Composable
-private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
-    val typeColor = when (dividend.type) {
-        DividendType.DIVIDENDO -> Color(0xFF2E7D32)
-        DividendType.JCP -> Color(0xFF1565C0)
-        DividendType.RENDIMENTO -> Color(0xFF6A1B9A)
-        DividendType.AMORTIZACAO -> Color(0xFFE65100)
-        DividendType.OUTROS -> Color(0xFF546E7A)
+private fun BarChart(
+    bars: List<Pair<String, Double>>,
+    modifier: Modifier = Modifier,
+    color: Color = GreenPositive,
+) {
+    var played by remember { mutableStateOf(false) }
+    val anim by animateFloatAsState(if (played) 1f else 0f, tween(800), label = "bars_anim")
+    LaunchedEffect(bars) { played = true }
+
+    val max = bars.maxOfOrNull { it.second }?.coerceAtLeast(0.01) ?: 1.0
+
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            bars.forEach { (_, value) ->
+                val fraction = ((value / max) * anim).toFloat().coerceIn(0f, 1f)
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.Bottom,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(fraction.coerceAtLeast(0.01f))
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(
+                                if (value > 0)
+                                    Brush.verticalGradient(listOf(color.copy(alpha = 0.45f), color))
+                                else
+                                    Brush.verticalGradient(listOf(Color(0xFFF5F5F5), Color(0xFFF5F5F5))),
+                            ),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            bars.forEach { (label, _) ->
+                Text(
+                    label,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 9.sp,
+                    color = Color(0xFF9E9E9E),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+// ─── TOP PAYERS ───
+
+@Composable
+private fun TopPayersCard(
+    dividends: List<Dividend>,
+    investments: List<Investment>,
+    totalInPeriod: Double,
+) {
+    data class PayerStat(
+        val investmentId: String,
+        val name: String,
+        val total: Double,
+        val count: Int,
+        val type: InvestmentType?,
+        val dy: Double?, // total no período / investedValue * 100
+    )
+
+    val stats: List<PayerStat> = remember(dividends, investments) {
+        dividends
+            .groupBy { it.investmentId }
+            .map { (id, list) ->
+                val total = list.sumOf { it.amount }
+                val inv = investments.firstOrNull { it.id == id }
+                PayerStat(
+                    investmentId = id,
+                    name = inv?.name ?: list.first().investmentName,
+                    total = total,
+                    count = list.size,
+                    type = inv?.type,
+                    dy = inv?.investedValue?.takeIf { it > 0 }?.let { total / it * 100.0 },
+                )
+            }
+            .sortedByDescending { it.total }
+            .take(5)
     }
 
+    if (stats.isEmpty()) return
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("Top pagadores", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Ordenado pelo total recebido no período",
+                fontSize = 11.sp, color = Color(0xFF9E9E9E))
+            Spacer(Modifier.height(16.dp))
+
+            stats.forEachIndexed { idx, stat ->
+                val pct = if (totalInPeriod > 0) stat.total / totalInPeriod * 100.0 else 0.0
+                PayerRow(
+                    rank = idx + 1,
+                    name = stat.name,
+                    total = stat.total,
+                    pct = pct,
+                    count = stat.count,
+                    dy = stat.dy,
+                    type = stat.type,
+                )
+                if (idx < stats.lastIndex) {
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                    Spacer(Modifier.height(10.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PayerRow(
+    rank: Int,
+    name: String,
+    total: Double,
+    pct: Double,
+    count: Int,
+    dy: Double?,
+    type: InvestmentType?,
+) {
+    val accent = when (type) {
+        InvestmentType.RENDA_VARIAVEL -> Color(0xFF503173)
+        InvestmentType.RENDA_FIXA -> Color(0xFF4CAF50)
+        InvestmentType.CRIPTOMOEDAS -> Color(0xFFFF9800)
+        null -> Purple40
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+            Text(
+                when (rank) {
+                    1 -> "🥇"
+                    2 -> "🥈"
+                    3 -> "🥉"
+                    else -> "$rank"
+                },
+                fontSize = if (rank <= 3) 20.sp else 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF9E9E9E),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Box(
+            modifier = Modifier.size(36.dp).clip(CircleShape).background(accent.copy(alpha = 0.10f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(name.take(2).uppercase(), fontSize = 11.sp,
+                fontWeight = FontWeight.Bold, color = accent)
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                "$count pagamento${if (count != 1) "s" else ""}" +
+                    (dy?.let { " · DY ${"%.2f".format(it)}%" } ?: ""),
+                fontSize = 10.sp,
+                color = Color(0xFF9E9E9E),
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(total.toBRL(), fontSize = 13.sp,
+                fontWeight = FontWeight.Bold, color = GreenPositive)
+            Text("${"%.1f".format(pct)}% do período",
+                fontSize = 10.sp, color = Color(0xFF9E9E9E))
+        }
+    }
+}
+
+// ─── TYPE BREAKDOWN ───
+
+@Composable
+private fun TypeBreakdownCard(
+    dividends: List<Dividend>,
+    totalInPeriod: Double,
+) {
+    val byType = remember(dividends) {
+        DividendType.values()
+            .map { type -> type to dividends.filter { it.type == type }.sumOf { it.amount } }
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
+    }
+    if (byType.isEmpty()) return
+
+    val maxValue = byType.maxOf { it.second }.coerceAtLeast(0.01)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("Por tipo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Distribuição no período", fontSize = 11.sp, color = Color(0xFF9E9E9E))
+            Spacer(Modifier.height(16.dp))
+
+            byType.forEachIndexed { idx, (type, amount) ->
+                val pct = if (totalInPeriod > 0) amount / totalInPeriod * 100.0 else 0.0
+                val color = typeColor[type] ?: GreenPositive
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(8.dp).clip(CircleShape).background(color),
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(typeLabel[type] ?: type.name,
+                                fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "${amount.toBRL()} · ${"%.1f".format(pct)}%",
+                                fontSize = 11.sp,
+                                color = Color(0xFF6B6B6B),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        AnimatedHorizontalBar(
+                            progress = (amount / maxValue).toFloat(),
+                            color = color,
+                        )
+                    }
+                }
+                if (idx < byType.lastIndex) Spacer(Modifier.height(14.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnimatedHorizontalBar(progress: Float, color: Color, modifier: Modifier = Modifier) {
+    var target by remember { mutableStateOf(0f) }
+    val anim by animateFloatAsState(target, tween(600), label = "type_bar")
+    LaunchedEffect(progress) { target = progress.coerceIn(0f, 1f) }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(5.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .background(Color(0xFFF0F0F0)),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(anim)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(3.dp))
+                .background(Brush.horizontalGradient(listOf(color.copy(alpha = 0.45f), color))),
+        )
+    }
+}
+
+// ─── DIVIDEND ROW ───
+
+@Composable
+private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
+    val color = typeColor[dividend.type] ?: GreenPositive
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(typeColor.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center) {
-            Text("💰", fontSize = 16.sp)
+        Box(
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(color.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("💵", fontSize = 16.sp)
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(dividend.investmentName, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(4.dp), color = typeColor.copy(alpha = 0.10f)) {
-                    Text(dividend.type.name, fontSize = 9.sp, color = typeColor, fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Surface(shape = RoundedCornerShape(4.dp), color = color.copy(alpha = 0.10f)) {
+                    Text(typeLabel[dividend.type] ?: dividend.type.name,
+                        fontSize = 9.sp, color = color, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                 }
-                Spacer(Modifier.width(6.dp))
                 Text(dividend.date, fontSize = 11.sp, color = Color(0xFF9E9E9E))
             }
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(dividend.amount.toBRL(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = GreenPositive)
-            Text("yield ${String.format("%.2f", dividend.yieldPercent)}%", fontSize = 10.sp, color = Color(0xFF9E9E9E))
+            Text("+${dividend.amount.toBRL()}", fontSize = 14.sp,
+                fontWeight = FontWeight.Bold, color = GreenPositive)
+            if (dividend.yieldPercent > 0)
+                Text("yield ${"%.2f".format(dividend.yieldPercent)}%",
+                    fontSize = 10.sp, color = Color(0xFF9E9E9E))
         }
         Spacer(Modifier.width(4.dp))
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.Delete, "Excluir", tint = Color(0xFFBDBDBD), modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Delete, "Excluir", tint = Color(0xFFBDBDBD),
+                modifier = Modifier.size(16.dp))
         }
     }
 }
+
+// ─── EMPTY STATE ───
+
+@Composable
+private fun EmptyState(onAdd: () -> Unit) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("💰", fontSize = 56.sp)
+            Spacer(Modifier.height(16.dp))
+            Text("Nenhum dividendo registrado",
+                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(6.dp))
+            Text("Registre o primeiro dividendo para\nver suas analytics aqui.",
+                fontSize = 12.sp, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
+            Button(
+                onClick = onAdd,
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = GreenPositive),
+            ) {
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Registrar dividendo")
+            }
+        }
+    }
+}
+
+// ─── ADD DIVIDEND FORM ───
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -256,74 +826,128 @@ private fun AddDividendForm(
 
         // Seletor de ativo
         OutlinedCard(
-            modifier = Modifier.fillMaxWidth().clickable { showInvestmentPicker = !showInvestmentPicker },
+            modifier = Modifier.fillMaxWidth().clickable { showInvestmentPicker = true },
             shape = RoundedCornerShape(12.dp),
         ) {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Ativo", fontSize = 11.sp, color = Color(0xFF9E9E9E))
-                    Text(if (uiState.formInvestmentName.isNotBlank()) uiState.formInvestmentName else "Selecione o ativo",
-                        fontSize = 14.sp, color = if (uiState.formInvestmentName.isNotBlank()) Color(0xFF1C1B1F) else Color(0xFFBDBDBD))
+                    Text(
+                        if (uiState.formInvestmentName.isNotBlank())
+                            uiState.formInvestmentName
+                        else "Selecione o ativo",
+                        fontSize = 14.sp,
+                        color = if (uiState.formInvestmentName.isNotBlank())
+                            Color(0xFF1C1B1F) else Color(0xFFBDBDBD),
+                    )
                 }
             }
         }
 
         if (showInvestmentPicker) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)) {
-                Column {
-                    uiState.investments.forEach { inv ->
-                        Row(modifier = Modifier.fillMaxWidth()
-                            .clickable { onInvestmentSelected(inv.id, inv.name); showInvestmentPicker = false }
-                            .padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(inv.name, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                            Text(inv.type.name, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+            AlertDialog(
+                onDismissRequest = { showInvestmentPicker = false },
+                title = { Text("Selecionar ativo", fontWeight = FontWeight.SemiBold) },
+                text = {
+                    if (uiState.investments.isEmpty()) {
+                        Text("Nenhum ativo cadastrado.",
+                            fontSize = 13.sp, color = Color(0xFF9E9E9E))
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(uiState.investments) { inv ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onInvestmentSelected(inv.id, inv.name)
+                                            showInvestmentPicker = false
+                                        }
+                                        .padding(vertical = 12.dp, horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(inv.name, fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f),
+                                        color = Color(0xFF1C1B1F))
+                                    Text(
+                                        when (inv.type) {
+                                            InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
+                                            InvestmentType.RENDA_FIXA -> "Renda Fixa"
+                                            InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
+                                        },
+                                        fontSize = 10.sp, color = Color(0xFF9E9E9E),
+                                    )
+                                }
+                                HorizontalDivider(color = Color(0xFFF5F5F5))
+                            }
                         }
-                        HorizontalDivider(color = Color(0xFFF5F5F5))
                     }
-                }
-            }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showInvestmentPicker = false }) { Text("Cancelar") }
+                },
+                shape = RoundedCornerShape(16.dp),
+            )
         }
 
         // Tipo de dividendo
         Text("Tipo", style = MaterialTheme.typography.labelMedium, color = Color(0xFF9E9E9E))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             DividendType.entries.take(3).forEach { type ->
-                FilterChip(selected = uiState.formType == type, onClick = { onTypeChanged(type) },
-                    label = { Text(type.name, fontSize = 10.sp) },
+                FilterChip(
+                    selected = uiState.formType == type,
+                    onClick = { onTypeChanged(type) },
+                    label = { Text(typeLabel[type] ?: type.name, fontSize = 10.sp) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = GreenPositive.copy(alpha = 0.12f),
-                        selectedLabelColor = GreenPositive))
+                        selectedLabelColor = GreenPositive,
+                    ),
+                )
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             DividendType.entries.drop(3).forEach { type ->
-                FilterChip(selected = uiState.formType == type, onClick = { onTypeChanged(type) },
-                    label = { Text(type.name, fontSize = 10.sp) },
+                FilterChip(
+                    selected = uiState.formType == type,
+                    onClick = { onTypeChanged(type) },
+                    label = { Text(typeLabel[type] ?: type.name, fontSize = 10.sp) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = GreenPositive.copy(alpha = 0.12f),
-                        selectedLabelColor = GreenPositive))
+                        selectedLabelColor = GreenPositive,
+                    ),
+                )
             }
         }
 
-        TextField(value = uiState.formAmount, onValueChange = onAmountChanged,
+        TextField(
+            value = uiState.formAmount, onValueChange = onAmountChanged,
             label = { Text("Valor recebido (R$)") }, placeholder = { Text("0,00") },
-            singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+        )
 
-        TextField(value = uiState.formDate, onValueChange = onDateChanged,
-            label = { Text("Data (yyyy-MM-dd)") }, placeholder = { Text("2026-05-10") },
-            singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+        TextField(
+            value = uiState.formDate, onValueChange = onDateChanged,
+            label = { Text("Data (yyyy-MM-dd)") }, placeholder = { Text("2026-05-18") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+        )
 
         uiState.formError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) }
 
-        Button(onClick = onSave, enabled = !uiState.isSaving,
+        Button(
+            onClick = onSave, enabled = !uiState.isSaving,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = GreenPositive)) {
-            if (uiState.isSaving) CircularProgressIndicator(Modifier.size(24.dp), color = Color.White)
-            else Text("Registrar dividendo", fontSize = 16.sp, color = Color.White)
+            colors = ButtonDefaults.buttonColors(containerColor = GreenPositive),
+        ) {
+            if (uiState.isSaving)
+                CircularProgressIndicator(Modifier.size(24.dp), color = Color.White)
+            else
+                Text("Registrar dividendo", fontSize = 16.sp, color = Color.White)
         }
     }
 }
