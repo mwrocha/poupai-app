@@ -92,6 +92,7 @@ class InvestmentRepositoryImpl @Inject constructor(
         shares: Double,
         averagePrice: Double,
         investedValue: Double,
+        currentValue: Double,
     ): Resource<Investment> = try {
         val data = investmentApi.updateInvestment(
             id, UpdateInvestmentRequest(
@@ -99,6 +100,9 @@ class InvestmentRepositoryImpl @Inject constructor(
                 shares = shares,
                 averagePrice = averagePrice,
                 investedValue = investedValue,
+                // Preserva o currentValue existente — sem isso, o backend recomputa
+                // como shares × averagePrice e a rentabilidade do ativo é zerada.
+                currentValue = currentValue,
             )
         ).body()?.data
         if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao atualizar ativo")
