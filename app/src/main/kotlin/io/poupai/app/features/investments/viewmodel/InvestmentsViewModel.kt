@@ -217,6 +217,8 @@ class InvestmentsViewModel @Inject constructor(
                 shares = shares,
                 averagePrice = averagePrice,
                 investedValue = investedValue,
+                // Preserva o currentValue para não perder ATUALIZACOES_VALOR anteriores.
+                currentValue = investment.currentValue,
             )
             when (result) {
                 is Resource.Success -> {
