@@ -39,9 +39,7 @@ class InvestmentRepositoryImpl @Inject constructor(
 
     override suspend fun getTotalProfitability(): Resource<Double> = try {
         val data = investmentApi.getInvestments().body()?.data
-        if (data != null) Resource.Success(data.sumOf { it.currentValue - it.investedValue }) else Resource.Error(
-            "Erro"
-        )
+        if (data != null) Resource.Success(data.sumOf { it.currentValue - it.investedValue }) else Resource.Error("Erro")
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Erro")
     }
@@ -78,14 +76,15 @@ class InvestmentRepositoryImpl @Inject constructor(
         Resource.Error(e.message ?: "Erro")
     }
 
-    override suspend fun updateAllocationTarget(id: String, target: Double): Resource<Investment> = try {
-        val data = investmentApi.updateInvestment(
-            id, UpdateInvestmentRequest(allocationTarget = target)
-        ).body()?.data
-        if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao atualizar alvo")
-    } catch (e: Exception) {
-        Resource.Error(e.message ?: "Erro")
-    }
+    override suspend fun updateAllocationTarget(id: String, target: Double): Resource<Investment> =
+        try {
+            val data = investmentApi.updateInvestment(
+                id, UpdateInvestmentRequest(allocationTarget = target)
+            ).body()?.data
+            if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao atualizar alvo")
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Erro")
+        }
 
     override suspend fun editInvestment(
         id: String,
@@ -124,36 +123,31 @@ class InvestmentRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addEntry(
-        investmentId: String, type: EntryType,
-        shares: Double?, sharePrice: Double?,
+        investmentId: String,
+        type: EntryType,
+        shares: Double?,
+        sharePrice: Double?,
         newCurrentValue: Double?,
-        adjustedShares: Double?, adjustedAveragePrice: Double?,
-        notes: String?, date: String,
+        adjustedShares: Double?,
+        adjustedAveragePrice: Double?,
+        notes: String?,
+        date: String,
     ): Resource<InvestmentEntry> = try {
         val data = investmentApi.addEntry(
             CreateEntryRequest(
-                investmentId = investmentId, type = type.name,
-                shares = shares, sharePrice = sharePrice,
+                investmentId = investmentId,
+                type = type.name,
+                shares = shares,
+                sharePrice = sharePrice,
                 newCurrentValue = newCurrentValue,
                 adjustedShares = adjustedShares,
                 adjustedAveragePrice = adjustedAveragePrice,
-                notes = notes, date = date,
+                notes = notes,
+                date = date,
             )
         ).body()?.data
-        if (data != null) {
-            // Ao registrar uma atualização de valor, sincroniza o currentValue no backend
-            if (type == EntryType.ATUALIZACAO_VALOR && newCurrentValue != null) {
-                try {
-                    investmentApi.updateInvestment(
-                        investmentId,
-                        UpdateInvestmentRequest(currentValue = newCurrentValue),
-                    )
-                } catch (_: Exception) { /* ignora falha secundária */ }
-            }
-            Resource.Success(data.toDomain())
-        } else {
-            Resource.Error("Erro ao salvar lançamento")
-        }
+        if (data != null) Resource.Success(data.toDomain())
+        else Resource.Error("Erro ao salvar lançamento")
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Erro")
     }
@@ -175,9 +169,9 @@ class InvestmentRepositoryImpl @Inject constructor(
     override suspend fun addDividend(
         investmentId: String, amount: Double, type: DividendType, date: String
     ): Resource<Dividend> = try {
-        val data =
-            investmentApi.addDividend(CreateDividendRequest(investmentId, amount, type.name, date))
-                .body()?.data
+        val data = investmentApi.addDividend(
+            CreateDividendRequest(investmentId, amount, type.name, date)
+        ).body()?.data
         if (data != null) Resource.Success(data.toDomain()) else Resource.Error("Erro ao salvar dividendo")
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Erro")
@@ -218,19 +212,13 @@ private fun InvestmentDto.toDomain() = Investment(
     profitability = profitability ?: 0.0, shares = shares ?: 0.0,
     averagePrice = averagePrice ?: 0.0, allocationTarget = allocationTarget ?: 0.0,
     history = history?.map {
-        ProfitabilitySnapshot(
-            it.date, it.value, it.invested, it.profitability
-        )
+        ProfitabilitySnapshot(it.date, it.value, it.invested, it.profitability)
     } ?: emptyList(),
 )
 
 private fun EntryDto.toDomain() = InvestmentEntry(
     id = id, investmentId = investmentId, investmentName = investmentName,
-    type = try {
-        EntryType.valueOf(type)
-    } catch (e: Exception) {
-        EntryType.APORTE
-    },
+    type = try { EntryType.valueOf(type) } catch (e: Exception) { EntryType.APORTE },
     shares = shares, sharePrice = sharePrice, totalValue = totalValue,
     previousShares = previousShares, previousAveragePrice = previousAveragePrice,
     newAveragePrice = newAveragePrice, newTotalShares = newTotalShares,
@@ -246,11 +234,7 @@ private fun EntrySummaryDto.toDomain() = EntrySummary(
 private fun DividendDto.toDomain() = Dividend(
     id = id, investmentId = investmentId, investmentName = investmentName,
     amount = amount, yieldPercent = yieldPercent, date = date,
-    type = try {
-        DividendType.valueOf(type)
-    } catch (e: Exception) {
-        DividendType.OUTROS
-    },
+    type = try { DividendType.valueOf(type) } catch (e: Exception) { DividendType.OUTROS },
 )
 
 private fun DividendSummaryDto.toDomain() = DividendSummary(
@@ -262,15 +246,9 @@ private fun DividendSummaryDto.toDomain() = DividendSummary(
 private fun RebalanceDto.toDomain() = RebalanceSummary(
     items = items.map {
         RebalanceItem(
-            it.investmentId,
-            it.name,
-            it.type,
-            it.currentValue,
-            it.currentPercent,
-            it.targetPercent,
-            it.difference,
-            it.action,
-            it.amountToAdjust
+            it.investmentId, it.name, it.type, it.currentValue,
+            it.currentPercent, it.targetPercent, it.difference,
+            it.action, it.amountToAdjust
         )
     },
     totalCurrentValue = totalCurrentValue,
