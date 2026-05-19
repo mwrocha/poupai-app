@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.analytics.TimeWindow
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
+import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.designsystem.components.StaleChip
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
@@ -124,6 +125,11 @@ fun InvestmentDetailScreen(
             }
         }
 
+        PullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.weight(1f),
+        ) {
         when {
             uiState.isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                 CircularProgressIndicator(color = Purple40)
@@ -133,7 +139,7 @@ fun InvestmentDetailScreen(
             }
             else -> LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
             ) {
                 item {
                     HeroCard(
@@ -180,6 +186,7 @@ fun InvestmentDetailScreen(
                 }
             }
         }
+        } // close PullToRefresh
     }
 }
 
@@ -325,8 +332,14 @@ private fun HeroCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(history.first().date.take(7),
-                        fontSize = 9.sp, color = Color.White.copy(alpha = 0.45f))
+                    Text(
+                        // "yyyy-MM-dd" → "MM-yyyy"
+                        history.first().date.take(7).let { ym ->
+                            val parts = ym.split("-")
+                            if (parts.size == 2) "${parts[1]}-${parts[0]}" else ym
+                        },
+                        fontSize = 9.sp, color = Color.White.copy(alpha = 0.45f),
+                    )
                     Text("Atual",
                         fontSize = 9.sp, color = Color.White.copy(alpha = 0.45f))
                 }
@@ -438,8 +451,12 @@ private fun MetricsCard(
                 Text("Última atualização", fontSize = 12.sp, color = Color(0xFF6B6B6B),
                     modifier = Modifier.weight(1f))
                 if (staleInfo.lastUpdate != null && staleInfo.status == io.poupai.app.core.util.StaleStatus.FRESH) {
-                    Text(staleInfo.lastUpdate, fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1B1F))
+                    Text(
+                        io.poupai.app.core.util.DateFormatter.isoToDisplay(staleInfo.lastUpdate),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1C1B1F),
+                    )
                 } else {
                     StaleChip(staleInfo)
                 }
@@ -536,7 +553,8 @@ private fun EntryRow(entry: InvestmentEntry, hideValues: Boolean) {
                     Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = color,
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                 }
-                Text(entry.date, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                Text(io.poupai.app.core.util.DateFormatter.isoToDisplay(entry.date),
+                    fontSize = 11.sp, color = Color(0xFF9E9E9E))
             }
             if (entry.type != EntryType.ATUALIZACAO_VALOR && (entry.shares ?: 0.0) > 0) {
                 Spacer(Modifier.height(2.dp))
@@ -646,7 +664,8 @@ private fun DividendRow(div: Dividend, hideValues: Boolean) {
                         color = GreenPositive,
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                 }
-                Text(div.date, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                Text(io.poupai.app.core.util.DateFormatter.isoToDisplay(div.date),
+                    fontSize = 11.sp, color = Color(0xFF9E9E9E))
             }
             if (div.yieldPercent > 0) {
                 Text("Yield: ${"%.2f".format(div.yieldPercent)}%",
