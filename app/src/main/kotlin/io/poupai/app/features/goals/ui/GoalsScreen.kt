@@ -38,6 +38,10 @@ import io.poupai.app.domain.model.Goal
 import io.poupai.app.features.goals.state.GoalsUiState
 import io.poupai.app.features.goals.viewmodel.GoalsViewModel
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import java.util.Date
 import java.util.Locale
 
 private val iconOptions = listOf("🎯", "🏠", "✈️", "🚗", "📱", "💍", "🎓", "🏋️", "💻", "🎸", "🐾", "🌍")
@@ -49,6 +53,15 @@ private val colorOptions = listOf(
 private fun String.toComposeColor(): Color = try {
     Color(android.graphics.Color.parseColor(if (startsWith("#")) this else "#$this"))
 } catch (e: Exception) { Color(0xFF503173) }
+
+private fun Date.toLocalDate(): LocalDate =
+    toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+
+private fun daysUntilDeadline(deadline: Date?): Long? =
+    deadline?.let { ChronoUnit.DAYS.between(LocalDate.now(), it.toLocalDate()) }
+
+private fun monthsUntilDeadline(deadline: Date?): Long? =
+    deadline?.let { ChronoUnit.MONTHS.between(LocalDate.now(), it.toLocalDate()) }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -370,6 +383,11 @@ private fun GoalCard(
                     color = Color(0xFF9E9E9E),
                 )
             }
+
+            // ─── Insights de prazo / aporte sugerido ───
+            if (!goal.isCompleted && goal.deadline != null) {
+                DeadlineInsights(goal = goal, goalColor = goalColor)
+            }
         }
     }
 
@@ -521,6 +539,113 @@ private fun UpdateProgressSheetContent(
         ) {
             if (uiState.isUpdatingProgress) CircularProgressIndicator(Modifier.size(24.dp), color = Color.White)
             else Text("Confirmar", fontSize = 16.sp, color = Color.White)
+        }
+    }
+}
+
+// ─── INSIGHTS DE PRAZO ───
+
+@Composable
+private fun DeadlineInsights(goal: Goal, goalColor: Color) {
+    val days = daysUntilDeadline(goal.deadline) ?: return
+    val months = monthsUntilDeadline(goal.deadline) ?: return
+
+    Spacer(Modifier.height(12.dp))
+    HorizontalDivider(color = Color(0xFFF5F5F5))
+    Spacer(Modifier.height(10.dp))
+
+    when {
+        days < 0 -> {
+            // Prazo expirado
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFFFEBEE),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("⏰", fontSize = 12.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "Prazo expirado · considere revisar o prazo",
+                        fontSize = 11.sp,
+                        color = Color(0xFFC62828),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
+
+        months >= 1 -> {
+            // Sugestão mensal
+            val required = goal.remaining / months
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Aporte sugerido", fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                    Text(
+                        "${required.toBRL()} / mês",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = goalColor,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Tempo restante", fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                    val years = months / 12
+                    val remMonths = months % 12
+                    val label = when {
+                        years >= 2 -> "$months meses · ~$years anos"
+                        years == 1L -> "$months meses · 1 ano"
+                        else -> "$months ${if (months == 1L) "mês" else "meses"}"
+                    }
+                    Text(
+                        label,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1C1B1F),
+                    )
+                }
+            }
+        }
+
+        else -> {
+            // Faltam menos de 1 mês — mostra dias e valor total restante
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Falta guardar", fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                    Text(
+                        goal.remaining.toBRL(),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = goalColor,
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFFFF4E0),
+                ) {
+                    Text(
+                        when (days) {
+                            0L -> "Vence hoje"
+                            1L -> "Falta 1 dia"
+                            else -> "Faltam $days dias"
+                        },
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFE65100),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+            }
         }
     }
 }

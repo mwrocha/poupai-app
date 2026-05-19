@@ -1,6 +1,7 @@
 package io.poupai.app.core.di
 
 import android.os.Build
+import io.poupai.app.BuildConfig
 import io.poupai.app.core.network.AuthInterceptor
 import io.poupai.app.data.remote.api.AuthApi
 import io.poupai.app.data.remote.api.FinanceApi
@@ -29,8 +30,18 @@ object NetworkModule {
     private const val EMULATOR_URL = "http://10.0.2.2:8080/"
     private const val DEVICE_URL   = "http://192.168.0.4:8080/"
 
+    /**
+     * URL base do backend. A escolha é amarrada ao tipo de build:
+     *  - release → backend de produção (Render) via BuildConfig.PROD_BACKEND_URL
+     *  - debug   → backend local (emulador ou device, auto-detectado)
+     * Para forçar produção em debug, alterne `USE_PRODUCTION` no build.gradle.kts.
+     */
     private val BASE_URL: String
-        get() = if (isEmulator()) EMULATOR_URL else DEVICE_URL
+        get() = when {
+            BuildConfig.USE_PRODUCTION -> BuildConfig.PROD_BACKEND_URL
+            isEmulator() -> EMULATOR_URL
+            else -> DEVICE_URL
+        }
 
     private fun isEmulator(): Boolean {
         return (Build.FINGERPRINT.startsWith("generic")

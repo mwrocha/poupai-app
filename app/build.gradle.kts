@@ -13,6 +13,13 @@ val localProps = Properties().apply {
     if (f.exists()) load(f.inputStream())
 }
 
+// Flag que decide se builds debug usam backend de produção (Render) ou local.
+// Default: produção. Para testar contra backend local, adicione no local.properties:
+//   USE_PRODUCTION=false
+// (Esse arquivo não vai para o git, então sua escolha não afeta ninguém.)
+val useProductionDebug: Boolean =
+    localProps.getProperty("USE_PRODUCTION", "true").toBoolean()
+
 android {
     namespace = "io.poupai.app"
     compileSdk = 35
@@ -25,6 +32,7 @@ android {
         versionName = "1.0.0"
 
         buildConfigField("String", "BRAPI_TOKEN", "\"${localProps.getProperty("BRAPI_TOKEN", "")}\"")
+        buildConfigField("String", "PROD_BACKEND_URL", "\"https://poupai-backend.onrender.com/\"")
     }
 
     buildTypes {
@@ -33,9 +41,14 @@ android {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
+            // Builds de release apontam para o backend de produção (Render).
+            buildConfigField("boolean", "USE_PRODUCTION", "true")
         }
         debug {
             isDebuggable = true
+            // Valor lido do local.properties (USE_PRODUCTION). Default = true.
+            // Para usar backend local, defina USE_PRODUCTION=false no seu local.properties.
+            buildConfigField("boolean", "USE_PRODUCTION", "$useProductionDebug")
         }
     }
 

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
@@ -80,6 +81,7 @@ fun InvestmentsScreen(
     onNavigateToRebalance: () -> Unit = {},
     onNavigateToAllocation: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToGoals: () -> Unit = {},
     viewModel: InvestmentsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -154,6 +156,7 @@ fun InvestmentsScreen(
                         QuickCard(Modifier.weight(1f), Icons.Default.Book, "Lançamentos", Purple40, onNavigateToBook)
                         QuickCard(Modifier.weight(1f), Icons.Default.MonetizationOn, "Dividendos", GreenPositive, onNavigateToDividends)
                         QuickCard(Modifier.weight(1f), Icons.Default.BarChart, "Rebalancear", Color(0xFFFF9800), onNavigateToRebalance)
+                        QuickCard(Modifier.weight(1f), Icons.Default.Flag, "Metas", Color(0xFFE91E63), onNavigateToGoals)
                     }
                 }
 

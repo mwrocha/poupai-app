@@ -144,6 +144,7 @@ fun PoupaiNavHost(navController: NavHostController) {
                 onNavigateToRebalance = { navController.navigate(Route.Rebalance.route) },
                 onNavigateToAllocation = { navController.navigate(Route.Allocation.route) },
                 onNavigateToDetail = { id -> navController.navigate(Route.InvestmentDetail.createRoute(id)) },
+                onNavigateToGoals = { navController.navigate(Route.Goals.route) },
             )
         }
 

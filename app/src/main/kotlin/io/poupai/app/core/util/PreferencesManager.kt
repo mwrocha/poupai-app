@@ -38,6 +38,7 @@ class PreferencesManager @Inject constructor(
         private val KEY_TARGET_RV = doublePreferencesKey("category_target_rv")
         private val KEY_TARGET_RF = doublePreferencesKey("category_target_rf")
         private val KEY_TARGET_CRIPTO = doublePreferencesKey("category_target_cripto")
+
     }
 
     // ─── Auth Token ───
