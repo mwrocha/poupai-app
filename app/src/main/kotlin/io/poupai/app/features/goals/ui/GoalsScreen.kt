@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
@@ -72,7 +73,7 @@ fun GoalsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val progressSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()) }
 
     val completed = uiState.goals.count { it.isCompleted }
     val totalTarget = uiState.goals.sumOf { it.targetValue }
@@ -116,6 +117,11 @@ fun GoalsScreen(
             }
         }
 
+        PullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.weight(1f),
+        ) {
         when {
             uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Purple40)
@@ -127,7 +133,7 @@ fun GoalsScreen(
                 LazyColumn(
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     // ─── Card de resumo ───
                     item { GoalsSummaryCard(totalCurrent, totalTarget, uiState.goals.size, completed) }
@@ -178,6 +184,7 @@ fun GoalsScreen(
                 }
             }
         }
+        } // close PullToRefresh
     }
 
     // ─── FAB ───
@@ -475,7 +482,7 @@ private fun AddGoalSheetContent(
             modifier = Modifier.fillMaxWidth(), colors = fieldColors)
 
         TextField(value = uiState.formDeadline, onValueChange = onDeadlineChanged,
-            label = { Text("Prazo (AAAA-MM-DD) — opcional") }, placeholder = { Text("2026-12-31") },
+            label = { Text("Prazo (dd-mm-aaaa) — opcional") }, placeholder = { Text("31-12-2026") },
             singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
 
         uiState.formError?.let {
