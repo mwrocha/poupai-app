@@ -4,7 +4,7 @@ import io.poupai.app.domain.model.EntryType
 import io.poupai.app.domain.model.Investment
 import io.poupai.app.domain.model.InvestmentEntry
 import io.poupai.app.domain.model.InvestmentType
-import java.time.LocalDate
+import io.poupai.app.core.util.DateFormatter
 
 data class InvestmentBookListState(
     val entries: List<InvestmentEntry> = emptyList(),
@@ -13,6 +13,7 @@ data class InvestmentBookListState(
     val totalRescued: Double = 0.0,
     val totalEntries: Long = 0,
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
 
     val selectedInvestmentId: String? = null,
@@ -42,7 +43,7 @@ data class InvestmentEntryFormState(
     val formNewCurrentValue: String = "",
 
     val formNotes: String = "",
-    val formDate: String = LocalDate.now().toString(),
+    val formDate: String = DateFormatter.todayDisplay(),
 
     val isSaving: Boolean = false,
 
