@@ -33,6 +33,7 @@ data class FinancesUiState(
     val selectedYear: Int = LocalDate.now().year,
     // UI
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val hideValues: Boolean = false,
 )
