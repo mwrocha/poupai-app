@@ -14,6 +14,8 @@ import io.poupai.app.features.finances.ui.FinancesScreen
 import io.poupai.app.features.gamification.ui.GamificationScreen
 import io.poupai.app.features.goals.ui.GoalsScreen
 import io.poupai.app.features.investmentbook.ui.InvestmentBookScreen
+import io.poupai.app.features.incometax.ui.IncomeTaxScreen
+import io.poupai.app.features.incometax.ui.TaxClassificationScreen
 import io.poupai.app.features.investmentdetail.ui.InvestmentDetailScreen
 import io.poupai.app.features.investments.ui.InvestmentsScreen
 import io.poupai.app.features.allocation.ui.AllocationScreen
@@ -145,7 +147,19 @@ fun PoupaiNavHost(navController: NavHostController) {
                 onNavigateToAllocation = { navController.navigate(Route.Allocation.route) },
                 onNavigateToDetail = { id -> navController.navigate(Route.InvestmentDetail.createRoute(id)) },
                 onNavigateToGoals = { navController.navigate(Route.Goals.route) },
+                onNavigateToIncomeTax = { navController.navigate(Route.IncomeTax.route) },
             )
+        }
+
+        composable(Route.IncomeTax.route) {
+            IncomeTaxScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToClassification = { navController.navigate(Route.TaxClassification.route) },
+            )
+        }
+
+        composable(Route.TaxClassification.route) {
+            TaxClassificationScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Route.Allocation.route) {
