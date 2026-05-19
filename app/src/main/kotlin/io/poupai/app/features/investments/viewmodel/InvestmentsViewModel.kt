@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -102,6 +103,20 @@ class InvestmentsViewModel @Inject constructor(
         loadInvestments()
         loadBenchmark()
         loadRebalance()
+    }
+
+    /**
+     * Refresh disparado por pull-to-refresh. Mantém o conteúdo visível
+     * (não usa `isLoading`) e desliga o indicador depois das chamadas completarem.
+     */
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadAll()
+            delay(1200)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
     }
 
     private fun loadInvestments() {
