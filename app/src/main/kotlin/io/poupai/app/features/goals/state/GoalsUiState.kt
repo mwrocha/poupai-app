@@ -5,6 +5,7 @@ import io.poupai.app.domain.model.Goal
 data class GoalsUiState(
     val goals: List<Goal> = emptyList(),
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     // Add sheet
     val showAddSheet: Boolean = false,
