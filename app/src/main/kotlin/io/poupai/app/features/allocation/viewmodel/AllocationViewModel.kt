@@ -12,6 +12,7 @@ import io.poupai.app.domain.repository.InvestmentRepository
 import io.poupai.app.features.allocation.state.AllocationUiState
 import io.poupai.app.features.allocation.state.InvestmentPerformance
 import io.poupai.app.features.allocation.state.PortfolioWindowReturns
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -156,6 +157,16 @@ class AllocationViewModel @Inject constructor(
         }
         return if (totalHistorical > 0)
             (totalCurrent - totalHistorical) / totalHistorical * 100.0 else 0.0
+    }
+
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadData()
+            delay(1200)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
     }
 
     fun toggleHideValues() {
