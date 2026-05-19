@@ -11,10 +11,11 @@ import io.poupai.app.features.dividends.state.DividendsUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import io.poupai.app.core.util.DateFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,6 +33,16 @@ class DividendsViewModel @Inject constructor(
     fun loadAll() {
         loadDividends()
         loadInvestments()
+    }
+
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadAll()
+            delay(1200)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
     }
 
     private fun loadDividends() {
@@ -79,7 +90,7 @@ class DividendsViewModel @Inject constructor(
         it.copy(
             showAddSheet = true, formInvestmentId = "", formInvestmentName = "",
             formAmount = "", formType = DividendType.DIVIDENDO,
-            formDate = LocalDate.now().toString(), formError = null,
+            formDate = DateFormatter.todayDisplay(), formError = null,
         )
     }
 
@@ -90,7 +101,10 @@ class DividendsViewModel @Inject constructor(
 
     fun onFormAmountChanged(v: String) = _uiState.update { it.copy(formAmount = v, formError = null) }
     fun onFormTypeChanged(t: DividendType) = _uiState.update { it.copy(formType = t) }
-    fun onFormDateChanged(v: String) = _uiState.update { it.copy(formDate = v) }
+    fun onFormDateChanged(v: String) {
+        val masked = DateFormatter.applyMask(v)
+        _uiState.update { it.copy(formDate = masked) }
+    }
 
     fun onSaveDividend() {
         val state = _uiState.value
@@ -102,17 +116,18 @@ class DividendsViewModel @Inject constructor(
             amount == null || amount <= 0 -> {
                 _uiState.update { it.copy(formError = "Valor inválido") }; return
             }
-            state.formDate.isBlank() -> {
-                _uiState.update { it.copy(formError = "Informe a data") }; return
+            state.formDate.isBlank() || !DateFormatter.isValidDisplay(state.formDate) -> {
+                _uiState.update { it.copy(formError = "Data inválida (use dd-mm-aaaa)") }; return
             }
         }
+        val isoDate = DateFormatter.displayToIso(state.formDate) ?: state.formDate
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             when (investmentRepository.addDividend(
                 investmentId = state.formInvestmentId,
                 amount = amount!!,
                 type = state.formType,
-                date = state.formDate,
+                date = isoDate,
             )) {
                 is Resource.Success -> { onDismissSheet(); loadDividends() }
                 is Resource.Error -> _uiState.update {
