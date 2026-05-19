@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.analytics.TimeWindow
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
+import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
@@ -166,6 +167,11 @@ fun AllocationScreen(
             }
         }
 
+        PullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.weight(1f),
+        ) {
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Purple40)
@@ -174,7 +180,7 @@ fun AllocationScreen(
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
             ) {
 
                 // ── 1. Hero card ──
@@ -247,6 +253,7 @@ fun AllocationScreen(
                 }
             }
         }
+        } // close PullToRefresh
     }
 }
 
@@ -352,7 +359,11 @@ private fun HeroCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        chartData.first().first.take(7),
+                        // "yyyy-MM-dd" → "MM-yyyy"
+                        chartData.first().first.take(7).let { ym ->
+                            val parts = ym.split("-")
+                            if (parts.size == 2) "${parts[1]}-${parts[0]}" else ym
+                        },
                         fontSize = 9.sp,
                         color = Color.White.copy(alpha = 0.45f),
                     )
