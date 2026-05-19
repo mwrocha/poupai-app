@@ -34,6 +34,7 @@ data class AllocationUiState(
     val portfolioWindowReturns: PortfolioWindowReturns? = null,
     val benchmark: BenchmarkSummary? = null,
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val hideValues: Boolean = false,
     val errorMessage: String? = null,
 )
