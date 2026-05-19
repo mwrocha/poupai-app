@@ -8,6 +8,7 @@ import io.poupai.app.core.util.PreferencesManager
 import io.poupai.app.domain.repository.FinanceRepository
 import io.poupai.app.features.finances.state.FinancesUiState
 import io.poupai.app.features.finances.state.PeriodFilter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,6 +63,18 @@ class FinancesViewModel @Inject constructor(
         loadFinances()
     }
 
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadFinances()
+            delay(1200)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
+
     fun loadFinances() {
         val state = _uiState.value
         viewModelScope.launch {
@@ -76,7 +89,14 @@ class FinancesViewModel @Inject constructor(
 
             flow.collect { result ->
                 when (result) {
-                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    is Resource.Loading -> _uiState.update { current ->
+                        // Sem flash: só mostra spinner full-screen se não tem dados ainda.
+                        val hasData = current.incomeHistory.isNotEmpty()
+                            || current.expenseHistory.isNotEmpty()
+                            || current.categoryBreakdown.isNotEmpty()
+                        if (hasData) current.copy(errorMessage = null)
+                        else current.copy(isLoading = true, errorMessage = null)
+                    }
                     is Resource.Success -> _uiState.update {
                         it.copy(
                             isLoading = false,
