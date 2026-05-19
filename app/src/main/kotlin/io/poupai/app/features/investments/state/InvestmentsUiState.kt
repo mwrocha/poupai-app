@@ -10,6 +10,7 @@ data class InvestmentsUiState(
     val rendaFixa: List<Investment> = emptyList(),
     val criptomoedas: List<Investment> = emptyList(),
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val hideValues: Boolean = false,
     val benchmark: BenchmarkSummary? = null,
