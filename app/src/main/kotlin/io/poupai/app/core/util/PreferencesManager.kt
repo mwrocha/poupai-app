@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -39,6 +40,10 @@ class PreferencesManager @Inject constructor(
         private val KEY_TARGET_RF = doublePreferencesKey("category_target_rf")
         private val KEY_TARGET_CRIPTO = doublePreferencesKey("category_target_cripto")
 
+        // ─── Imposto de Renda ───
+        // Conjunto de investmentIds marcados manualmente como FII (Fundo Imobiliário).
+        // Necessário porque RV (sufixo 11) é ambíguo entre FII, ETF e Units.
+        private val KEY_FII_INVESTMENT_IDS = stringSetPreferencesKey("fii_investment_ids")
     }
 
     // ─── Auth Token ───
@@ -134,6 +139,18 @@ class PreferencesManager @Inject constructor(
 
     suspend fun saveTargetCripto(target: Double) {
         context.dataStore.edit { it[KEY_TARGET_CRIPTO] = target }
+    }
+
+    // ─── Imposto de Renda · FII flags ───
+    val fiiInvestmentIds: Flow<Set<String>> = context.dataStore.data.map {
+        it[KEY_FII_INVESTMENT_IDS] ?: emptySet()
+    }
+
+    suspend fun setIsFii(investmentId: String, isFii: Boolean) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[KEY_FII_INVESTMENT_IDS] ?: emptySet()
+            prefs[KEY_FII_INVESTMENT_IDS] = if (isFii) current + investmentId else current - investmentId
+        }
     }
 
     // ─── Logout ───
