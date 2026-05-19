@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
@@ -89,6 +90,11 @@ fun InvestmentBookScreen(
             }
         }
 
+        PullToRefresh(
+            isRefreshing = listState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.weight(1f),
+        ) {
         if (listState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Purple40)
@@ -97,7 +103,7 @@ fun InvestmentBookScreen(
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
             ) {
                 item { BookSummaryCard(listState) }
                 item { BookFilters(listState = listState, viewModel = viewModel) }
@@ -142,6 +148,7 @@ fun InvestmentBookScreen(
                 item { Spacer(Modifier.height(80.dp)) }
             }
         }
+        } // close PullToRefresh
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
@@ -299,7 +306,8 @@ private fun EntryRow(entry: InvestmentEntry, onDelete: () -> Unit) {
                     Text(typeLabel, fontSize = 9.sp, color = color, fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
                 }
-                Text(entry.date, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                Text(io.poupai.app.core.util.DateFormatter.isoToDisplay(entry.date),
+                    fontSize = 11.sp, color = Color(0xFF9E9E9E))
             }
             when (entry.type) {
                 EntryType.APORTE, EntryType.RESGATE -> {
@@ -325,6 +333,58 @@ private fun EntryRow(entry: InvestmentEntry, onDelete: () -> Unit) {
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Default.Delete, "Excluir", tint = Color(0xFFBDBDBD), modifier = Modifier.size(16.dp))
         }
+    }
+}
+
+// ─── CARD DE POSIÇÃO ATUAL (mostrado em RESGATE) ───
+
+@Composable
+private fun CurrentPositionCard(investment: io.poupai.app.domain.model.Investment) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = RedNegative.copy(alpha = 0.06f)),
+        elevation = CardDefaults.cardElevation(0.dp),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("📊", fontSize = 14.sp)
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "Sua posição atual em ${investment.name}",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF6B6B6B),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                PositionStat(
+                    label = "Cotas",
+                    value = "%.4f".format(investment.shares).trimEnd('0').trimEnd('.'),
+                )
+                if (investment.averagePrice > 0) {
+                    PositionStat(label = "PM", value = investment.averagePrice.toBRL())
+                }
+                PositionStat(
+                    label = "Valor atual",
+                    value = investment.currentValue.toBRL(),
+                    align = Alignment.End,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PositionStat(
+    label: String,
+    value: String,
+    align: Alignment.Horizontal = Alignment.Start,
+) {
+    Column(horizontalAlignment = align) {
+        Text(label, fontSize = 9.sp, color = Color(0xFF9E9E9E))
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1B1F))
     }
 }
 
@@ -484,6 +544,13 @@ private fun AddEntryForm(
         // ─── Campos condicionais por tipo ───
         when (formState.formType) {
             EntryType.APORTE, EntryType.RESGATE -> {
+                // Para RESGATE com ativo existente, mostra posição atual antes dos campos.
+                if (formState.formType == EntryType.RESGATE && !formState.isNewAsset) {
+                    val selectedInvestment = investments.find { it.id == formState.formInvestmentId }
+                    if (selectedInvestment != null && selectedInvestment.shares > 0) {
+                        CurrentPositionCard(selectedInvestment)
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextField(value = formState.formShares, onValueChange = onSharesChanged,
                         label = { Text("Qtd cotas") }, placeholder = { Text("0") },
@@ -523,7 +590,7 @@ private fun AddEntryForm(
         }
 
         TextField(value = formState.formDate, onValueChange = onDateChanged,
-            label = { Text("Data (yyyy-MM-dd)") }, placeholder = { Text("2026-05-13") },
+            label = { Text("Data (dd-mm-aaaa)") }, placeholder = { Text("18-05-2026") },
             singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors,
             isError = fe.containsKey("formDate"),
             supportingText = fe["formDate"]?.let { { Text(it, color = MaterialTheme.colorScheme.error) } })
