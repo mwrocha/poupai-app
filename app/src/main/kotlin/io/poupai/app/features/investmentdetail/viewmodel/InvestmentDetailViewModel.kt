@@ -9,6 +9,7 @@ import io.poupai.app.core.network.Resource
 import io.poupai.app.core.util.PreferencesManager
 import io.poupai.app.domain.repository.InvestmentRepository
 import io.poupai.app.features.investmentdetail.state.InvestmentDetailUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -106,6 +107,16 @@ class InvestmentDetailViewModel @Inject constructor(
                 val total = filtered.sumOf { it.amount }
                 _uiState.update { it.copy(dividends = filtered, totalDividends = total) }
             }
+        }
+    }
+
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadData()
+            delay(1200)
+            _uiState.update { it.copy(isRefreshing = false) }
         }
     }
 
