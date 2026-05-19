@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
@@ -52,6 +54,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.text.input.KeyboardType
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
+import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.designsystem.components.StaleChip
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
@@ -82,6 +85,7 @@ fun InvestmentsScreen(
     onNavigateToAllocation: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
     onNavigateToGoals: () -> Unit = {},
+    onNavigateToIncomeTax: () -> Unit = {},
     viewModel: InvestmentsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -136,6 +140,11 @@ fun InvestmentsScreen(
             }
         }
 
+        PullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.weight(1f),
+        ) {
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Purple40)
@@ -146,17 +155,23 @@ fun InvestmentsScreen(
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
             ) {
                 item { InvestmentSummaryCard(totalInvested, totalCurrent, totalProfit, uiState.hideValues) }
 
-                // ─── Atalhos rápidos ───
+                // ─── Atalhos rápidos (grid 2x3) ───
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickCard(Modifier.weight(1f), Icons.Default.Book, "Lançamentos", Purple40, onNavigateToBook)
-                        QuickCard(Modifier.weight(1f), Icons.Default.MonetizationOn, "Dividendos", GreenPositive, onNavigateToDividends)
-                        QuickCard(Modifier.weight(1f), Icons.Default.BarChart, "Rebalancear", Color(0xFFFF9800), onNavigateToRebalance)
-                        QuickCard(Modifier.weight(1f), Icons.Default.Flag, "Metas", Color(0xFFE91E63), onNavigateToGoals)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            QuickCard(Modifier.weight(1f), Icons.Default.Book, "Lançamentos", Purple40, onNavigateToBook)
+                            QuickCard(Modifier.weight(1f), Icons.Default.MonetizationOn, "Dividendos", GreenPositive, onNavigateToDividends)
+                            QuickCard(Modifier.weight(1f), Icons.Default.Receipt, "Imposto", Color(0xFF455A64), onNavigateToIncomeTax)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            QuickCard(Modifier.weight(1f), Icons.Default.BarChart, "Rebalancear", Color(0xFFFF9800), onNavigateToRebalance)
+                            QuickCard(Modifier.weight(1f), Icons.Default.PieChart, "Alocação", Color(0xFF00838F), onNavigateToAllocation)
+                            QuickCard(Modifier.weight(1f), Icons.Default.Flag, "Metas", Color(0xFFE91E63), onNavigateToGoals)
+                        }
                     }
                 }
 
@@ -176,7 +191,8 @@ fun InvestmentsScreen(
                                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Text("vs CDI", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                     Spacer(Modifier.weight(1f))
-                                    Text("Atualizado: ${benchmark.lastUpdated}", fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                                    Text("Atualizado: ${io.poupai.app.core.util.DateFormatter.isoToDisplay(benchmark.lastUpdated)}",
+                                        fontSize = 10.sp, color = Color(0xFF9E9E9E))
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -227,6 +243,7 @@ fun InvestmentsScreen(
                 item { Spacer(Modifier.height(32.dp)) }
             }
         }
+        } // close PullToRefresh
     }
 
     // ─── Edit bottom sheet ───
