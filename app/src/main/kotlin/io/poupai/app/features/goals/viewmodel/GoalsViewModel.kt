@@ -7,6 +7,7 @@ import io.poupai.app.core.network.Resource
 import io.poupai.app.domain.model.Goal
 import io.poupai.app.domain.repository.GoalRepository
 import io.poupai.app.features.goals.state.GoalsUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,11 +31,28 @@ class GoalsViewModel @Inject constructor(
         viewModelScope.launch {
             goalRepository.getGoals().collect { result ->
                 when (result) {
-                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
-                    is Resource.Success -> _uiState.update { it.copy(isLoading = false, goals = result.data, errorMessage = null) }
-                    is Resource.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    is Resource.Loading -> _uiState.update { state ->
+                        // Sem flash: só mostra o spinner se ainda não temos dados
+                        if (state.goals.isEmpty()) state.copy(isLoading = true) else state
+                    }
+                    is Resource.Success -> _uiState.update {
+                        it.copy(isLoading = false, goals = result.data, errorMessage = null)
+                    }
+                    is Resource.Error -> _uiState.update {
+                        it.copy(isLoading = false, errorMessage = result.message)
+                    }
                 }
             }
+        }
+    }
+
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadGoals()
+            delay(1200)
+            _uiState.update { it.copy(isRefreshing = false) }
         }
     }
 
@@ -53,7 +71,10 @@ class GoalsViewModel @Inject constructor(
     fun onFormTitleChanged(v: String) = _uiState.update { it.copy(formTitle = v, formError = null) }
     fun onFormTargetChanged(v: String) = _uiState.update { it.copy(formTargetValue = v, formError = null) }
     fun onFormCurrentChanged(v: String) = _uiState.update { it.copy(formCurrentValue = v, formError = null) }
-    fun onFormDeadlineChanged(v: String) = _uiState.update { it.copy(formDeadline = v) }
+    fun onFormDeadlineChanged(v: String) {
+        val masked = io.poupai.app.core.util.DateFormatter.applyMask(v)
+        _uiState.update { it.copy(formDeadline = masked) }
+    }
     fun onFormIconChanged(v: String) = _uiState.update { it.copy(formIcon = v) }
     fun onFormColorChanged(v: String) = _uiState.update { it.copy(formColor = v) }
 
@@ -73,7 +94,10 @@ class GoalsViewModel @Inject constructor(
                 title = state.formTitle.trim(),
                 targetValue = target!!,
                 currentValue = current,
-                deadline = state.formDeadline.ifBlank { null },
+                // Backend espera ISO yyyy-MM-dd; o form usa dd-MM-yyyy.
+                deadline = state.formDeadline.ifBlank { null }?.let {
+                    io.poupai.app.core.util.DateFormatter.displayToIso(it) ?: it
+                },
                 icon = state.formIcon,
                 color = state.formColor,
             )
