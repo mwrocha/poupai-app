@@ -3,6 +3,7 @@ package io.poupai.app.features.dividends.state
 import io.poupai.app.domain.model.Dividend
 import io.poupai.app.domain.model.DividendType
 import io.poupai.app.domain.model.Investment
+import io.poupai.app.core.util.DateFormatter
 import java.time.LocalDate
 
 data class DividendsUiState(
@@ -17,6 +18,7 @@ data class DividendsUiState(
     val projectedAnnual: Double = 0.0,
 
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
 
     /** Ano selecionado para visualização das analytics. Null = "Todos". */
@@ -28,7 +30,7 @@ data class DividendsUiState(
     val formInvestmentName: String = "",
     val formAmount: String = "",
     val formType: DividendType = DividendType.DIVIDENDO,
-    val formDate: String = LocalDate.now().toString(),
+    val formDate: String = DateFormatter.todayDisplay(),
     val formError: String? = null,
     val isSaving: Boolean = false,
 
