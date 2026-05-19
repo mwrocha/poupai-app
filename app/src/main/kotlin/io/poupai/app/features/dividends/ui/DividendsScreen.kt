@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
@@ -144,6 +145,11 @@ fun DividendsScreen(
             }
         }
 
+        PullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.weight(1f),
+        ) {
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Purple40)
@@ -154,7 +160,7 @@ fun DividendsScreen(
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
             ) {
 
                 // 1. Hero card
@@ -266,6 +272,7 @@ fun DividendsScreen(
                 item { Spacer(Modifier.height(80.dp)) }
             }
         }
+        } // close PullToRefresh
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
@@ -758,7 +765,8 @@ private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
                         fontSize = 9.sp, color = color, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                 }
-                Text(dividend.date, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                Text(io.poupai.app.core.util.DateFormatter.isoToDisplay(dividend.date),
+                    fontSize = 11.sp, color = Color(0xFF9E9E9E))
             }
         }
         Column(horizontalAlignment = Alignment.End) {
@@ -931,7 +939,7 @@ private fun AddDividendForm(
 
         TextField(
             value = uiState.formDate, onValueChange = onDateChanged,
-            label = { Text("Data (yyyy-MM-dd)") }, placeholder = { Text("2026-05-18") },
+            label = { Text("Data (dd-mm-aaaa)") }, placeholder = { Text("18-05-2026") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(), colors = fieldColors,
         )
