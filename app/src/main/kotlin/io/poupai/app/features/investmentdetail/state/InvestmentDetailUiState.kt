@@ -12,6 +12,7 @@ data class InvestmentDetailUiState(
     val totalRescued: Double = 0.0,
     val totalDividends: Double = 0.0,
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val hideValues: Boolean = false,
     val errorMessage: String? = null,
 )
