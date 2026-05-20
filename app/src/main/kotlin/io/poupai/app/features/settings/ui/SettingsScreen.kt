@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -11,22 +12,27 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.features.settings.state.SettingsUiState
 import io.poupai.app.features.settings.viewmodel.SettingsViewModel
 
@@ -46,6 +52,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(PoupaiTheme.tokens.bg),
     ) {
+        // ─── Header ───
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -58,172 +65,320 @@ fun SettingsScreen(
                     Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
-                Text("Configurações", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    "Configurações",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.size(48.dp))
             }
         }
 
-        SettingsContent(
-            uiState = uiState,
-            onThemeChanged = viewModel::onThemeChanged,
-            onNotificationsChanged = viewModel::onNotificationsChanged,
-            onShowAbout = viewModel::onShowAboutDialog,
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            // ─── Aparência ───
+            SectionTitle("Aparência", Icons.Default.Palette)
+
+            ThemeSelectorCard(
+                selectedTheme = uiState.theme,
+                onThemeChanged = viewModel::onThemeChanged,
+            )
+
+            // ─── Notificações ───
+            SectionTitle("Notificações", Icons.Default.Notifications)
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(PurpleLight.copy(alpha = 0.55f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Notifications, null,
+                            tint = Purple40, modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Lembrete diário",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PoupaiTheme.tokens.textPrimary,
+                        )
+                        Text(
+                            "Recebe um lembrete às 20h para registrar transações",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = PoupaiTheme.tokens.textMuted,
+                        )
+                    }
+                    Switch(
+                        checked = uiState.notificationsEnabled,
+                        onCheckedChange = viewModel::onNotificationsChanged,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Purple40,
+                            uncheckedThumbColor = PoupaiTheme.tokens.surface,
+                            uncheckedTrackColor = PoupaiTheme.tokens.surfaceAlt,
+                        ),
+                    )
+                }
+            }
+
+            // ─── Sobre ───
+            SectionTitle("Sobre", Icons.Default.Info)
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.onShowAboutDialog() },
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(PurpleLight.copy(alpha = 0.55f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Info, null,
+                            tint = Purple40, modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Sobre o Poupaí",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PoupaiTheme.tokens.textPrimary,
+                        )
+                        Text(
+                            "Versão 1.0.0",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = PoupaiTheme.tokens.textMuted,
+                        )
+                    }
+                    Icon(
+                        Icons.Default.ChevronRight, null,
+                        tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── SECTION TITLE ───
+
+@Composable
+private fun SectionTitle(text: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp, start = 2.dp),
+    ) {
+        Icon(icon, null, tint = Purple40, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = PoupaiTheme.tokens.textSecondary,
         )
     }
 }
 
+// ─── THEME SELECTOR (segmented control no padrão PeriodSelector) ───
+
 @Composable
-private fun SettingsContent(
-    uiState: SettingsUiState,
+private fun ThemeSelectorCard(
+    selectedTheme: String,
     onThemeChanged: (String) -> Unit,
-    onNotificationsChanged: (Boolean) -> Unit,
-    onShowAbout: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
-        Spacer(Modifier.height(16.dp))
-
-        // ─── Aparência ───
-        SettingsSectionTitle("Aparência")
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(PurpleLight.copy(alpha = 0.55f)),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Icon(
-                        imageVector = when (uiState.theme) {
+                        imageVector = when (selectedTheme) {
                             "light" -> Icons.Default.Brightness7
                             "dark" -> Icons.Default.Brightness4
                             else -> Icons.Default.BrightnessAuto
                         },
                         contentDescription = null,
                         tint = Purple40,
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(20.dp),
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Text("Tema", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                 }
-                Spacer(Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("light" to "Claro", "dark" to "Escuro", "system" to "Sistema").forEach { (value, label) ->
-                        FilterChip(
-                            selected = uiState.theme == value,
-                            onClick = { onThemeChanged(value) },
-                            label = { Text(label, fontSize = 13.sp) },
-                            modifier = Modifier.weight(1f),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Purple40.copy(alpha = 0.12f),
-                                selectedLabelColor = Purple40,
-                            ),
-                        )
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Tema",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PoupaiTheme.tokens.textPrimary,
+                    )
+                    Text(
+                        when (selectedTheme) {
+                            "light" -> "Sempre claro"
+                            "dark" -> "Sempre escuro"
+                            else -> "Segue o sistema"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = PoupaiTheme.tokens.textMuted,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            // Segmented control no padrão das outras telas
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(PoupaiTheme.tokens.surfaceAlt)
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                listOf(
+                    Triple("light", "Claro", Icons.Default.Brightness7),
+                    Triple("dark", "Escuro", Icons.Default.Brightness4),
+                    Triple("system", "Auto", Icons.Default.BrightnessAuto),
+                ).forEach { (value, label, icon) ->
+                    val isSelected = selectedTheme == value
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(9.dp),
+                        color = if (isSelected) Purple40 else Color.Transparent,
+                        onClick = { onThemeChanged(value) },
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 9.dp),
+                        ) {
+                            Icon(
+                                icon, null,
+                                tint = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
+                                modifier = Modifier.size(13.dp),
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                label,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
         }
-
-        Spacer(Modifier.height(8.dp))
-
-        // ─── Notificações ───
-        SettingsSectionTitle("Notificações")
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Default.Notifications, null, tint = Purple40, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Lembrete diário", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                    Text("Recebe um lembrete às 20h para registrar transações",
-                        style = MaterialTheme.typography.bodySmall, color = PoupaiTheme.tokens.textMuted)
-                }
-                Switch(
-                    checked = uiState.notificationsEnabled,
-                    onCheckedChange = onNotificationsChanged,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Purple40,
-                    ),
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        // ─── Sobre ───
-        SettingsSectionTitle("Sobre")
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
-        ) {
-            SettingsRowItem(icon = Icons.Default.Info, title = "Sobre o Poupaí", subtitle = "Versão 1.0.0", onClick = onShowAbout)
-        }
     }
 }
+
+// ─── ABOUT DIALOG ───
 
 @Composable
 private fun AboutDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Poupaí", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Versão 1.0.0", style = MaterialTheme.typography.bodyMedium)
-                Text("Seu assistente financeiro pessoal. Controle gastos, acompanhe investimentos e alcance suas metas financeiras.",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(4.dp))
-                Text("Desenvolvido com ❤️", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        shape = RoundedCornerShape(20.dp),
+        icon = {
+            Box(
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396)))
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "P",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        title = {
+            Text(
+                "Poupaí",
+                fontWeight = FontWeight.Bold,
+                color = PoupaiTheme.tokens.textPrimary,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Purple40.copy(alpha = 0.12f),
+                ) {
+                    Text(
+                        "Versão 1.0.0",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Purple40,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Text(
+                    "Seu assistente financeiro pessoal. Controle gastos, acompanhe investimentos e alcance suas metas financeiras.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = PoupaiTheme.tokens.textSecondary,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Purple40),
+            ) {
+                Text("Fechar", color = Color.White)
+            }
+        },
     )
-}
-
-@Composable
-private fun SettingsSectionTitle(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelMedium,
-        color = PoupaiTheme.tokens.textSecondary,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-    )
-}
-
-@Composable
-private fun SettingsRowItem(icon: ImageVector, title: String, subtitle: String? = null, onClick: (() -> Unit)? = null) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(imageVector = icon, contentDescription = null, tint = Purple40, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = PoupaiTheme.tokens.textMuted)
-        }
-    }
 }
