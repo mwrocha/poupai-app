@@ -8,15 +8,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TrackChanges
@@ -47,6 +45,7 @@ import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.theme.RedNegative
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.Goal
@@ -128,15 +127,15 @@ fun DashboardScreen(
                 .verticalScroll(rememberScrollState())
                 .alpha(mainAlpha),
         ) {
-            // ─── Header roxo com saldo ───
-            DashboardHeader(
+            // ─── Hero (header roxo + saldo + receita/despesa inline) ───
+            DashboardHero(
                 uiState = uiState,
                 onMenuClick = { scope.launch { drawerState.open() } },
                 onProfileClick = onNavigateToProfile,
                 onToggleHide = viewModel::toggleHideValues,
             )
 
-            // ─── Atalhos rápidos ───
+            // ─── Atalhos rápidos (overlay) ───
             QuickActions(
                 onTransactions = onNavigateToTransactions,
                 onInvestments = onNavigateToInvestments,
@@ -144,38 +143,46 @@ fun DashboardScreen(
                 onTags = onNavigateToTags,
             )
 
-            Spacer(Modifier.height(8.dp))
-
-            // ─── Resumo do mês ───
-            MonthSummaryCard(uiState = uiState)
-
-            Spacer(Modifier.height(16.dp))
-
             // ─── Streak / Conquistas ───
             if (uiState.currentStreak > 0 || uiState.totalPoints > 0) {
+                Spacer(Modifier.height(4.dp))
                 StreakCard(
                     streak = uiState.currentStreak,
                     points = uiState.totalPoints,
                     onClick = onNavigateToGamification,
                 )
-                Spacer(Modifier.height(16.dp))
             }
 
             // ─── Metas ativas ───
             if (uiState.activeGoals.isNotEmpty()) {
-                GoalsSection(
-                    goals = uiState.activeGoals,
-                    hideValues = uiState.hideValues,
+                Spacer(Modifier.height(20.dp))
+                SectionHeader(
+                    title = "Suas metas",
+                    icon = Icons.Default.TrackChanges,
                     onSeeAll = onNavigateToGoals,
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(10.dp))
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    uiState.activeGoals.forEach { goal ->
+                        GoalProgressItem(goal = goal, hideValues = uiState.hideValues)
+                    }
+                }
             }
 
             // ─── Últimas transações ───
-            RecentTransactionsSection(
+            Spacer(Modifier.height(20.dp))
+            SectionHeader(
+                title = "Últimas transações",
+                icon = Icons.Default.Receipt,
+                onSeeAll = onNavigateToTransactions,
+            )
+            Spacer(Modifier.height(10.dp))
+            RecentTransactionsContent(
                 transactions = uiState.recentTransactions,
                 hideValues = uiState.hideValues,
-                onSeeAll = onNavigateToTransactions,
             )
 
             Spacer(Modifier.height(32.dp))
@@ -183,10 +190,10 @@ fun DashboardScreen(
     }
 }
 
-// ─── HEADER ───
+// ─── HERO: HEADER + SALDO + RECEITA/DESPESA INLINE ───
 
 @Composable
-private fun DashboardHeader(
+private fun DashboardHero(
     uiState: DashboardUiState,
     onMenuClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -195,9 +202,11 @@ private fun DashboardHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
+            .background(
+                Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396))),
+            )
             .padding(horizontal = 20.dp)
-            .padding(top = 16.dp, bottom = 32.dp),
+            .padding(top = 16.dp, bottom = 40.dp),
     ) {
         Column {
             // ─── Top bar ───
@@ -237,37 +246,95 @@ private fun DashboardHeader(
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(18.dp))
 
-            // ─── Nome ───
-            Text(
-                "Olá,",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 14.sp,
-            )
+            // ─── Saudação + Saldo ───
+            Text("Olá,", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
             Text(
                 uiState.userName.trim().split(" ").firstOrNull() ?: "",
                 color = Color.White,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
             )
 
             Spacer(Modifier.height(20.dp))
 
-            // ─── Saldo ───
-            Text(
-                "Saldo total",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 13.sp,
-            )
+            Text("Saldo total", color = Color.White.copy(alpha = 0.65f), fontSize = 11.sp)
             Spacer(Modifier.height(4.dp))
             Text(
                 text = if (uiState.hideValues) HIDDEN else uiState.totalSaved.toBRL(),
                 color = Color.White,
-                fontSize = 32.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
             )
+
+            Spacer(Modifier.height(20.dp))
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.White.copy(alpha = 0.15f)),
+            )
+            Spacer(Modifier.height(16.dp))
+
+            // ─── Receitas / Despesas inline ───
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                HeroStat(
+                    modifier = Modifier.weight(1f),
+                    label = "Receitas do mês",
+                    value = if (uiState.hideValues) HIDDEN else uiState.monthIncome.toBRL(),
+                    icon = Icons.Default.ArrowUpward,
+                )
+                Box(
+                    Modifier.width(1.dp).height(40.dp)
+                        .background(Color.White.copy(alpha = 0.15f)),
+                )
+                HeroStat(
+                    modifier = Modifier.weight(1f),
+                    label = "Despesas do mês",
+                    value = if (uiState.hideValues) HIDDEN else uiState.monthExpense.toBRL(),
+                    icon = Icons.Default.ArrowDownward,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun HeroStat(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    icon: ImageVector,
+) {
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(20.dp).clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(12.dp))
+            }
+            Spacer(Modifier.width(6.dp))
+            Text(
+                label,
+                fontSize = 10.sp,
+                color = Color.White.copy(alpha = 0.7f),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            value,
+            fontSize = 15.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -311,83 +378,24 @@ private fun QuickActionButton(icon: ImageVector, label: String, onClick: () -> U
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(PoupaiTheme.tokens.accentBright.copy(alpha = 0.10f)),
+                .size(46.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(PurpleLight.copy(alpha = 0.55f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, label, tint = PoupaiTheme.tokens.accentBright, modifier = Modifier.size(22.dp))
+            Icon(icon, label, tint = Purple40, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.height(6.dp))
-        Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textPrimary, fontWeight = FontWeight.Medium)
-    }
-}
-
-// ─── MONTH SUMMARY ───
-
-@Composable
-private fun MonthSummaryCard(uiState: DashboardUiState) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        SummaryItem(
-            modifier = Modifier.weight(1f),
-            icon = Icons.Default.ArrowUpward,
-            label = "Receitas do mês",
-            value = uiState.monthIncome,
-            color = GreenPositive,
-            hideValues = uiState.hideValues,
-        )
-        SummaryItem(
-            modifier = Modifier.weight(1f),
-            icon = Icons.Default.ArrowDownward,
-            label = "Despesas do mês",
-            value = uiState.monthExpense,
-            color = RedNegative,
-            hideValues = uiState.hideValues,
+        Text(
+            label,
+            fontSize = 11.sp,
+            color = PoupaiTheme.tokens.textPrimary,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
 
-@Composable
-private fun SummaryItem(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    label: String,
-    value: Double,
-    color: Color,
-    hideValues: Boolean,
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(28.dp).clip(CircleShape).background(color.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
-                }
-                Spacer(Modifier.width(8.dp))
-                Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary)
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                if (hideValues) HIDDEN else value.toBRL(),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = color,
-            )
-        }
-    }
-}
-
-// ─── STREAK CARD ───
+// ─── STREAK CARD (on-brand roxa) ───
 
 @Composable
 private fun StreakCard(streak: Int, points: Int, onClick: () -> Unit) {
@@ -401,94 +409,140 @@ private fun StreakCard(streak: Int, points: Int, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFF5722).copy(alpha = 0.12f)),
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(PurpleLight.copy(alpha = 0.55f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Default.LocalFireDepartment, null, tint = Color(0xFFFF5722), modifier = Modifier.size(24.dp))
+                Icon(
+                    Icons.Default.LocalFireDepartment, null,
+                    tint = Purple40, modifier = Modifier.size(22.dp),
+                )
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (streak > 0) "$streak ${if (streak == 1) "dia seguido" else "dias seguidos"}" else "Comece sua sequência",
-                    fontSize = 15.sp,
+                    if (streak > 0) "$streak ${if (streak == 1) "dia seguido" else "dias seguidos"}"
+                    else "Comece sua sequência",
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = PoupaiTheme.tokens.textPrimary,
                 )
                 Text(
                     "$points pontos acumulados",
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     color = PoupaiTheme.tokens.textSecondary,
                 )
             }
-            Icon(Icons.Default.ChevronRight, null, tint = PoupaiTheme.tokens.textMuted)
-        }
-    }
-}
-
-// ─── GOALS SECTION ───
-
-@Composable
-private fun GoalsSection(goals: List<Goal>, hideValues: Boolean, onSeeAll: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        SectionHeader(title = "Suas metas", onSeeAll = onSeeAll)
-        Spacer(Modifier.height(8.dp))
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            goals.forEach { goal ->
-                GoalProgressItem(goal = goal, hideValues = hideValues)
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = Purple40.copy(alpha = 0.10f),
+            ) {
+                Text(
+                    "$points pts",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Purple40,
+                )
             }
+            Spacer(Modifier.width(6.dp))
+            Icon(
+                Icons.Default.ChevronRight, null,
+                tint = PoupaiTheme.tokens.textMuted,
+            )
         }
     }
 }
+
+// ─── GOALS ITEMS ───
 
 @Composable
 private fun GoalProgressItem(goal: Goal, hideValues: Boolean) {
     val progress = (goal.currentValue / goal.targetValue).toFloat().coerceIn(0f, 1f)
     val percent = (progress * 100).toInt()
-
-    val goalColor = try { Color(android.graphics.Color.parseColor(goal.color)) } catch (e: Exception) { PoupaiTheme.tokens.accentBright }
+    val remaining = (goal.targetValue - goal.currentValue).coerceAtLeast(0.0)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier.size(36.dp).clip(CircleShape).background(goalColor.copy(alpha = 0.12f)),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(PurpleLight.copy(alpha = 0.55f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(goal.icon, fontSize = 16.sp)
+                    Text(goal.icon, fontSize = 18.sp)
                 }
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(goal.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        if (hideValues) "$percent%" else "${goal.currentValue.toBRL()} de ${goal.targetValue.toBRL()}",
+                        goal.title,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PoupaiTheme.tokens.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        if (hideValues) "Meta em andamento"
+                        else "${goal.currentValue.toBRL()} guardado",
                         fontSize = 11.sp,
-                        color = PoupaiTheme.tokens.textSecondary,
+                        color = PoupaiTheme.tokens.textMuted,
                     )
                 }
-                Text("$percent%", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = goalColor)
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Purple40.copy(alpha = 0.12f),
+                ) {
+                    Text(
+                        "$percent%",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Purple40,
+                    )
+                }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                color = goalColor,
-                trackColor = goalColor.copy(alpha = 0.12f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = Purple40,
+                trackColor = PoupaiTheme.tokens.surfaceSunken,
             )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    if (hideValues) HIDDEN else goal.currentValue.toBRL(),
+                    fontSize = 11.sp,
+                    color = PoupaiTheme.tokens.textSecondary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    if (hideValues) HIDDEN else "Falta ${remaining.toBRL()}",
+                    fontSize = 11.sp,
+                    color = PoupaiTheme.tokens.textMuted,
+                )
+            }
         }
     }
 }
@@ -496,48 +550,49 @@ private fun GoalProgressItem(goal: Goal, hideValues: Boolean) {
 // ─── RECENT TRANSACTIONS ───
 
 @Composable
-private fun RecentTransactionsSection(
+private fun RecentTransactionsContent(
     transactions: List<Transaction>,
     hideValues: Boolean,
-    onSeeAll: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        SectionHeader(title = "Últimas transações", onSeeAll = onSeeAll)
-        Spacer(Modifier.height(8.dp))
-
-        if (transactions.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+    if (transactions.isEmpty()) {
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(13.dp))
+                        .background(PurpleLight.copy(alpha = 0.55f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        "Nenhuma transação ainda",
-                        fontSize = 13.sp,
-                        color = PoupaiTheme.tokens.textMuted,
+                    Icon(
+                        Icons.Default.Receipt, null,
+                        tint = Purple40, modifier = Modifier.size(22.dp),
                     )
                 }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Nenhuma transação ainda",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PoupaiTheme.tokens.textSecondary,
+                )
             }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
-            ) {
-                Column {
-                    transactions.forEachIndexed { index, transaction ->
-                        TransactionRow(transaction = transaction, hideValues = hideValues)
-                        if (index < transactions.lastIndex) {
-                            HorizontalDivider(color = PoupaiTheme.tokens.surfaceSunken, modifier = Modifier.padding(horizontal = 14.dp))
-                        }
-                    }
-                }
+        }
+    } else {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            transactions.forEach { transaction ->
+                TransactionRow(transaction = transaction, hideValues = hideValues)
             }
         }
     }
@@ -546,54 +601,107 @@ private fun RecentTransactionsSection(
 @Composable
 private fun TransactionRow(transaction: Transaction, hideValues: Boolean) {
     val isIncome = transaction.type == TransactionType.INCOME
-    val color = if (isIncome) GreenPositive else RedNegative
-    val dateFormatter = SimpleDateFormat("dd/MM", Locale("pt", "BR"))
+    // Paleta roxa: receita Purple40 (deep), despesa Purple60 (lavanda)
+    val accent = if (isIncome) Purple40 else Color(0xFF9B7FD4)
+    val dateFormatter = SimpleDateFormat("dd 'de' MMM", Locale("pt", "BR"))
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
-        Box(
-            modifier = Modifier.size(36.dp).clip(CircleShape).background(color.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center,
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                if (isIncome) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
-                null,
-                tint = color,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Spacer(Modifier.width(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(transaction.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(accent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (isIncome) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                    null,
+                    tint = accent,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    transaction.title,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PoupaiTheme.tokens.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(5.dp),
+                        color = accent.copy(alpha = 0.10f),
+                    ) {
+                        Text(
+                            transaction.category,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = accent,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        dateFormatter.format(transaction.date)
+                            .replaceFirstChar { it.uppercase() },
+                        fontSize = 10.sp,
+                        color = PoupaiTheme.tokens.textMuted,
+                    )
+                }
+            }
             Text(
-                "${transaction.category} • ${dateFormatter.format(transaction.date)}",
-                fontSize = 11.sp,
-                color = PoupaiTheme.tokens.textMuted,
+                text = if (hideValues) HIDDEN
+                else "${if (isIncome) "+" else "-"} ${transaction.amount.toBRL()}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = accent,
             )
         }
-        Text(
-            text = if (hideValues) HIDDEN else "${if (isIncome) "+" else "-"} ${transaction.amount.toBRL()}",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = color,
-        )
     }
 }
 
 // ─── HELPERS ───
 
 @Composable
-private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
+private fun SectionHeader(title: String, icon: ImageVector, onSeeAll: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
+        Icon(icon, null, tint = Purple40, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = PoupaiTheme.tokens.textPrimary,
+        )
         Spacer(Modifier.weight(1f))
-        TextButton(onClick = onSeeAll, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
-            Text("Ver todas", fontSize = 12.sp, color = PoupaiTheme.tokens.accentBright, fontWeight = FontWeight.SemiBold)
+        TextButton(
+            onClick = onSeeAll,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+        ) {
+            Text(
+                "Ver todas",
+                fontSize = 12.sp,
+                color = PoupaiTheme.tokens.accentBright,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
     }
 }
