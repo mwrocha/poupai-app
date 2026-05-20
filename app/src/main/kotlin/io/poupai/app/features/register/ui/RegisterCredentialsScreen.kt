@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.R
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.features.register.viewmodel.RegisterViewModel
 
 @Composable
@@ -92,7 +93,7 @@ fun RegisterCredentialsScreen(
                 text = "Cadastro",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1C1B1F),
+                color = PoupaiTheme.tokens.textPrimary,
             )
 
             Spacer(Modifier.height(24.dp))
