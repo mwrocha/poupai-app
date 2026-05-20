@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.features.auth.ui.LoginScreen
 import io.poupai.app.features.auth.ui.WelcomeScreen
 import io.poupai.app.features.dashboard.ui.DashboardScreen
@@ -36,6 +37,30 @@ fun PoupaiNavHost(navController: NavHostController) {
     fun navigateToLogin() {
         navController.navigate(Route.Welcome.route) { popUpTo(0) { inclusive = true } }
     }
+
+    // Navega para uma rota top-level, fazendo singleTop para evitar pilha gigante
+    // ao trocar de feature via drawer várias vezes.
+    fun navigateTopLevel(route: String) {
+        navController.navigate(route) {
+            launchSingleTop = true
+            // Mantém o Dashboard na base; remove qualquer outra top-level intermediária.
+            popUpTo(Route.Dashboard.route) { saveState = false; inclusive = false }
+            restoreState = false
+        }
+    }
+
+    val topLevelNav = TopLevelNavCallbacks(
+        onNavigateToDashboard  = { navigateTopLevel(Route.Dashboard.route) },
+        onNavigateToInvestments = { navigateTopLevel(Route.Investments.route) },
+        onNavigateToFinances    = { navigateTopLevel(Route.Finances.route) },
+        onNavigateToTransactions = { navigateTopLevel(Route.Transactions.route) },
+        onNavigateToTags        = { navigateTopLevel(Route.Tags.route) },
+        onNavigateToGoals       = { navigateTopLevel(Route.Goals.route) },
+        onNavigateToGamification = { navigateTopLevel(Route.Gamification.route) },
+        onNavigateToProfile     = { navigateTopLevel(Route.Profile.route) },
+        onNavigateToSettings    = { navigateTopLevel(Route.Settings.route) },
+        onLogout                = { navigateToLogin() },
+    )
 
     NavHost(navController = navController, startDestination = Route.Splash.route) {
 
@@ -121,32 +146,21 @@ fun PoupaiNavHost(navController: NavHostController) {
         }
 
         composable(Route.Dashboard.route) {
-            DashboardScreen(
-                onNavigateToTransactions = { navController.navigate(Route.Transactions.route) },
-                onNavigateToTags = { navController.navigate(Route.Tags.route) },
-                onNavigateToFinances = { navController.navigate(Route.Finances.route) },
-                onNavigateToInvestments = { navController.navigate(Route.Investments.route) },
-                onNavigateToGoals = { navController.navigate(Route.Goals.route) },
-                onNavigateToProfile = { navController.navigate(Route.Profile.route) },
-                onNavigateToSettings = { navController.navigate(Route.Settings.route) },
-                onNavigateToGamification = { navController.navigate(Route.Gamification.route) },
-                onLogout = { navigateToLogin() },
-            )
+            DashboardScreen(topLevelNav = topLevelNav)
         }
 
-        composable(Route.Transactions.route) { TransactionsScreen(onNavigateBack = { navController.popBackStack() }) }
-        composable(Route.Tags.route) { TagsScreen(onNavigateBack = { navController.popBackStack() }) }
-        composable(Route.Finances.route) { FinancesScreen(onNavigateBack = { navController.popBackStack() }) }
+        composable(Route.Transactions.route) { TransactionsScreen(topLevelNav = topLevelNav) }
+        composable(Route.Tags.route) { TagsScreen(topLevelNav = topLevelNav) }
+        composable(Route.Finances.route) { FinancesScreen(topLevelNav = topLevelNav) }
 
         composable(Route.Investments.route) {
             InvestmentsScreen(
-                onNavigateBack = { navController.popBackStack() },
+                topLevelNav = topLevelNav,
                 onNavigateToBook = { navController.navigate(Route.InvestmentBook.route) },
                 onNavigateToDividends = { navController.navigate(Route.Dividends.route) },
                 onNavigateToRebalance = { navController.navigate(Route.Rebalance.route) },
                 onNavigateToAllocation = { navController.navigate(Route.Allocation.route) },
                 onNavigateToDetail = { id -> navController.navigate(Route.InvestmentDetail.createRoute(id)) },
-                onNavigateToGoals = { navController.navigate(Route.Goals.route) },
                 onNavigateToIncomeTax = { navController.navigate(Route.IncomeTax.route) },
             )
         }
@@ -180,13 +194,9 @@ fun PoupaiNavHost(navController: NavHostController) {
         composable(Route.Dividends.route) { DividendsScreen(onNavigateBack = { navController.popBackStack() }) }
         composable(Route.Rebalance.route) { RebalanceScreen(onNavigateBack = { navController.popBackStack() }) }
 
-        composable(Route.Profile.route) {
-            ProfileScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onLogout = { navigateToLogin() })
-        }
-        composable(Route.Goals.route) { GoalsScreen(onNavigateBack = { navController.popBackStack() }) }
-        composable(Route.Settings.route) { SettingsScreen(onNavigateBack = { navController.popBackStack() }) }
-        composable(Route.Gamification.route) { GamificationScreen(onNavigateBack = { navController.popBackStack() }) }
+        composable(Route.Profile.route) { ProfileScreen(topLevelNav = topLevelNav) }
+        composable(Route.Goals.route) { GoalsScreen(topLevelNav = topLevelNav) }
+        composable(Route.Settings.route) { SettingsScreen(topLevelNav = topLevelNav) }
+        composable(Route.Gamification.route) { GamificationScreen(topLevelNav = topLevelNav) }
     }
 }
