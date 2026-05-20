@@ -31,6 +31,7 @@ import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.designsystem.components.StaleChip
 import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
@@ -102,7 +103,7 @@ fun InvestmentDetailScreen(
     var selectedWindow by remember { mutableStateOf(TimeWindow.ALL) }
     val inv = uiState.investment
 
-    Column(Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+    Column(Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         DetailHeader(
             investment = inv,
@@ -132,10 +133,10 @@ fun InvestmentDetailScreen(
         ) {
         when {
             uiState.isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                CircularProgressIndicator(color = Purple40)
+                CircularProgressIndicator(color = PoupaiTheme.tokens.accentBright)
             }
             inv == null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                Text("Ativo não encontrado", color = Color(0xFF9E9E9E))
+                Text("Ativo não encontrado", color = PoupaiTheme.tokens.textMuted)
             }
             else -> LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
@@ -362,7 +363,7 @@ private fun TimeWindowSelector(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
+            .background(PoupaiTheme.tokens.surface)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -372,7 +373,7 @@ private fun TimeWindowSelector(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(9.dp))
-                    .background(if (isSelected) Purple40 else Color.Transparent)
+                    .background(if (isSelected) PoupaiTheme.tokens.accentBright else Color.Transparent)
                     .clickable { onSelect(window) }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center,
@@ -381,7 +382,7 @@ private fun TimeWindowSelector(
                     window.label,
                     fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else Color(0xFF9E9E9E),
+                    color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
                 )
             }
         }
@@ -405,7 +406,7 @@ private fun MetricsCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -448,14 +449,14 @@ private fun MetricsCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Última atualização", fontSize = 12.sp, color = Color(0xFF6B6B6B),
+                Text("Última atualização", fontSize = 12.sp, color = PoupaiTheme.tokens.textSecondary,
                     modifier = Modifier.weight(1f))
                 if (staleInfo.lastUpdate != null && staleInfo.status == io.poupai.app.core.util.StaleStatus.FRESH) {
                     Text(
                         io.poupai.app.core.util.DateFormatter.isoToDisplay(staleInfo.lastUpdate),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1C1B1F),
+                        color = PoupaiTheme.tokens.textPrimary,
                     )
                 } else {
                     StaleChip(staleInfo)
@@ -466,19 +467,19 @@ private fun MetricsCard(
 }
 
 @Composable
-private fun MetricRow(label: String, value: String, valueColor: Color = Color(0xFF1C1B1F)) {
+private fun MetricRow(label: String, value: String, valueColor: Color = PoupaiTheme.tokens.textPrimary) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontSize = 12.sp, color = Color(0xFF6B6B6B), modifier = Modifier.weight(1f))
+        Text(label, fontSize = 12.sp, color = PoupaiTheme.tokens.textSecondary, modifier = Modifier.weight(1f))
         Text(value, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = valueColor)
     }
 }
 
 @Composable
 private fun MetricDivider() {
-    HorizontalDivider(color = Color(0xFFF5F5F5))
+    HorizontalDivider(color = PoupaiTheme.tokens.divider)
 }
 
 // ─── ENTRIES CARD ───
@@ -492,7 +493,7 @@ private fun EntriesCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(vertical = 20.dp)) {
@@ -520,7 +521,7 @@ private fun EntriesCard(
             entries.forEachIndexed { index, entry ->
                 EntryRow(entry = entry, hideValues = hideValues)
                 if (index < entries.lastIndex)
-                    HorizontalDivider(color = Color(0xFFF5F5F5),
+                    HorizontalDivider(color = PoupaiTheme.tokens.divider,
                         modifier = Modifier.padding(horizontal = 20.dp))
             }
         }
@@ -554,13 +555,13 @@ private fun EntryRow(entry: InvestmentEntry, hideValues: Boolean) {
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                 }
                 Text(io.poupai.app.core.util.DateFormatter.isoToDisplay(entry.date),
-                    fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                    fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             }
             if (entry.type != EntryType.ATUALIZACAO_VALOR && (entry.shares ?: 0.0) > 0) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "${"%.2f".format(entry.shares)} cotas × ${entry.sharePrice?.toBRL() ?: "—"}",
-                    fontSize = 11.sp, color = Color(0xFF6B6B6B),
+                    fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary,
                 )
             }
             if (entry.type == EntryType.APORTE && (entry.newAveragePrice ?: 0.0) > 0) {
@@ -568,7 +569,7 @@ private fun EntryRow(entry: InvestmentEntry, hideValues: Boolean) {
                     fontSize = 10.sp, color = color, fontWeight = FontWeight.SemiBold)
             }
             entry.notes?.takeIf { it.isNotBlank() }?.let {
-                Text(it, fontSize = 10.sp, color = Color(0xFF9E9E9E),
+                Text(it, fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
@@ -593,7 +594,7 @@ private fun DividendsCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(vertical = 20.dp)) {
@@ -627,7 +628,7 @@ private fun DividendsCard(
             dividends.forEachIndexed { index, div ->
                 DividendRow(div = div, hideValues = hideValues)
                 if (index < dividends.lastIndex)
-                    HorizontalDivider(color = Color(0xFFF5F5F5),
+                    HorizontalDivider(color = PoupaiTheme.tokens.divider,
                         modifier = Modifier.padding(horizontal = 20.dp))
             }
         }
@@ -665,11 +666,11 @@ private fun DividendRow(div: Dividend, hideValues: Boolean) {
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                 }
                 Text(io.poupai.app.core.util.DateFormatter.isoToDisplay(div.date),
-                    fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                    fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             }
             if (div.yieldPercent > 0) {
                 Text("Yield: ${"%.2f".format(div.yieldPercent)}%",
-                    fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                    fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
             }
         }
         Text(
