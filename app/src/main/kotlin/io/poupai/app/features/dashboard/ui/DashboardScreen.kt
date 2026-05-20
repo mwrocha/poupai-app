@@ -86,7 +86,10 @@ fun DashboardScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val mainAlpha = if (drawerState.isOpen) 0f else 1f
+    // Quando o drawer abre, escondemos só o avatar (que já aparece dentro do drawer)
+    // — não a tela inteira. Antes era `.alpha(mainAlpha)` no Column raiz, o que
+    // pintava o app de cinza ao abrir o menu.
+    val avatarAlpha = if (drawerState.isOpen) 0f else 1f
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -124,8 +127,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(PoupaiTheme.tokens.bg)
-                .verticalScroll(rememberScrollState())
-                .alpha(mainAlpha),
+                .verticalScroll(rememberScrollState()),
         ) {
             // ─── Hero (header roxo + saldo + receita/despesa inline) ───
             DashboardHero(
@@ -133,6 +135,7 @@ fun DashboardScreen(
                 onMenuClick = { scope.launch { drawerState.open() } },
                 onProfileClick = onNavigateToProfile,
                 onToggleHide = viewModel::toggleHideValues,
+                avatarAlpha = avatarAlpha,
             )
 
             // ─── Atalhos rápidos (overlay) ───
@@ -198,6 +201,7 @@ private fun DashboardHero(
     onMenuClick: () -> Unit,
     onProfileClick: () -> Unit,
     onToggleHide: () -> Unit,
+    avatarAlpha: Float = 1f,
 ) {
     Box(
         modifier = Modifier
@@ -225,7 +229,8 @@ private fun DashboardHero(
                         .size(40.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.2f))
-                        .clickable { onProfileClick() },
+                        .clickable { onProfileClick() }
+                        .alpha(avatarAlpha),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (!uiState.profileImageUrl.isNullOrBlank()) {
