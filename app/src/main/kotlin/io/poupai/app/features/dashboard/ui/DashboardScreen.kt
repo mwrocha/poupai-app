@@ -44,6 +44,7 @@ import coil.compose.AsyncImage
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PoupaiDrawerContent
 import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
@@ -123,7 +124,7 @@ fun DashboardScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F7))
+                .background(PoupaiTheme.tokens.bg)
                 .verticalScroll(rememberScrollState())
                 .alpha(mainAlpha),
         ) {
@@ -286,7 +287,7 @@ private fun QuickActions(
             .offset(y = (-24).dp),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Row(
             modifier = Modifier
@@ -312,13 +313,13 @@ private fun QuickActionButton(icon: ImageVector, label: String, onClick: () -> U
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Purple40.copy(alpha = 0.10f)),
+                .background(PoupaiTheme.tokens.accentBright.copy(alpha = 0.10f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, label, tint = Purple40, modifier = Modifier.size(22.dp))
+            Icon(icon, label, tint = PoupaiTheme.tokens.accentBright, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.height(6.dp))
-        Text(label, fontSize = 11.sp, color = Color(0xFF424242), fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textPrimary, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -362,7 +363,7 @@ private fun SummaryItem(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -373,7 +374,7 @@ private fun SummaryItem(
                     Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
                 }
                 Spacer(Modifier.width(8.dp))
-                Text(label, fontSize = 11.sp, color = Color(0xFF6B6B6B))
+                Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary)
             }
             Spacer(Modifier.height(8.dp))
             Text(
@@ -397,7 +398,7 @@ private fun StreakCard(streak: Int, points: Int, onClick: () -> Unit) {
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -418,15 +419,15 @@ private fun StreakCard(streak: Int, points: Int, onClick: () -> Unit) {
                     if (streak > 0) "$streak ${if (streak == 1) "dia seguido" else "dias seguidos"}" else "Comece sua sequência",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1C1B1F),
+                    color = PoupaiTheme.tokens.textPrimary,
                 )
                 Text(
                     "$points pontos acumulados",
                     fontSize = 12.sp,
-                    color = Color(0xFF6B6B6B),
+                    color = PoupaiTheme.tokens.textSecondary,
                 )
             }
-            Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF9E9E9E))
+            Icon(Icons.Default.ChevronRight, null, tint = PoupaiTheme.tokens.textMuted)
         }
     }
 }
@@ -454,13 +455,13 @@ private fun GoalProgressItem(goal: Goal, hideValues: Boolean) {
     val progress = (goal.currentValue / goal.targetValue).toFloat().coerceIn(0f, 1f)
     val percent = (progress * 100).toInt()
 
-    val goalColor = try { Color(android.graphics.Color.parseColor(goal.color)) } catch (e: Exception) { Purple40 }
+    val goalColor = try { Color(android.graphics.Color.parseColor(goal.color)) } catch (e: Exception) { PoupaiTheme.tokens.accentBright }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -472,11 +473,11 @@ private fun GoalProgressItem(goal: Goal, hideValues: Boolean) {
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(goal.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(goal.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         if (hideValues) "$percent%" else "${goal.currentValue.toBRL()} de ${goal.targetValue.toBRL()}",
                         fontSize = 11.sp,
-                        color = Color(0xFF6B6B6B),
+                        color = PoupaiTheme.tokens.textSecondary,
                     )
                 }
                 Text("$percent%", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = goalColor)
@@ -509,7 +510,7 @@ private fun RecentTransactionsSection(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
             ) {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -518,7 +519,7 @@ private fun RecentTransactionsSection(
                     Text(
                         "Nenhuma transação ainda",
                         fontSize = 13.sp,
-                        color = Color(0xFF9E9E9E),
+                        color = PoupaiTheme.tokens.textMuted,
                     )
                 }
             }
@@ -527,13 +528,13 @@ private fun RecentTransactionsSection(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
             ) {
                 Column {
                     transactions.forEachIndexed { index, transaction ->
                         TransactionRow(transaction = transaction, hideValues = hideValues)
                         if (index < transactions.lastIndex) {
-                            HorizontalDivider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 14.dp))
+                            HorizontalDivider(color = PoupaiTheme.tokens.surfaceSunken, modifier = Modifier.padding(horizontal = 14.dp))
                         }
                     }
                 }
@@ -565,11 +566,11 @@ private fun TransactionRow(transaction: Transaction, hideValues: Boolean) {
         }
         Spacer(Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(transaction.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(transaction.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 "${transaction.category} • ${dateFormatter.format(transaction.date)}",
                 fontSize = 11.sp,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
             )
         }
         Text(
@@ -589,10 +590,10 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1B1F))
+        Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
         Spacer(Modifier.weight(1f))
         TextButton(onClick = onSeeAll, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
-            Text("Ver todas", fontSize = 12.sp, color = Purple40, fontWeight = FontWeight.SemiBold)
+            Text("Ver todas", fontSize = 12.sp, color = PoupaiTheme.tokens.accentBright, fontWeight = FontWeight.SemiBold)
         }
     }
 }
