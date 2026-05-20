@@ -30,6 +30,7 @@ import io.poupai.app.core.analytics.TimeWindow
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
@@ -131,7 +132,7 @@ fun AllocationScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+    Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // ─── Header ───
         Box(
@@ -405,7 +406,7 @@ private fun TimeWindowSelector(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
+            .background(PoupaiTheme.tokens.surface)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -415,7 +416,7 @@ private fun TimeWindowSelector(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(9.dp))
-                    .background(if (isSelected) Purple40 else Color.Transparent)
+                    .background(if (isSelected) PoupaiTheme.tokens.accentBright else Color.Transparent)
                     .clickable { onSelect(window) }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center,
@@ -424,7 +425,7 @@ private fun TimeWindowSelector(
                     window.label,
                     fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else Color(0xFF9E9E9E),
+                    color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
                 )
             }
         }
@@ -467,7 +468,7 @@ private fun CategoryBarsCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -479,7 +480,7 @@ private fun CategoryBarsCard(
                     Text("Por Categoria", style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold)
                     Text("Rentabilidade no período · ${selectedWindow.label}",
-                        fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                        fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
                 }
             }
             Spacer(Modifier.height(20.dp))
@@ -513,7 +514,7 @@ private fun CategoryBarsCard(
                                 Text(
                                     "${if (hideValues) HIDDEN else catCurrent.toBRL()}  ·  ${"%.1f".format(catPercent)}%",
                                     fontSize = 10.sp,
-                                    color = Color(0xFF9E9E9E),
+                                    color = PoupaiTheme.tokens.textMuted,
                                 )
                             }
                             ReturnBadge(cat.returnPct)
@@ -528,7 +529,7 @@ private fun CategoryBarsCard(
 
                 if (index < categories.lastIndex) {
                     Spacer(Modifier.height(18.dp))
-                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                    HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
                     Spacer(Modifier.height(18.dp))
                 }
             }
@@ -553,20 +554,20 @@ private fun PerformanceRankingCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Ranking · ${selectedWindow.label}", style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold)
             Text("Ordenado por rentabilidade no período",
-                fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
 
             if (topThree.isEmpty() && bottomOne == null) {
                 Spacer(Modifier.height(16.dp))
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Text("Sem dados suficientes para este período",
-                        fontSize = 12.sp, color = Color(0xFF9E9E9E))
+                        fontSize = 12.sp, color = PoupaiTheme.tokens.textMuted)
                 }
                 return@Column
             }
@@ -587,7 +588,7 @@ private fun PerformanceRankingCard(
 
             if (bottomOne != null) {
                 Spacer(Modifier.height(16.dp))
-                HorizontalDivider(color = Color(0xFFF5F5F5))
+                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -654,10 +655,10 @@ private fun RankingRow(
 
         Column(Modifier.weight(1f)) {
             Text(inv.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 typeShortLabel[inv.type] ?: "",
-                fontSize = 10.sp, color = Color(0xFF9E9E9E),
+                fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted,
             )
         }
 
@@ -689,7 +690,7 @@ private fun AllAssetsCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
@@ -714,7 +715,7 @@ private fun AllAssetsCard(
             }
             Spacer(Modifier.height(4.dp))
             Text("Ordenados por rentabilidade · ${selectedWindow.label}",
-                fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(16.dp))
 
             performances.forEachIndexed { index, perf ->
@@ -726,7 +727,7 @@ private fun AllAssetsCard(
                 )
                 if (index < performances.lastIndex) {
                     Spacer(Modifier.height(14.dp))
-                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                    HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
                     Spacer(Modifier.height(14.dp))
                 }
             }
@@ -759,10 +760,10 @@ private fun AssetBarRow(
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(inv.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     if (hideValues) HIDDEN else inv.currentValue.toBRL(),
-                    fontSize = 11.sp, color = Color(0xFF6B6B6B),
+                    fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary,
                 )
             }
             ReturnBadge(windowReturn)
@@ -814,7 +815,7 @@ private fun AnimatedBar(
             .fillMaxWidth()
             .height(5.dp)
             .clip(RoundedCornerShape(3.dp))
-            .background(Color(0xFFF0F0F0)),
+            .background(PoupaiTheme.tokens.surfaceSunken),
     ) {
         Box(
             modifier = Modifier
