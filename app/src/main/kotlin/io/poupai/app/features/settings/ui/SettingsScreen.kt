@@ -8,12 +8,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.designsystem.components.PoupaiDrawerScaffold
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
@@ -38,7 +40,7 @@ import io.poupai.app.features.settings.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit,
+    topLevelNav: TopLevelNavCallbacks,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -47,6 +49,10 @@ fun SettingsScreen(
         AboutDialog(onDismiss = viewModel::onDismissAboutDialog)
     }
 
+    PoupaiDrawerScaffold(
+        selectedRoute = "settings",
+        nav = topLevelNav,
+    ) { onMenuClick ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -61,8 +67,8 @@ fun SettingsScreen(
                 .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -193,6 +199,7 @@ fun SettingsScreen(
             }
         }
     }
+    } // close PoupaiDrawerScaffold
 }
 
 // ─── SECTION TITLE ───
