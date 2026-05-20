@@ -10,8 +10,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.designsystem.components.PoupaiDrawerScaffold
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
@@ -33,11 +35,15 @@ import io.poupai.app.features.gamification.viewmodel.GamificationViewModel
 
 @Composable
 fun GamificationScreen(
-    onNavigateBack: () -> Unit,
+    topLevelNav: TopLevelNavCallbacks,
     viewModel: GamificationViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    PoupaiDrawerScaffold(
+        selectedRoute = "gamification",
+        nav = topLevelNav,
+    ) { onMenuClick ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -52,8 +58,8 @@ fun GamificationScreen(
                 .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, "Menu", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
                 Text("Conquistas", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
@@ -114,6 +120,7 @@ fun GamificationScreen(
             }
         }
     }
+    } // close PoupaiDrawerScaffold
 }
 
 // ─── CARD DE NÍVEL ───
