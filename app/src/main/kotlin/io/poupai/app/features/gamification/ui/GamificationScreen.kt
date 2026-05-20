@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.domain.model.Badge
@@ -40,7 +41,7 @@ fun GamificationScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7)),
+            .background(PoupaiTheme.tokens.bg),
     ) {
         // ─── Header ───
         Box(
@@ -96,8 +97,8 @@ fun GamificationScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Conquistas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1B1F))
-                    Text("$unlockedCount/${uiState.badges.size}", fontSize = 12.sp, color = Color(0xFF9E9E9E))
+                    Text("Conquistas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary)
+                    Text("$unlockedCount/${uiState.badges.size}", fontSize = 12.sp, color = PoupaiTheme.tokens.textMuted)
                 }
 
                 // ─── Grid de badges ───
@@ -185,7 +186,7 @@ private fun StatCard(modifier: Modifier, emoji: String, value: String, label: St
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Column(
             modifier = Modifier.padding(12.dp).fillMaxWidth(),
@@ -194,7 +195,7 @@ private fun StatCard(modifier: Modifier, emoji: String, value: String, label: St
             Text(emoji, fontSize = 22.sp)
             Spacer(Modifier.height(4.dp))
             Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
-            Text(label, fontSize = 10.sp, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center, lineHeight = 13.sp)
+            Text(label, fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted, textAlign = TextAlign.Center, lineHeight = 13.sp)
         }
     }
 }
@@ -207,7 +208,7 @@ private fun BadgeCard(badge: Badge) {
         modifier = Modifier.fillMaxWidth().alpha(if (badge.unlocked) 1f else 0.45f),
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(if (badge.unlocked) 1.dp else 0.dp),
-        colors = CardDefaults.cardColors(containerColor = if (badge.unlocked) Color.White else Color(0xFFEEEEEE)),
+        colors = CardDefaults.cardColors(containerColor = if (badge.unlocked) PoupaiTheme.tokens.surface else PoupaiTheme.tokens.surfaceSunken),
     ) {
         Column(
             modifier = Modifier.padding(10.dp).fillMaxWidth(),
@@ -220,14 +221,14 @@ private fun BadgeCard(badge: Badge) {
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                color = if (badge.unlocked) Color(0xFF1C1B1F) else Color(0xFF9E9E9E),
+                color = if (badge.unlocked) PoupaiTheme.tokens.textPrimary else PoupaiTheme.tokens.textMuted,
             )
             Spacer(Modifier.height(3.dp))
             Text(
                 badge.description,
                 fontSize = 9.sp,
                 textAlign = TextAlign.Center,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
                 lineHeight = 12.sp,
             )
         }
