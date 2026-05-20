@@ -12,12 +12,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.poupai.app.core.designsystem.components.PoupaiDrawerScaffold
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
@@ -50,10 +52,11 @@ import io.poupai.app.features.profile.viewmodel.ProfileViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateBack: () -> Unit,
-    onLogout: () -> Unit = {},
+    topLevelNav: TopLevelNavCallbacks,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
+    // `onLogout` herda do TopLevelNavCallbacks (mesmo callback usado pelo drawer)
+    val onLogout = topLevelNav.onLogout
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var showEmailDialog by remember { mutableStateOf(false) }
@@ -123,6 +126,10 @@ fun ProfileScreen(
         }
     }
 
+    PoupaiDrawerScaffold(
+        selectedRoute = "profile",
+        nav = topLevelNav,
+    ) { onMenuClick ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -135,7 +142,7 @@ fun ProfileScreen(
             lastName = uiState.editLastName,
             email = uiState.editEmail,
             profileImageUrl = uiState.editProfileImageUrl,
-            onNavigateBack = onNavigateBack,
+            onMenuClick = onMenuClick,
             onImagePick = { imagePicker.launch("image/*") },
         )
 
@@ -303,6 +310,7 @@ fun ProfileScreen(
 
         Spacer(Modifier.height(40.dp))
     }
+    } // close PoupaiDrawerScaffold
 }
 
 // ─── HERO ───
@@ -313,7 +321,7 @@ private fun ProfileHero(
     lastName: String,
     email: String,
     profileImageUrl: String?,
-    onNavigateBack: () -> Unit,
+    onMenuClick: () -> Unit,
     onImagePick: () -> Unit,
 ) {
     Box(
@@ -327,8 +335,8 @@ private fun ProfileHero(
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, "Menu", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
