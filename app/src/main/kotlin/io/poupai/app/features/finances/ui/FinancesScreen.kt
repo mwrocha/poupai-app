@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PullToRefresh
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
@@ -63,16 +64,9 @@ import java.util.Locale
 
 private const val HIDDEN = "••••"
 
-// Paleta de cor on-brand para gráficos e dados (sem verde/vermelho).
-private val IncomeColor = Purple40           // 0xFF503173 — receita
-private val ExpenseColor = Purple60          // 0xFF9B7FD4 — despesa (lavanda)
-private val NeutralUp = Color(0xFF2E7D5B)    // verde sóbrio só para chips %
-private val NeutralDown = Color(0xFFB23A48)  // vermelho sóbrio só para chips %
-private val Bg = Color(0xFFF5F5F7)
-private val TextPrimary = Color(0xFF1C1B1F)
-private val TextSecondary = Color(0xFF6B6B6B)
-private val TextMuted = Color(0xFF9E9E9E)
-private val Divider = Color(0xFFEDEAF2)
+// Paleta on-brand para gráficos (independente de tema)
+private val IncomeColor = Purple40           // receita
+private val ExpenseColor = Purple60          // despesa (lavanda)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +76,7 @@ fun FinancesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(Bg)) {
+    Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // ─── Header ───
         Box(
@@ -216,7 +210,7 @@ private fun SectionTitle(text: String, icon: ImageVector) {
             text,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = TextSecondary,
+            color = PoupaiTheme.tokens.textSecondary,
         )
     }
 }
@@ -237,7 +231,7 @@ private fun PeriodSelector(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White)
+            .background(PoupaiTheme.tokens.surface)
             .padding(5.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
@@ -289,13 +283,13 @@ private fun PeriodOption(
             label,
             fontSize = 12.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.White else TextMuted,
+            color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (trailingIcon != null) {
             Icon(trailingIcon, null, modifier = Modifier.size(14.dp),
-                tint = if (isSelected) Color.White else TextMuted)
+                tint = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted)
         }
     }
 }
@@ -337,8 +331,8 @@ private fun MonthYearPickerDialog(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(
-                                            if (isSelected) Purple40.copy(alpha = 0.12f)
-                                            else Color(0xFFF5F5F5)
+                                            if (isSelected) PoupaiTheme.tokens.accentBright.copy(alpha = 0.18f)
+                                            else PoupaiTheme.tokens.surfaceAlt
                                         )
                                         .pointerInput(Unit) { detectTapGestures { month = m } }
                                         .padding(vertical = 10.dp),
@@ -348,7 +342,7 @@ private fun MonthYearPickerDialog(
                                         months[m - 1],
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Purple40 else TextSecondary,
+                                        color = if (isSelected) Purple40 else PoupaiTheme.tokens.textSecondary,
                                     )
                                 }
                             }
@@ -584,7 +578,7 @@ private fun InsightCard(data: InsightData, modifier: Modifier = Modifier) {
         modifier = modifier.defaultMinSize(minHeight = 120.dp),
         shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Row(Modifier.fillMaxSize()) {
             // Faixa lateral fina como destaque sutil (sem fundo tingido feio)
@@ -617,7 +611,7 @@ private fun InsightCard(data: InsightData, modifier: Modifier = Modifier) {
                     Text(
                         data.label,
                         fontSize = 10.sp,
-                        color = TextMuted,
+                        color = PoupaiTheme.tokens.textMuted,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -627,7 +621,7 @@ private fun InsightCard(data: InsightData, modifier: Modifier = Modifier) {
                         data.value,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = PoupaiTheme.tokens.textPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -636,7 +630,7 @@ private fun InsightCard(data: InsightData, modifier: Modifier = Modifier) {
                         Text(
                             data.subtitle,
                             fontSize = 10.sp,
-                            color = TextMuted,
+                            color = PoupaiTheme.tokens.textMuted,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -660,12 +654,12 @@ private fun BarChartCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Receitas vs Despesas", style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold, color = TextPrimary)
-            Text("Toque em uma barra para detalhes", fontSize = 11.sp, color = TextMuted)
+                fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
+            Text("Toque em uma barra para detalhes", fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(16.dp))
             BarChart(incomeData, expenseData, labels, hideValues)
             Spacer(Modifier.height(14.dp))
@@ -691,8 +685,9 @@ private fun BarChart(
 
     val maxValue = (incomeData + expenseData).maxOrNull()?.takeIf { it > 0 } ?: 1.0
     val textMeasurer = rememberTextMeasurer()
-    val labelStyle = TextStyle(fontSize = 9.sp, color = TextMuted)
+    val labelStyle = TextStyle(fontSize = 9.sp, color = PoupaiTheme.tokens.textMuted)
     val tooltipStyle = TextStyle(fontSize = 10.sp, color = Color.White)
+    val gridColor = PoupaiTheme.tokens.surfaceSunken
     val dataSize = maxOf(incomeData.size, expenseData.size)
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
@@ -716,7 +711,7 @@ private fun BarChart(
 
         repeat(4) { i ->
             drawLine(
-                Color(0xFFF0F0F0),
+                gridColor,
                 Offset(0f, chartH * i / 4),
                 Offset(size.width, chartH * i / 4),
                 1.dp.toPx(),
@@ -789,12 +784,12 @@ private fun LineChartCard(data: List<Double>, labels: List<String>, hideValues: 
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Saldo mensal", style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold, color = TextPrimary)
-            Text("Receitas menos despesas", fontSize = 11.sp, color = TextMuted)
+                fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
+            Text("Receitas menos despesas", fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(16.dp))
             LineChart(data, labels, hideValues)
         }
@@ -816,8 +811,10 @@ private fun LineChart(
     val maxValue = data.maxOf { it }
     val range = (maxValue - minValue).takeIf { it > 0 } ?: 1.0
     val textMeasurer = rememberTextMeasurer()
-    val labelStyle = TextStyle(fontSize = 9.sp, color = TextMuted)
+    val labelStyle = TextStyle(fontSize = 9.sp, color = PoupaiTheme.tokens.textMuted)
     val tooltipStyle = TextStyle(fontSize = 10.sp, color = Color.White)
+    val gridColor = PoupaiTheme.tokens.surfaceSunken
+    val dividerColor = PoupaiTheme.tokens.divider
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
 
     Canvas(
@@ -838,13 +835,13 @@ private fun LineChart(
 
         if (minValue < 0 && maxValue > 0) {
             val zeroY = chartH * (1f - ((0.0 - minValue) / range).toFloat())
-            drawLine(Color(0xFFDDDDDD), Offset(0f, zeroY), Offset(size.width, zeroY),
+            drawLine(dividerColor, Offset(0f, zeroY), Offset(size.width, zeroY),
                 1.dp.toPx())
         }
 
         repeat(3) { i ->
             drawLine(
-                Color(0xFFF0F0F0),
+                gridColor,
                 Offset(0f, chartH * (i + 1) / 4),
                 Offset(size.width, chartH * (i + 1) / 4),
                 1.dp.toPx(),
@@ -915,12 +912,12 @@ private fun CategoryBreakdownCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Despesas por categoria", style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold, color = TextPrimary)
-            Text("Onde o seu dinheiro foi parar", fontSize = 11.sp, color = TextMuted)
+                fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
+            Text("Onde o seu dinheiro foi parar", fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(18.dp))
 
             categories.forEachIndexed { index, cat ->
@@ -944,11 +941,11 @@ private fun CategoryRow(name: String, value: String, percent: Double, color: Col
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).clip(CircleShape).background(color))
                 Spacer(Modifier.width(8.dp))
-                Text(name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                Text(name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary)
             }
             Row(verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(value, fontSize = 11.sp, color = TextSecondary)
+                Text(value, fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary)
                 Surface(shape = RoundedCornerShape(6.dp), color = color.copy(alpha = 0.12f)) {
                     Text("${"%.1f".format(percent)}%", fontSize = 10.sp,
                         fontWeight = FontWeight.Bold, color = color,
@@ -981,7 +978,7 @@ private fun AnimatedHorizontalBar(
             .fillMaxWidth()
             .height(6.dp)
             .clip(RoundedCornerShape(3.dp))
-            .background(Color(0xFFF0F0F0)),
+            .background(PoupaiTheme.tokens.surfaceSunken),
     ) {
         Box(
             modifier = Modifier
@@ -998,7 +995,7 @@ private fun LegendDot(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(10.dp).clip(CircleShape).background(color))
         Spacer(Modifier.width(6.dp))
-        Text(label, fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary, fontWeight = FontWeight.Medium)
     }
 }
 
