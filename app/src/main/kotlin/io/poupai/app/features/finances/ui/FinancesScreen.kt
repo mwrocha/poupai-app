@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -19,6 +18,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
@@ -47,7 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
+import io.poupai.app.core.designsystem.components.PoupaiDrawerScaffold
 import io.poupai.app.core.designsystem.components.PullToRefresh
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.Purple60
@@ -71,11 +73,15 @@ private val ExpenseColor = Purple60          // despesa (lavanda)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinancesScreen(
-    onNavigateBack: () -> Unit,
+    topLevelNav: TopLevelNavCallbacks,
     viewModel: FinancesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    PoupaiDrawerScaffold(
+        selectedRoute = "finances",
+        nav = topLevelNav,
+    ) { onMenuClick ->
     Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // ─── Header ───
@@ -87,8 +93,8 @@ fun FinancesScreen(
                 .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, "Menu", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -196,6 +202,7 @@ fun FinancesScreen(
             }
         }
     }
+    } // close PoupaiDrawerScaffold
 }
 
 @Composable
