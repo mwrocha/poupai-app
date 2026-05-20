@@ -1,8 +1,11 @@
 package io.poupai.app.core.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
 // ─── Paleta Poupaí (extraída do protótipo) ───
@@ -24,15 +27,26 @@ val RedNegative = Color(0xFFE53935)
 
 // ─── Color Schemes ───
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = Purple60,
-    tertiary = PurpleAccent,
-    background = Color(0xFF1C1B1F),
-    surface = Color(0xFF2B2930),
+    primary = Purple60,
     onPrimary = Color.White,
+    primaryContainer = Color(0xFF4A3F6B),
+    onPrimaryContainer = Color(0xFFF2EEFB),
+    secondary = Purple60,
     onSecondary = Color.White,
-    onBackground = Color.White,
-    onSurface = Color.White,
+    tertiary = PurpleAccent,
+    onTertiary = Color.White,
+    background = Color(0xFF221C2E),
+    onBackground = Color(0xFFF2EEFB),
+    surface = Color(0xFF2E2740),
+    onSurface = Color(0xFFF2EEFB),
+    surfaceVariant = Color(0xFF3A3350),
+    onSurfaceVariant = Color(0xFFB8B0CC),
+    outline = Color(0xFF4A3F6B),
+    outlineVariant = Color(0xFF3A3350),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -45,7 +59,7 @@ private val LightColorScheme = lightColorScheme(
     onSecondary = Color.White,
     onBackground = Color(0xFF1C1B1F),
     onSurface = Color(0xFF1C1B1F),
-    onSurfaceVariant = Color(0xFF49454F), // ← adiciona essa linha
+    onSurfaceVariant = Color(0xFF49454F),
 )
 
 @Composable
@@ -54,10 +68,13 @@ fun PoupaiTheme(
     content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val tokens = if (darkTheme) DarkTokens else LightTokens
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = PoupaiTypography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalPoupaiTokens provides tokens) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = PoupaiTypography,
+            content = content,
+        )
+    }
 }
