@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PullToRefresh
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
@@ -50,11 +51,6 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 private const val HIDDEN = "••••"
-
-private val Bg = Color(0xFFF5F5F7)
-private val TextPrimary = Color(0xFF1C1B1F)
-private val TextSecondary = Color(0xFF6B6B6B)
-private val TextMuted = Color(0xFF9E9E9E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,9 +68,9 @@ fun TransactionsScreen(
         focusedIndicatorColor = Purple40,
         unfocusedIndicatorColor = Color(0xFFBDBDBD),
         focusedLabelColor = Purple40,
-        unfocusedLabelColor = TextMuted,
-        focusedTextColor = TextPrimary,
-        unfocusedTextColor = TextPrimary,
+        unfocusedLabelColor = PoupaiTheme.tokens.textMuted,
+        focusedTextColor = PoupaiTheme.tokens.textPrimary,
+        unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
         cursorColor = Purple40,
     )
 
@@ -94,7 +90,7 @@ fun TransactionsScreen(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Bg)) {
+    Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // ─── Header ───
         Box(
@@ -272,7 +268,7 @@ private fun SectionTitle(text: String, icon: ImageVector) {
             text,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = TextSecondary,
+            color = PoupaiTheme.tokens.textSecondary,
         )
     }
 }
@@ -458,7 +454,7 @@ private fun FilterChipsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White)
+            .background(PoupaiTheme.tokens.surface)
             .padding(5.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
@@ -467,14 +463,14 @@ private fun FilterChipsRow(
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(10.dp),
-                color = if (isSelected) Purple40 else Color.Transparent,
+                color = if (isSelected) PoupaiTheme.tokens.accentBright else Color.Transparent,
                 onClick = { onFilterChanged(filter) },
             ) {
                 Text(
                     label,
                     fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color.White else TextMuted,
+                    color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -494,7 +490,7 @@ private fun EmptyState(allEmpty: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Box(
@@ -518,14 +514,14 @@ private fun EmptyState(allEmpty: Boolean) {
                     if (allEmpty) "Nenhuma transação ainda" else "Nenhuma transação neste período",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextSecondary,
+                    color = PoupaiTheme.tokens.textSecondary,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Toque em + para adicionar",
                     fontSize = 12.sp,
-                    color = TextMuted,
+                    color = PoupaiTheme.tokens.textMuted,
                 )
             }
         }
@@ -563,14 +559,14 @@ private fun TransactionForm(
             .padding(bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+        Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
 
         // Tipo — segmented na paleta roxa
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF5F5F7))
+                .background(PoupaiTheme.tokens.surfaceAlt)
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(3.dp),
         ) {
@@ -583,7 +579,7 @@ private fun TransactionForm(
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(9.dp),
-                    color = if (isSelected) Purple40 else Color.Transparent,
+                    color = if (isSelected) PoupaiTheme.tokens.accentBright else Color.Transparent,
                     onClick = { onTypeChanged(type) },
                 ) {
                     Row(
@@ -595,7 +591,7 @@ private fun TransactionForm(
                     ) {
                         Icon(
                             icon, null,
-                            tint = if (isSelected) Color.White else TextMuted,
+                            tint = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
                             modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(6.dp))
@@ -603,7 +599,7 @@ private fun TransactionForm(
                             label,
                             fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) Color.White else TextMuted,
+                            color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
                         )
                     }
                 }
@@ -631,7 +627,7 @@ private fun TransactionForm(
             colors = fieldColors,
         )
 
-        Text("Categoria", style = MaterialTheme.typography.labelMedium, color = TextMuted)
+        Text("Categoria", style = MaterialTheme.typography.labelMedium, color = PoupaiTheme.tokens.textMuted)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(categories) { category ->
                 val selected = formCategory == category
