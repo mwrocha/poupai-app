@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
 import io.poupai.app.core.util.toBRL
@@ -211,7 +212,7 @@ private fun CategoryAllocationCard(
 
             CategoryRow(
                 label = "Renda Variável",
-                color = Color(0xFF503173),
+                color = Purple40,
                 currentPercent = currentRV,
                 savedTarget = targetRV,
                 onSave = { onSaveTarget(InvestmentType.RENDA_VARIAVEL, it) },
@@ -219,7 +220,7 @@ private fun CategoryAllocationCard(
             Spacer(Modifier.height(10.dp))
             CategoryRow(
                 label = "Renda Fixa",
-                color = Color(0xFF4CAF50),
+                color = Purple60,
                 currentPercent = currentRF,
                 savedTarget = targetRF,
                 onSave = { onSaveTarget(InvestmentType.RENDA_FIXA, it) },
@@ -227,7 +228,7 @@ private fun CategoryAllocationCard(
             Spacer(Modifier.height(10.dp))
             CategoryRow(
                 label = "Criptomoedas",
-                color = Color(0xFFFF9800),
+                color = Color(0xFF7C5295),
                 currentPercent = currentCripto,
                 savedTarget = targetCripto,
                 onSave = { onSaveTarget(InvestmentType.CRIPTOMOEDAS, it) },
@@ -355,14 +356,14 @@ private fun RebalanceItemCard(
     onSaveTarget: (Double) -> Unit,
 ) {
     val actionColor = when (item.action) {
-        "COMPRAR" -> GreenPositive
-        "VENDER" -> RedNegative
+        "COMPRAR" -> Purple40
+        "VENDER" -> Color(0xFF7C5295)
         else -> PoupaiTheme.tokens.textMuted
     }
     val typeColor = when (item.type) {
-        "RENDA_VARIAVEL" -> Color(0xFF503173)
-        "RENDA_FIXA" -> Color(0xFF4CAF50)
-        else -> Color(0xFFFF9800)
+        "RENDA_VARIAVEL" -> Purple40
+        "RENDA_FIXA" -> Purple60
+        else -> Color(0xFF7C5295)
     }
 
     var targetText by remember(item.investmentId) {
