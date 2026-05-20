@@ -24,6 +24,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.features.dashboard.state.MonthData
 
 @Composable
@@ -41,7 +42,7 @@ fun SavingsChart(
             Text(
                 "Adicione transações para ver o gráfico",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
             )
         }
         return
@@ -49,8 +50,8 @@ fun SavingsChart(
 
     val incomeColor = Color(0xFF503173)
     val expenseColor = Color(0xFFB39DDB)
-    val gridColor = Color(0xFFEEEEEE)
-    val labelColor = Color(0xFF9E9E9E)
+    val gridColor = PoupaiTheme.tokens.divider
+    val labelColor = PoupaiTheme.tokens.textMuted
 
     // Índice da barra selecionada pelo toque
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
@@ -220,6 +221,6 @@ private fun LegendDot(color: Color, label: String) {
             drawCircle(color = color)
         }
         Spacer(Modifier.width(4.dp))
-        Text(label, fontSize = 11.sp, color = Color(0xFF6B6B6B))
+        Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary)
     }
 }
