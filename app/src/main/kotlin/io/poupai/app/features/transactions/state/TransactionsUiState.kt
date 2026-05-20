@@ -24,6 +24,7 @@ data class TransactionsUiState(
     val expenseTotal: Double = 0.0,
     val allTransactions: List<Transaction> = emptyList(),
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val hideValues: Boolean = false,
 
