@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
@@ -46,7 +47,7 @@ fun RebalanceScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7))
+            .background(PoupaiTheme.tokens.bg)
     ) {
 
         Box(
@@ -75,7 +76,7 @@ fun RebalanceScreen(
         when {
             rebalance == null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Purple40)
+                    CircularProgressIndicator(color = PoupaiTheme.tokens.accentBright)
                 }
             }
 
@@ -87,12 +88,12 @@ fun RebalanceScreen(
                         Text(
                             "Nenhum ativo cadastrado",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF9E9E9E),
+                            color = PoupaiTheme.tokens.textMuted,
                         )
                         Text(
                             "Cadastre ativos e defina os % alvo",
                             fontSize = 12.sp,
-                            color = Color(0xFFBDBDBD),
+                            color = PoupaiTheme.tokens.textMuted,
                         )
                     }
                 }
@@ -122,7 +123,7 @@ fun RebalanceScreen(
                             "Total da carteira: ${rebalance.totalCurrentValue.toBRL()}",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF6B6B6B),
+                            color = PoupaiTheme.tokens.textSecondary,
                         )
                     }
 
@@ -162,7 +163,7 @@ private fun CategoryAllocationCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -170,7 +171,7 @@ private fun CategoryAllocationCard(
                 "Alocação por Categoria",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1C1B1F),
+                color = PoupaiTheme.tokens.textPrimary,
             )
             Spacer(Modifier.height(12.dp))
 
@@ -178,34 +179,34 @@ private fun CategoryAllocationCard(
                 Text(
                     "Categoria",
                     fontSize = 11.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                     modifier = Modifier.weight(1.8f)
                 )
                 Text(
                     "Atual",
                     fontSize = 11.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                     modifier = Modifier.weight(0.9f),
                     textAlign = TextAlign.End
                 )
                 Text(
                     "Alvo",
                     fontSize = 11.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                     modifier = Modifier.width(88.dp),
                     textAlign = TextAlign.Center
                 )
                 Text(
                     "Dif.",
                     fontSize = 11.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                     modifier = Modifier.weight(0.9f),
                     textAlign = TextAlign.End
                 )
             }
 
             HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFF0F0F0)
+                modifier = Modifier.padding(vertical = 8.dp), color = PoupaiTheme.tokens.divider
             )
 
             CategoryRow(
@@ -257,7 +258,7 @@ private fun CategoryRow(
     val diffColor = when {
         diff > 0.05 -> GreenPositive
         diff < -0.05 -> RedNegative
-        else -> Color(0xFF9E9E9E)
+        else -> PoupaiTheme.tokens.textMuted
     }
 
     Row(
@@ -272,12 +273,12 @@ private fun CategoryRow(
                     .background(color),
             )
             Spacer(Modifier.width(6.dp))
-            Text(label, fontSize = 12.sp, color = Color(0xFF1C1B1F))
+            Text(label, fontSize = 12.sp, color = PoupaiTheme.tokens.textPrimary)
         }
         Text(
             "${String.format("%.1f", currentPercent)}%",
             fontSize = 12.sp,
-            color = Color(0xFF6B6B6B),
+            color = PoupaiTheme.tokens.textSecondary,
             modifier = Modifier.weight(0.9f),
             textAlign = TextAlign.End,
         )
@@ -302,13 +303,13 @@ private fun CategoryRow(
                 textStyle = LocalTextStyle.current.copy(
                     fontSize = 12.sp,
                     textAlign = TextAlign.End,
-                    color = Color(0xFF1C1B1F),
+                    color = PoupaiTheme.tokens.textPrimary,
                 ),
                 placeholder = {
                     Text(
                         "0",
                         fontSize = 11.sp,
-                        color = Color(0xFFBDBDBD),
+                        color = PoupaiTheme.tokens.textMuted,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.End,
                     )
@@ -321,18 +322,18 @@ private fun CategoryRow(
                 shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = color,
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    unfocusedBorderColor = PoupaiTheme.tokens.divider,
                     focusedContainerColor = color.copy(alpha = 0.04f),
                     unfocusedContainerColor = Color.Transparent,
-                    focusedTextColor = Color(0xFF1C1B1F),
-                    unfocusedTextColor = Color(0xFF1C1B1F),
+                    focusedTextColor = PoupaiTheme.tokens.textPrimary,
+                    unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
                     cursorColor = color,
                 ),
             )
             Text(
                 "%",
                 fontSize = 11.sp,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
                 modifier = Modifier.padding(start = 2.dp)
             )
         }
@@ -356,7 +357,7 @@ private fun RebalanceItemCard(
     val actionColor = when (item.action) {
         "COMPRAR" -> GreenPositive
         "VENDER" -> RedNegative
-        else -> Color(0xFF9E9E9E)
+        else -> PoupaiTheme.tokens.textMuted
     }
     val typeColor = when (item.type) {
         "RENDA_VARIAVEL" -> Color(0xFF503173)
@@ -378,7 +379,7 @@ private fun RebalanceItemCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -403,9 +404,9 @@ private fun RebalanceItemCard(
                         item.name,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1C1B1F)
+                        color = PoupaiTheme.tokens.textPrimary
                     )
-                    Text(item.currentValue.toBRL(), fontSize = 12.sp, color = Color(0xFF6B6B6B))
+                    Text(item.currentValue.toBRL(), fontSize = 12.sp, color = PoupaiTheme.tokens.textSecondary)
                 }
                 Surface(shape = RoundedCornerShape(8.dp), color = actionColor.copy(alpha = 0.12f)) {
                     Text(
@@ -426,7 +427,7 @@ private fun RebalanceItemCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Alocação atual vs alvo", fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                    Text("Alocação atual vs alvo", fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "Atual: ${String.format("%.1f", item.currentPercent)}%",
@@ -437,7 +438,7 @@ private fun RebalanceItemCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Alvo: ", fontSize = 12.sp, color = Color(0xFF6B6B6B))
+                    Text("Alvo: ", fontSize = 12.sp, color = PoupaiTheme.tokens.textSecondary)
                     OutlinedTextField(
                         value = targetText,
                         onValueChange = { new ->
@@ -453,13 +454,13 @@ private fun RebalanceItemCard(
                         textStyle = LocalTextStyle.current.copy(
                             fontSize = 12.sp,
                             textAlign = TextAlign.End,
-                            color = Color(0xFF1C1B1F),
+                            color = PoupaiTheme.tokens.textPrimary,
                         ),
                         placeholder = {
                             Text(
                                 "0",
                                 fontSize = 11.sp,
-                                color = Color(0xFFBDBDBD),
+                                color = PoupaiTheme.tokens.textMuted,
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.End,
                             )
@@ -473,11 +474,11 @@ private fun RebalanceItemCard(
                         shape = RoundedCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = typeColor,
-                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            unfocusedBorderColor = PoupaiTheme.tokens.divider,
                             focusedContainerColor = typeColor.copy(alpha = 0.04f),
                             unfocusedContainerColor = Color.Transparent,
-                            focusedTextColor = Color(0xFF1C1B1F),
-                            unfocusedTextColor = Color(0xFF1C1B1F),
+                            focusedTextColor = PoupaiTheme.tokens.textPrimary,
+                            unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
                             cursorColor = typeColor,
                         ),
                     )
@@ -489,7 +490,7 @@ private fun RebalanceItemCard(
                             color = typeColor,
                         )
                     } else {
-                        Text("%", fontSize = 12.sp, color = Color(0xFF6B6B6B))
+                        Text("%", fontSize = 12.sp, color = PoupaiTheme.tokens.textSecondary)
                     }
                 }
             }
@@ -512,8 +513,8 @@ private fun RebalanceItemCard(
                     .fillMaxWidth()
                     .height(3.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = Color(0xFFBDBDBD),
-                trackColor = Color(0xFFF0F0F0),
+                color = PoupaiTheme.tokens.textMuted,
+                trackColor = PoupaiTheme.tokens.surfaceSunken,
             )
 
             if (item.action != "OK") {
