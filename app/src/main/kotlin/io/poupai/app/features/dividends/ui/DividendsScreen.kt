@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.util.toBRL
@@ -83,11 +84,11 @@ fun DividendsScreen(
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
         focusedIndicatorColor = Purple40,
-        unfocusedIndicatorColor = Color(0xFFBDBDBD),
+        unfocusedIndicatorColor = PoupaiTheme.tokens.textMuted,
         focusedLabelColor = Purple40,
-        unfocusedLabelColor = Color(0xFF9E9E9E),
-        focusedTextColor = Color(0xFF1C1B1F),
-        unfocusedTextColor = Color(0xFF1C1B1F),
+        unfocusedLabelColor = PoupaiTheme.tokens.textMuted,
+        focusedTextColor = PoupaiTheme.tokens.textPrimary,
+        unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
         cursorColor = Purple40,
     )
 
@@ -123,7 +124,7 @@ fun DividendsScreen(
     val totalInvested = uiState.investments.sumOf { it.investedValue }
     val dyPeriod = if (totalInvested > 0) totalInPeriod / totalInvested * 100.0 else 0.0
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+    Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // Header
         Box(
@@ -224,7 +225,7 @@ fun DividendsScreen(
                         "Registros (${dividendsInPeriod.size})",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF6B6B6B),
+                        color = PoupaiTheme.tokens.textSecondary,
                     )
                 }
                 if (dividendsInPeriod.isEmpty()) {
@@ -232,14 +233,14 @@ fun DividendsScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
                             elevation = CardDefaults.cardElevation(1.dp),
                         ) {
                             Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                                 Text(
                                     "Nenhum dividendo neste período",
                                     fontSize = 12.sp,
-                                    color = Color(0xFF9E9E9E),
+                                    color = PoupaiTheme.tokens.textMuted,
                                 )
                             }
                         }
@@ -249,7 +250,7 @@ fun DividendsScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
                             elevation = CardDefaults.cardElevation(1.dp),
                         ) {
                             Column {
@@ -260,7 +261,7 @@ fun DividendsScreen(
                                     )
                                     if (idx < dividendsInPeriod.lastIndex) {
                                         HorizontalDivider(
-                                            color = Color(0xFFF5F5F5),
+                                            color = PoupaiTheme.tokens.surfaceAlt,
                                             modifier = Modifier.padding(horizontal = 16.dp),
                                         )
                                     }
@@ -388,7 +389,7 @@ private fun YearSelector(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
+            .background(PoupaiTheme.tokens.surface)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -407,7 +408,7 @@ private fun YearSelector(
                     label,
                     fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else Color(0xFF9E9E9E),
+                    color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
                 )
             }
         }
@@ -447,7 +448,7 @@ private fun ChartCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -457,7 +458,7 @@ private fun ChartCard(
                 if (periodTotal > 0)
                     "Maior pagamento: ${(bars.maxByOrNull { it.second }?.let { "${it.first} · ${it.second.toBRL()}" } ?: "—")}"
                 else "Sem registros",
-                fontSize = 11.sp, color = Color(0xFF9E9E9E),
+                fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted,
             )
             Spacer(Modifier.height(16.dp))
             BarChart(
@@ -502,7 +503,7 @@ private fun BarChart(
                                 if (value > 0)
                                     Brush.verticalGradient(listOf(color.copy(alpha = 0.45f), color))
                                 else
-                                    Brush.verticalGradient(listOf(Color(0xFFF5F5F5), Color(0xFFF5F5F5))),
+                                    Brush.verticalGradient(listOf(PoupaiTheme.tokens.surfaceAlt, PoupaiTheme.tokens.surfaceAlt)),
                             ),
                     )
                 }
@@ -515,7 +516,7 @@ private fun BarChart(
                     label,
                     modifier = Modifier.weight(1f),
                     fontSize = 9.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                 )
@@ -565,13 +566,13 @@ private fun TopPayersCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Top pagadores", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text("Ordenado pelo total recebido no período",
-                fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(16.dp))
 
             stats.forEachIndexed { idx, stat ->
@@ -587,7 +588,7 @@ private fun TopPayersCard(
                 )
                 if (idx < stats.lastIndex) {
                     Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                    HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
                     Spacer(Modifier.height(10.dp))
                 }
             }
@@ -622,7 +623,7 @@ private fun PayerRow(
                 },
                 fontSize = if (rank <= 3) 20.sp else 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
             )
         }
         Spacer(Modifier.width(10.dp))
@@ -636,19 +637,19 @@ private fun PayerRow(
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 "$count pagamento${if (count != 1) "s" else ""}" +
                     (dy?.let { " · DY ${"%.2f".format(it)}%" } ?: ""),
                 fontSize = 10.sp,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
             )
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(total.toBRL(), fontSize = 13.sp,
                 fontWeight = FontWeight.Bold, color = GreenPositive)
             Text("${"%.1f".format(pct)}% do período",
-                fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
         }
     }
 }
@@ -673,12 +674,12 @@ private fun TypeBreakdownCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Por tipo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text("Distribuição no período", fontSize = 11.sp, color = Color(0xFF9E9E9E))
+            Text("Distribuição no período", fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(16.dp))
 
             byType.forEachIndexed { idx, (type, amount) ->
@@ -700,7 +701,7 @@ private fun TypeBreakdownCard(
                             Text(
                                 "${amount.toBRL()} · ${"%.1f".format(pct)}%",
                                 fontSize = 11.sp,
-                                color = Color(0xFF6B6B6B),
+                                color = PoupaiTheme.tokens.textSecondary,
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
@@ -727,7 +728,7 @@ private fun AnimatedHorizontalBar(progress: Float, color: Color, modifier: Modif
             .fillMaxWidth()
             .height(5.dp)
             .clip(RoundedCornerShape(3.dp))
-            .background(Color(0xFFF0F0F0)),
+            .background(PoupaiTheme.tokens.surfaceSunken),
     ) {
         Box(
             modifier = Modifier
@@ -757,7 +758,7 @@ private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(dividend.investmentName, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = RoundedCornerShape(4.dp), color = color.copy(alpha = 0.10f)) {
@@ -766,7 +767,7 @@ private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                 }
                 Text(io.poupai.app.core.util.DateFormatter.isoToDisplay(dividend.date),
-                    fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                    fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             }
         }
         Column(horizontalAlignment = Alignment.End) {
@@ -774,11 +775,11 @@ private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
                 fontWeight = FontWeight.Bold, color = GreenPositive)
             if (dividend.yieldPercent > 0)
                 Text("yield ${"%.2f".format(dividend.yieldPercent)}%",
-                    fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                    fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
         }
         Spacer(Modifier.width(4.dp))
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.Delete, "Excluir", tint = Color(0xFFBDBDBD),
+            Icon(Icons.Default.Delete, "Excluir", tint = PoupaiTheme.tokens.textMuted,
                 modifier = Modifier.size(16.dp))
         }
     }
@@ -796,7 +797,7 @@ private fun EmptyState(onAdd: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
             Text("Registre o primeiro dividendo para\nver suas analytics aqui.",
-                fontSize = 12.sp, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
+                fontSize = 12.sp, color = PoupaiTheme.tokens.textMuted, textAlign = TextAlign.Center)
             Spacer(Modifier.height(20.dp))
             Button(
                 onClick = onAdd,
@@ -840,14 +841,14 @@ private fun AddDividendForm(
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Ativo", fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                    Text("Ativo", fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
                     Text(
                         if (uiState.formInvestmentName.isNotBlank())
                             uiState.formInvestmentName
                         else "Selecione o ativo",
                         fontSize = 14.sp,
                         color = if (uiState.formInvestmentName.isNotBlank())
-                            Color(0xFF1C1B1F) else Color(0xFFBDBDBD),
+                            PoupaiTheme.tokens.textPrimary else PoupaiTheme.tokens.textMuted,
                     )
                 }
             }
@@ -860,7 +861,7 @@ private fun AddDividendForm(
                 text = {
                     if (uiState.investments.isEmpty()) {
                         Text("Nenhum ativo cadastrado.",
-                            fontSize = 13.sp, color = Color(0xFF9E9E9E))
+                            fontSize = 13.sp, color = PoupaiTheme.tokens.textMuted)
                     } else {
                         LazyColumn(modifier = Modifier.fillMaxWidth()) {
                             items(uiState.investments) { inv ->
@@ -877,17 +878,17 @@ private fun AddDividendForm(
                                     Text(inv.name, fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier.weight(1f),
-                                        color = Color(0xFF1C1B1F))
+                                        color = PoupaiTheme.tokens.textPrimary)
                                     Text(
                                         when (inv.type) {
                                             InvestmentType.RENDA_VARIAVEL -> "Renda Variável"
                                             InvestmentType.RENDA_FIXA -> "Renda Fixa"
                                             InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
                                         },
-                                        fontSize = 10.sp, color = Color(0xFF9E9E9E),
+                                        fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted,
                                     )
                                 }
-                                HorizontalDivider(color = Color(0xFFF5F5F5))
+                                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
                             }
                         }
                     }
@@ -901,7 +902,7 @@ private fun AddDividendForm(
         }
 
         // Tipo de dividendo
-        Text("Tipo", style = MaterialTheme.typography.labelMedium, color = Color(0xFF9E9E9E))
+        Text("Tipo", style = MaterialTheme.typography.labelMedium, color = PoupaiTheme.tokens.textMuted)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             DividendType.entries.take(3).forEach { type ->
                 FilterChip(
