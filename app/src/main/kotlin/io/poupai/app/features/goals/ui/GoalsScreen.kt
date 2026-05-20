@@ -12,13 +12,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.WarningAmber
@@ -37,7 +37,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.designsystem.components.PoupaiDrawerScaffold
 import io.poupai.app.core.designsystem.components.PullToRefresh
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
@@ -75,7 +77,7 @@ private fun monthsUntilDeadline(deadline: Date?): Long? =
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun GoalsScreen(
-    onNavigateBack: () -> Unit,
+    topLevelNav: TopLevelNavCallbacks,
     viewModel: GoalsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -101,6 +103,10 @@ fun GoalsScreen(
         cursorColor = Purple40,
     )
 
+    PoupaiDrawerScaffold(
+        selectedRoute = "goals",
+        nav = topLevelNav,
+    ) { onMenuClick ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -115,8 +121,8 @@ fun GoalsScreen(
                 .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, "Menu", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
                 Text("Metas", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
@@ -186,6 +192,7 @@ fun GoalsScreen(
             }
         }
     }
+    } // close PoupaiDrawerScaffold
 
     // ─── FAB ───
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
