@@ -42,6 +42,7 @@ import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.theme.RedNegative
@@ -53,6 +54,26 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 private const val HIDDEN = "••••"
+
+// Paleta on-brand pra tags. O `tag.color` que vem do backend pode ser qualquer
+// HEX (verde, laranja, etc, definidos por convenções antigas). Em vez de
+// confiar nesse dado, distribuímos as tags entre 6 tons de roxo de forma
+// estável (hash do nome) — assim cada categoria mantém sempre a mesma cor
+// dentro da identidade roxa do app.
+private val tagPalette = listOf(
+    Purple40,                  // #503173
+    Purple60,                  // #9B7FD4
+    Color(0xFF7C5295),         // mid
+    Color(0xFFB39DDB),         // lavanda clara
+    Color(0xFFD1C4E9),         // lavanda muito clara
+    Color(0xFF6A3F9E),         // roxo profundo
+)
+
+private fun tagColorFor(tag: Tag): Color {
+    val seed = tag.name.ifBlank { tag.id }
+    val idx = ((seed.hashCode() % tagPalette.size) + tagPalette.size) % tagPalette.size
+    return tagPalette[idx]
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -447,9 +468,7 @@ private fun BasicTextFieldCompat(
 private fun TagCard(tag: Tag, totalSpent: Double, hideValues: Boolean, onClick: () -> Unit) {
     val percent = if (totalSpent > 0) (tag.totalSpent / totalSpent).toFloat() else 0f
     val percentInt = (percent * 100).toInt()
-    val tagColor = try {
-        Color(android.graphics.Color.parseColor(tag.color))
-    } catch (e: Exception) { Purple40 }
+    val tagColor = tagColorFor(tag)
 
     var animationPlayed by remember { mutableStateOf(false) }
     val animProgress by animateFloatAsState(
@@ -608,9 +627,7 @@ private fun TagDetailSheet(
     totalSpent: Double,
     hideValues: Boolean,
 ) {
-    val tagColor = try {
-        Color(android.graphics.Color.parseColor(tag.color))
-    } catch (e: Exception) { Purple40 }
+    val tagColor = tagColorFor(tag)
     val percent = if (totalSpent > 0) (tag.totalSpent / totalSpent * 100).toInt() else 0
 
     Column(
