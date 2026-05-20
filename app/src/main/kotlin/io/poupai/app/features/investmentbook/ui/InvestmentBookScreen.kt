@@ -5,16 +5,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -30,11 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.PullToRefresh
-import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
-import io.poupai.app.core.theme.RedNegative
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.EntryType
 import io.poupai.app.domain.model.InvestmentEntry
@@ -116,12 +120,24 @@ fun InvestmentBookScreen(
                             elevation = CardDefaults.cardElevation(1.dp)) {
                             Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("📒", fontSize = 40.sp)
+                                    Box(
+                                        Modifier.size(56.dp).clip(CircleShape)
+                                            .background(PurpleLight.copy(alpha = 0.55f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Book, null,
+                                            tint = Purple40, modifier = Modifier.size(28.dp),
+                                        )
+                                    }
                                     Spacer(Modifier.height(12.dp))
                                     Text("Nenhum lançamento encontrado",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = PoupaiTheme.tokens.textMuted, textAlign = TextAlign.Center)
-                                    Text("Toque em + para registrar", fontSize = 12.sp, color = Color(0xFFBDBDBD))
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = PoupaiTheme.tokens.textSecondary, textAlign = TextAlign.Center)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Toque em + para registrar", fontSize = 12.sp,
+                                        color = PoupaiTheme.tokens.textMuted)
                                 }
                             }
                         }
@@ -139,7 +155,7 @@ fun InvestmentBookScreen(
                                 listState.entries.forEachIndexed { index, entry ->
                                     EntryRow(entry = entry, onDelete = { viewModel.onDeleteRequest(entry) })
                                     if (index < listState.entries.lastIndex)
-                                        HorizontalDivider(color = Color(0xFFF5F5F5),
+                                        HorizontalDivider(color = PoupaiTheme.tokens.divider,
                                             modifier = Modifier.padding(horizontal = 16.dp))
                                 }
                             }
@@ -186,7 +202,10 @@ private fun BookSummaryCard(listState: io.poupai.app.features.investmentbook.sta
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(4.dp)) {
         Box(modifier = Modifier.fillMaxWidth()
-            .background(brush = Brush.linearGradient(listOf(PurpleDark, Purple40)), shape = RoundedCornerShape(20.dp))
+            .background(
+                brush = Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396))),
+                shape = RoundedCornerShape(20.dp),
+            )
             .padding(20.dp)) {
             Column {
                 Text("Movimentações", fontSize = 12.sp, color = Color.White.copy(alpha = 0.75f))
@@ -232,7 +251,7 @@ private fun BookFilters(
             }
             if (listState.selectedInvestmentId != null || listState.selectedMonth != null) {
                 TextButton(onClick = viewModel::onClearFilters, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                    Text("Limpar", fontSize = 11.sp, color = RedNegative)
+                    Text("Limpar", fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary)
                 }
             }
         }
@@ -261,7 +280,7 @@ private fun BookFilters(
                                     InvestmentType.CRIPTOMOEDAS -> "Criptomoedas"
                                 }, fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
                             }
-                            HorizontalDivider(color = Color(0xFFF5F5F5))
+                            HorizontalDivider(color = PoupaiTheme.tokens.divider)
                         }
                     }
                 },
@@ -281,10 +300,10 @@ private fun BookFilters(
 
 @Composable
 private fun EntryRow(entry: InvestmentEntry, onDelete: () -> Unit) {
-    val (color, emoji) = when (entry.type) {
-        EntryType.APORTE -> GreenPositive to "📥"
-        EntryType.RESGATE -> RedNegative to "📤"
-        EntryType.ATUALIZACAO_VALOR -> Purple40 to "📊"
+    val (color, icon: ImageVector) = when (entry.type) {
+        EntryType.APORTE -> Purple40 to Icons.Default.ArrowUpward
+        EntryType.RESGATE -> Color(0xFF7C5295) to Icons.Default.ArrowDownward
+        EntryType.ATUALIZACAO_VALOR -> Purple60 to Icons.Default.Sync
     }
     val typeLabel = when (entry.type) {
         EntryType.APORTE -> "Aporte"
@@ -294,9 +313,9 @@ private fun EntryRow(entry: InvestmentEntry, onDelete: () -> Unit) {
 
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(color.copy(alpha = 0.12f)),
+        Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center) {
-            Text(emoji, fontSize = 16.sp)
+            Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -332,7 +351,7 @@ private fun EntryRow(entry: InvestmentEntry, onDelete: () -> Unit) {
         }
         Spacer(Modifier.width(4.dp))
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.Delete, "Excluir", tint = Color(0xFFBDBDBD), modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Delete, "Excluir", tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(16.dp))
         }
     }
 }
@@ -344,12 +363,15 @@ private fun CurrentPositionCard(investment: io.poupai.app.domain.model.Investmen
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = RedNegative.copy(alpha = 0.06f)),
+        colors = CardDefaults.cardColors(containerColor = PurpleLight.copy(alpha = 0.55f)),
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("📊", fontSize = 14.sp)
+                Icon(
+                    Icons.Default.AccountBalanceWallet, null,
+                    tint = Purple40, modifier = Modifier.size(14.dp),
+                )
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "Sua posição atual em ${investment.name}",
@@ -441,9 +463,9 @@ private fun AddEntryForm(
                     InvestmentType.RENDA_FIXA to "Renda Fixa",
                     InvestmentType.CRIPTOMOEDAS to "Cripto").forEach { (type, label) ->
                     val typeColor = when (type) {
-                        InvestmentType.RENDA_VARIAVEL -> Color(0xFF503173)
-                        InvestmentType.RENDA_FIXA -> Color(0xFF4CAF50)
-                        InvestmentType.CRIPTOMOEDAS -> Color(0xFFFF9800)
+                        InvestmentType.RENDA_VARIAVEL -> Purple40
+                        InvestmentType.RENDA_FIXA -> Purple60
+                        InvestmentType.CRIPTOMOEDAS -> Color(0xFF7C5295)
                     }
                     FilterChip(selected = formState.newAssetType == type, onClick = { onNewAssetTypeChanged(type) },
                         label = { Text(label, fontSize = 11.sp) },
@@ -462,7 +484,7 @@ private fun AddEntryForm(
                         Text("Ativo", fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
                         Text(if (formState.formInvestmentName.isNotBlank()) formState.formInvestmentName else "Selecione o ativo",
                             fontSize = 14.sp,
-                            color = if (formState.formInvestmentName.isNotBlank()) Color(0xFF1C1B1F) else Color(0xFFBDBDBD))
+                            color = if (formState.formInvestmentName.isNotBlank()) PoupaiTheme.tokens.textPrimary else PoupaiTheme.tokens.textMuted)
                     }
                 }
             }
@@ -504,7 +526,7 @@ private fun AddEntryForm(
                                             Text("PM: ${inv.averagePrice.toBRL()}", fontSize = 11.sp,
                                                 color = Purple40, fontWeight = FontWeight.SemiBold)
                                     }
-                                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                                    HorizontalDivider(color = PoupaiTheme.tokens.divider)
                                 }
                             }
                         }
@@ -520,7 +542,7 @@ private fun AddEntryForm(
             }
         }
 
-        HorizontalDivider(color = Color(0xFFF0F0F0))
+        HorizontalDivider(color = PoupaiTheme.tokens.divider)
 
         // ─── Tipo de lançamento ───
         Text("Tipo", style = MaterialTheme.typography.labelMedium, color = PoupaiTheme.tokens.textMuted)
@@ -531,9 +553,9 @@ private fun AddEntryForm(
                 EntryType.ATUALIZACAO_VALOR to "Atualização",
             ).forEach { (type, label) ->
                 val color = when (type) {
-                    EntryType.APORTE -> GreenPositive
-                    EntryType.RESGATE -> RedNegative
-                    EntryType.ATUALIZACAO_VALOR -> Purple40
+                    EntryType.APORTE -> Purple40
+                    EntryType.RESGATE -> Color(0xFF7C5295)
+                    EntryType.ATUALIZACAO_VALOR -> Purple60
                 }
                 FilterChip(selected = formState.formType == type, onClick = { onTypeChanged(type) },
                     label = { Text(label, fontSize = 11.sp) },
