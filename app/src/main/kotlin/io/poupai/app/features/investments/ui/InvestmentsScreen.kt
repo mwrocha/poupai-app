@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Delete
@@ -26,6 +25,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
@@ -54,8 +54,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
+import io.poupai.app.core.designsystem.components.PoupaiDrawerScaffold
 import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.designsystem.components.StaleChip
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
@@ -82,13 +84,12 @@ private val typeColor = mapOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvestmentsScreen(
-    onNavigateBack: () -> Unit,
+    topLevelNav: TopLevelNavCallbacks,
     onNavigateToBook: () -> Unit = {},
     onNavigateToDividends: () -> Unit = {},
     onNavigateToRebalance: () -> Unit = {},
     onNavigateToAllocation: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToGoals: () -> Unit = {},
     onNavigateToIncomeTax: () -> Unit = {},
     viewModel: InvestmentsViewModel = hiltViewModel(),
 ) {
@@ -110,6 +111,10 @@ fun InvestmentsScreen(
     // Não recomputamos localmente para evitar divergência de janela temporal e base de cálculo.
     val accumulatedCdi = profitPercent - (uiState.benchmark?.vsCdi ?: 0.0)
 
+    PoupaiDrawerScaffold(
+        selectedRoute = "investments",
+        nav = topLevelNav,
+    ) { onMenuClick ->
     Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // ─── Header ───
@@ -121,8 +126,8 @@ fun InvestmentsScreen(
                 .padding(top = 16.dp, bottom = 16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, "Menu", tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
                 Text("Investimentos", style = MaterialTheme.typography.titleLarge,
@@ -188,7 +193,7 @@ fun InvestmentsScreen(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 QuickCard(Modifier.weight(1f), Icons.Default.BarChart, "Rebalancear", onNavigateToRebalance)
                                 QuickCard(Modifier.weight(1f), Icons.Default.PieChart, "Alocação", onNavigateToAllocation)
-                                QuickCard(Modifier.weight(1f), Icons.Default.Flag, "Metas", onNavigateToGoals)
+                                QuickCard(Modifier.weight(1f), Icons.Default.Flag, "Metas", topLevelNav.onNavigateToGoals)
                             }
                         }
                     }
@@ -242,6 +247,7 @@ fun InvestmentsScreen(
             }
         }
     }
+    } // close PoupaiDrawerScaffold
 
     // ─── Edit bottom sheet ───
     if (uiState.showEditSheet) {
