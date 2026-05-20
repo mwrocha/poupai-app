@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.PoupaiTheme
 
 /**
  * Wrapper de pull-to-refresh com indicador custom (sem fundo, sem sombra).
@@ -40,7 +40,7 @@ fun PullToRefresh(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
-    indicatorColor: Color = Purple40,
+    indicatorColor: Color = PoupaiTheme.tokens.accentBright,
     content: @Composable () -> Unit,
 ) {
     val state = rememberPullToRefreshState()
