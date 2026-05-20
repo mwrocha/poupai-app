@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.domain.model.InvestmentType
@@ -36,7 +37,7 @@ fun TaxClassificationScreen(
     val uiState by viewModel.uiState.collectAsState()
     val rvAssets = uiState.investments.filter { it.type == InvestmentType.RENDA_VARIAVEL }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+    Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // ─── Header ───
         Box(
@@ -73,7 +74,7 @@ fun TaxClassificationScreen(
                 Text(
                     "Nenhum ativo de Renda Variável cadastrado.",
                     fontSize = 13.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                 )
             }
             else -> LazyColumn(
@@ -86,7 +87,7 @@ fun TaxClassificationScreen(
                         "Renda Variável (${rvAssets.size})",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF6B6B6B),
+                        color = PoupaiTheme.tokens.textSecondary,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                     )
                 }
@@ -153,7 +154,7 @@ private fun AssetRow(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Row(
@@ -180,13 +181,13 @@ private fun AssetRow(
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1C1B1F),
+                    color = PoupaiTheme.tokens.textPrimary,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     if (isFii) "Tratado como FII (20%, sem isenção)"
                     else "Tratado como ação (15%, isenção R\$ 20k/mês)",
                     fontSize = 10.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                 )
             }
             Switch(
