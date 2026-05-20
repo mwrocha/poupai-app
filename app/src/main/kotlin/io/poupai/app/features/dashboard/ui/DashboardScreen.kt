@@ -24,7 +24,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -40,7 +39,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.AsyncImage
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
-import io.poupai.app.core.designsystem.components.PoupaiDrawerContent
+import io.poupai.app.core.designsystem.components.PoupaiDrawerScaffold
+import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
@@ -53,7 +53,6 @@ import io.poupai.app.domain.model.Transaction
 import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.features.dashboard.state.DashboardUiState
 import io.poupai.app.features.dashboard.viewmodel.DashboardViewModel
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -62,20 +61,10 @@ private const val HIDDEN = "••••"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    onNavigateToTransactions: () -> Unit,
-    onNavigateToTags: () -> Unit,
-    onNavigateToFinances: () -> Unit,
-    onNavigateToInvestments: () -> Unit,
-    onNavigateToGoals: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToGamification: () -> Unit = {},
-    onLogout: () -> Unit = {},
+    topLevelNav: TopLevelNavCallbacks,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
@@ -86,43 +75,10 @@ fun DashboardScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Quando o drawer abre, escondemos só o avatar (que já aparece dentro do drawer)
-    // — não a tela inteira. Antes era `.alpha(mainAlpha)` no Column raiz, o que
-    // pintava o app de cinza ao abrir o menu.
-    val avatarAlpha = if (drawerState.isOpen) 0f else 1f
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            PoupaiDrawerContent(
-                userName = uiState.userName,
-                userHandle = "",
-                profileImageUrl = uiState.profileImageUrl,
-                selectedRoute = "dashboard",
-                onAvatarClick = {
-                    scope.launch { drawerState.close() }
-                    onNavigateToProfile()
-                },
-                onItemClick = { route ->
-                    scope.launch { drawerState.close() }
-                    when (route) {
-                        "transactions" -> onNavigateToTransactions()
-                        "finances" -> onNavigateToFinances()
-                        "investments" -> onNavigateToInvestments()
-                        "tags" -> onNavigateToTags()
-                        "goals" -> onNavigateToGoals()
-                        "profile" -> onNavigateToProfile()
-                        "settings" -> onNavigateToSettings()
-                        "gamification" -> onNavigateToGamification()
-                    }
-                },
-                onLogout = {
-                    scope.launch { drawerState.close() }
-                    onLogout()
-                },
-            )
-        },
-    ) {
+    PoupaiDrawerScaffold(
+        selectedRoute = "dashboard",
+        nav = topLevelNav,
+    ) { onMenuClick ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -132,18 +88,17 @@ fun DashboardScreen(
             // ─── Hero (header roxo + saldo + receita/despesa inline) ───
             DashboardHero(
                 uiState = uiState,
-                onMenuClick = { scope.launch { drawerState.open() } },
-                onProfileClick = onNavigateToProfile,
+                onMenuClick = onMenuClick,
+                onProfileClick = topLevelNav.onNavigateToProfile,
                 onToggleHide = viewModel::toggleHideValues,
-                avatarAlpha = avatarAlpha,
             )
 
             // ─── Atalhos rápidos (overlay) ───
             QuickActions(
-                onTransactions = onNavigateToTransactions,
-                onInvestments = onNavigateToInvestments,
-                onGoals = onNavigateToGoals,
-                onTags = onNavigateToTags,
+                onTransactions = topLevelNav.onNavigateToTransactions,
+                onInvestments = topLevelNav.onNavigateToInvestments,
+                onGoals = topLevelNav.onNavigateToGoals,
+                onTags = topLevelNav.onNavigateToTags,
             )
 
             // ─── Streak / Conquistas ───
@@ -152,7 +107,7 @@ fun DashboardScreen(
                 StreakCard(
                     streak = uiState.currentStreak,
                     points = uiState.totalPoints,
-                    onClick = onNavigateToGamification,
+                    onClick = topLevelNav.onNavigateToGamification,
                 )
             }
 
@@ -162,7 +117,7 @@ fun DashboardScreen(
                 SectionHeader(
                     title = "Suas metas",
                     icon = Icons.Default.TrackChanges,
-                    onSeeAll = onNavigateToGoals,
+                    onSeeAll = topLevelNav.onNavigateToGoals,
                 )
                 Spacer(Modifier.height(10.dp))
                 Column(
@@ -180,7 +135,7 @@ fun DashboardScreen(
             SectionHeader(
                 title = "Últimas transações",
                 icon = Icons.Default.Receipt,
-                onSeeAll = onNavigateToTransactions,
+                onSeeAll = topLevelNav.onNavigateToTransactions,
             )
             Spacer(Modifier.height(10.dp))
             RecentTransactionsContent(
@@ -201,7 +156,6 @@ private fun DashboardHero(
     onMenuClick: () -> Unit,
     onProfileClick: () -> Unit,
     onToggleHide: () -> Unit,
-    avatarAlpha: Float = 1f,
 ) {
     Box(
         modifier = Modifier
@@ -229,8 +183,7 @@ private fun DashboardHero(
                         .size(40.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.2f))
-                        .clickable { onProfileClick() }
-                        .alpha(avatarAlpha),
+                        .clickable { onProfileClick() },
                     contentAlignment = Alignment.Center,
                 ) {
                     if (!uiState.profileImageUrl.isNullOrBlank()) {
