@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,7 +33,9 @@ import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.Dividend
 import io.poupai.app.domain.model.DividendType
@@ -48,11 +51,11 @@ private val MONTHS_PT = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
     "Jul", "Ago", "Set", "Out", "Nov", "Dez")
 
 private val typeColor = mapOf(
-    DividendType.DIVIDENDO to Color(0xFF2E7D32),
-    DividendType.JCP to Color(0xFF1565C0),
-    DividendType.RENDIMENTO to Color(0xFF6A1B9A),
-    DividendType.AMORTIZACAO to Color(0xFFE65100),
-    DividendType.OUTROS to Color(0xFF546E7A),
+    DividendType.DIVIDENDO to Purple40,
+    DividendType.JCP to Purple60,
+    DividendType.RENDIMENTO to Color(0xFF7C5295),
+    DividendType.AMORTIZACAO to Color(0xFFB39DDB),
+    DividendType.OUTROS to Color(0xFFD1C4E9),
 )
 
 private val typeLabel = mapOf(
@@ -279,7 +282,7 @@ fun DividendsScreen(
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         FloatingActionButton(
             onClick = viewModel::onShowAddSheet,
-            containerColor = GreenPositive,
+            containerColor = Purple40,
             shape = CircleShape,
             modifier = Modifier.padding(24.dp),
         ) {
@@ -322,7 +325,7 @@ private fun HeroCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.linearGradient(listOf(Color(0xFF1B5E20), GreenPositive)),
+                    brush = Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396))),
                     shape = RoundedCornerShape(20.dp),
                 )
                 .padding(20.dp),
@@ -399,7 +402,7 @@ private fun YearSelector(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(9.dp))
-                    .background(if (isSelected) GreenPositive else Color.Transparent)
+                    .background(if (isSelected) Purple40 else Color.Transparent)
                     .clickable { onSelect(year) }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center,
@@ -473,7 +476,7 @@ private fun ChartCard(
 private fun BarChart(
     bars: List<Pair<String, Double>>,
     modifier: Modifier = Modifier,
-    color: Color = GreenPositive,
+    color: Color = Purple40,
 ) {
     var played by remember { mutableStateOf(false) }
     val anim by animateFloatAsState(if (played) 1f else 0f, tween(800), label = "bars_anim")
@@ -607,9 +610,9 @@ private fun PayerRow(
     type: InvestmentType?,
 ) {
     val accent = when (type) {
-        InvestmentType.RENDA_VARIAVEL -> Color(0xFF503173)
-        InvestmentType.RENDA_FIXA -> Color(0xFF4CAF50)
-        InvestmentType.CRIPTOMOEDAS -> Color(0xFFFF9800)
+        InvestmentType.RENDA_VARIAVEL -> Purple40
+        InvestmentType.RENDA_FIXA -> Purple60
+        InvestmentType.CRIPTOMOEDAS -> Color(0xFF7C5295)
         null -> Purple40
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -684,7 +687,7 @@ private fun TypeBreakdownCard(
 
             byType.forEachIndexed { idx, (type, amount) ->
                 val pct = if (totalInPeriod > 0) amount / totalInPeriod * 100.0 else 0.0
-                val color = typeColor[type] ?: GreenPositive
+                val color = typeColor[type] ?: Purple40
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier.size(8.dp).clip(CircleShape).background(color),
@@ -744,7 +747,7 @@ private fun AnimatedHorizontalBar(progress: Float, color: Color, modifier: Modif
 
 @Composable
 private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
-    val color = typeColor[dividend.type] ?: GreenPositive
+    val color = typeColor[dividend.type] ?: Purple40
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -791,7 +794,20 @@ private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
 private fun EmptyState(onAdd: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("💰", fontSize = 56.sp)
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(PurpleLight.copy(alpha = 0.55f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.Payments,
+                    contentDescription = null,
+                    tint = Purple40,
+                    modifier = Modifier.size(36.dp),
+                )
+            }
             Spacer(Modifier.height(16.dp))
             Text("Nenhum dividendo registrado",
                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -802,7 +818,7 @@ private fun EmptyState(onAdd: () -> Unit) {
             Button(
                 onClick = onAdd,
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GreenPositive),
+                colors = ButtonDefaults.buttonColors(containerColor = Purple40),
             ) {
                 Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -910,8 +926,8 @@ private fun AddDividendForm(
                     onClick = { onTypeChanged(type) },
                     label = { Text(typeLabel[type] ?: type.name, fontSize = 10.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = GreenPositive.copy(alpha = 0.12f),
-                        selectedLabelColor = GreenPositive,
+                        selectedContainerColor = Purple40.copy(alpha = 0.12f),
+                        selectedLabelColor = Purple40,
                     ),
                 )
             }
@@ -923,8 +939,8 @@ private fun AddDividendForm(
                     onClick = { onTypeChanged(type) },
                     label = { Text(typeLabel[type] ?: type.name, fontSize = 10.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = GreenPositive.copy(alpha = 0.12f),
-                        selectedLabelColor = GreenPositive,
+                        selectedContainerColor = Purple40.copy(alpha = 0.12f),
+                        selectedLabelColor = Purple40,
                     ),
                 )
             }
@@ -951,7 +967,7 @@ private fun AddDividendForm(
             onClick = onSave, enabled = !uiState.isSaving,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = GreenPositive),
+            colors = ButtonDefaults.buttonColors(containerColor = Purple40),
         ) {
             if (uiState.isSaving)
                 CircularProgressIndicator(Modifier.size(24.dp), color = Color.White)
