@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleLight
@@ -37,10 +38,6 @@ import io.poupai.app.core.util.toBRL
 import io.poupai.app.core.util.toDisplayFormat
 import io.poupai.app.domain.model.Transaction
 import io.poupai.app.domain.model.TransactionType
-
-private val TextPrimary = Color(0xFF1C1B1F)
-private val TextSecondary = Color(0xFF6B6B6B)
-private val TextMuted = Color(0xFF9E9E9E)
 
 @Composable
 fun TransactionItem(
@@ -59,7 +56,7 @@ fun TransactionItem(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
@@ -92,7 +89,7 @@ fun TransactionItem(
                     text = transaction.title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
+                    color = PoupaiTheme.tokens.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -104,19 +101,19 @@ fun TransactionItem(
                     Text(
                         text = transaction.date.toDisplayFormat(),
                         fontSize = 11.sp,
-                        color = TextMuted,
+                        color = PoupaiTheme.tokens.textMuted,
                     )
                     if (transaction.category.isNotBlank()) {
                         Box(
                             Modifier
                                 .size(3.dp)
                                 .clip(CircleShape)
-                                .background(TextMuted),
+                                .background(PoupaiTheme.tokens.textMuted),
                         )
                         Text(
                             text = transaction.category,
                             fontSize = 11.sp,
-                            color = TextSecondary,
+                            color = PoupaiTheme.tokens.textSecondary,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -177,7 +174,7 @@ fun TransactionItem(
                         Icon(
                             Icons.Default.DeleteOutline,
                             contentDescription = "Deletar",
-                            tint = TextMuted,
+                            tint = PoupaiTheme.tokens.textMuted,
                             modifier = Modifier.size(18.dp),
                         )
                     }
