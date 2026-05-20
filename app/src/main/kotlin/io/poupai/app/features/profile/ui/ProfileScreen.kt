@@ -14,8 +14,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -33,9 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.util.CpfVisualTransformation
 import io.poupai.app.core.util.PhoneVisualTransformation
 import io.poupai.app.features.profile.viewmodel.ProfileViewModel
@@ -69,13 +76,14 @@ fun ProfileScreen(
     if (showEmailDialog) {
         AlertDialog(
             onDismissRequest = { showEmailDialog = false },
-            title = { Text("Confirmar alteração de e-mail") },
+            shape = RoundedCornerShape(20.dp),
+            title = { Text("Confirmar alteração de e-mail", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
                         "Para alterar o e-mail você será desconectado e precisará fazer login novamente.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = PoupaiTheme.tokens.textSecondary,
                     )
                     Spacer(Modifier.height(16.dp))
                     TextField(
@@ -97,10 +105,13 @@ fun ProfileScreen(
                         currentPassword = ""
                     },
                     enabled = currentPassword.isNotBlank(),
-                ) { Text("Confirmar") }
+                    colors = ButtonDefaults.buttonColors(containerColor = Purple40),
+                ) { Text("Confirmar", color = Color.White) }
             },
             dismissButton = {
-                TextButton(onClick = { showEmailDialog = false; currentPassword = "" }) { Text("Cancelar") }
+                TextButton(onClick = { showEmailDialog = false; currentPassword = "" }) {
+                    Text("Cancelar")
+                }
             },
         )
     }
@@ -118,94 +129,22 @@ fun ProfileScreen(
             .background(PoupaiTheme.tokens.bg)
             .verticalScroll(rememberScrollState()),
     ) {
-        // ─── Header ───
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
-                .padding(horizontal = 20.dp)
-                .padding(top = 16.dp, bottom = 40.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
-                }
-                Spacer(Modifier.weight(1f))
-                Text("Meu Perfil", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.weight(1f))
-                Spacer(Modifier.size(48.dp))
-            }
-        }
+        // ─── Hero (header gradient + avatar + nome integrados) ───
+        ProfileHero(
+            firstName = uiState.editFirstName,
+            lastName = uiState.editLastName,
+            email = uiState.editEmail,
+            profileImageUrl = uiState.editProfileImageUrl,
+            onNavigateBack = onNavigateBack,
+            onImagePick = { imagePicker.launch("image/*") },
+        )
 
-        // ─── Avatar flutuando sobre o header ───
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-40).dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box {
-                Box(
-                    modifier = Modifier
-                        .size(88.dp)
-                        .clip(CircleShape)
-                        .background(Purple40.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (!uiState.editProfileImageUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = uiState.editProfileImageUrl,
-                            contentDescription = "Foto de perfil",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Text(
-                            text = uiState.firstName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Purple40,
-                        )
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(Purple40)
-                        .clickable { imagePicker.launch("image/*") },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Default.CameraAlt, "Trocar foto", tint = Color.White, modifier = Modifier.size(16.dp))
-                }
-            }
-        }
+        Spacer(Modifier.height(20.dp))
 
-        // ─── Nome exibido ───
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-32).dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                "${uiState.editFirstName} ${uiState.editLastName}".trim(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = PoupaiTheme.tokens.textPrimary,
-            )
-            Text(
-                uiState.editEmail,
-                style = MaterialTheme.typography.bodySmall,
-                color = PoupaiTheme.tokens.textSecondary,
-            )
-        }
+        // ─── Informações pessoais ───
+        SectionTitle("Informações pessoais", Icons.Default.Person)
 
-        Spacer(Modifier.height(4.dp))
-
-        // ─── Seção: Informações pessoais ───
-        ProfileSectionTitle("Informações pessoais")
+        Spacer(Modifier.height(10.dp))
 
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
@@ -216,23 +155,25 @@ fun ProfileScreen(
             Column {
                 EditableFieldRow("Usuário", uiState.editUsername, uiState.editingField == "username",
                     { viewModel.onFieldClick("username") }, viewModel::onUsernameChanged, fieldColors)
-                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
+                FieldDivider()
                 EditableFieldRow("Nome", uiState.editFirstName, uiState.editingField == "firstName",
                     { viewModel.onFieldClick("firstName") }, viewModel::onFirstNameChanged, fieldColors)
-                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
+                FieldDivider()
                 EditableFieldRow("Sobrenome", uiState.editLastName, uiState.editingField == "lastName",
                     { viewModel.onFieldClick("lastName") }, viewModel::onLastNameChanged, fieldColors)
-                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
-                EditableFieldRow("Data de Nascimento", uiState.editBirthDate, uiState.editingField == "birthDate",
+                FieldDivider()
+                EditableFieldRow("Data de nascimento", uiState.editBirthDate, uiState.editingField == "birthDate",
                     { viewModel.onFieldClick("birthDate") }, viewModel::onBirthDateChanged, fieldColors,
                     placeholder = "dd/MM/yyyy")
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
-        // ─── Seção: Contato ───
-        ProfileSectionTitle("Contato e segurança")
+        // ─── Contato e segurança ───
+        SectionTitle("Contato e segurança", Icons.Default.Lock)
+
+        Spacer(Modifier.height(10.dp))
 
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
@@ -249,9 +190,9 @@ fun ProfileScreen(
                     onValueChange = viewModel::onEmailChanged,
                     colors = fieldColors,
                     keyboardType = KeyboardType.Email,
-                    trailingNote = if (uiState.emailChanged) "⚠ Novo login" else null,
+                    warningNote = if (uiState.emailChanged) "Novo login necessário" else null,
                 )
-                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
+                FieldDivider()
                 EditableFieldRow(
                     label = "CPF",
                     value = uiState.editCpf,
@@ -263,7 +204,7 @@ fun ProfileScreen(
                     placeholder = "000.000.000-00",
                     visualTransformation = CpfVisualTransformation(),
                 )
-                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
+                FieldDivider()
                 EditableFieldRow(
                     label = "Telefone",
                     value = uiState.editPhone,
@@ -281,15 +222,15 @@ fun ProfileScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // ─── Mensagens ───
-        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-            }
-            uiState.successMessage?.let {
-                Text(it, color = Color(0xFF4CAF50), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-            }
+        // ─── Mensagens (chips on-brand) ───
+        uiState.errorMessage?.let {
+            MessageChip(text = it, isError = true)
         }
+        uiState.successMessage?.let {
+            MessageChip(text = it, isError = false)
+        }
+
+        Spacer(Modifier.height(8.dp))
 
         // ─── Botão salvar ───
         Button(
@@ -303,31 +244,233 @@ fun ProfileScreen(
             colors = ButtonDefaults.buttonColors(containerColor = Purple40),
         ) {
             if (uiState.isSaving) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-            else Text("Salvar alterações", fontSize = 16.sp, color = Color.White)
+            else Text("Salvar alterações", fontSize = 16.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(20.dp))
 
-        OutlinedButton(
-            onClick = { viewModel.onLogout(onLogout) },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(56.dp),
+        // ─── Conta (logout como card-item) ───
+        SectionTitle("Conta", Icons.Default.Logout)
+
+        Spacer(Modifier.height(10.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .clickable { viewModel.onLogout(onLogout) },
             shape = RoundedCornerShape(16.dp),
-        ) { Text("Sair da conta") }
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Default.Logout, null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Sair da conta",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PoupaiTheme.tokens.textPrimary,
+                    )
+                    Text(
+                        "Encerrar a sessão neste dispositivo",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = PoupaiTheme.tokens.textMuted,
+                    )
+                }
+                Icon(
+                    Icons.Default.ChevronRight, null,
+                    tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(20.dp),
+                )
+            }
+        }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(40.dp))
+    }
+}
+
+// ─── HERO ───
+
+@Composable
+private fun ProfileHero(
+    firstName: String,
+    lastName: String,
+    email: String,
+    profileImageUrl: String?,
+    onNavigateBack: () -> Unit,
+    onImagePick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396))),
+            )
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp, bottom = 28.dp),
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "Meu Perfil",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.size(48.dp))
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ─── Avatar + nome + email centralizados ───
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(96.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (!profileImageUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = profileImageUrl,
+                                contentDescription = "Foto de perfil",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                            )
+                        } else {
+                            Text(
+                                text = firstName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .clickable { onImagePick() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.CameraAlt, "Trocar foto",
+                            tint = Purple40, modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "$firstName $lastName".trim().ifBlank { "—" },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+                if (email.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color.White.copy(alpha = 0.18f),
+                    ) {
+                        Text(
+                            email,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            fontSize = 11.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── SECTION TITLE ───
+
+@Composable
+private fun SectionTitle(text: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 22.dp),
+    ) {
+        Icon(icon, null, tint = Purple40, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = PoupaiTheme.tokens.textSecondary,
+        )
     }
 }
 
 @Composable
-private fun ProfileSectionTitle(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.labelMedium,
-        color = PoupaiTheme.tokens.textSecondary,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
+private fun FieldDivider() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(1.dp)
+            .background(PoupaiTheme.tokens.divider),
     )
 }
+
+// ─── MESSAGE CHIPS ───
+
+@Composable
+private fun MessageChip(text: String, isError: Boolean) {
+    val bg = if (isError) MaterialTheme.colorScheme.errorContainer
+             else GreenPositive.copy(alpha = 0.14f)
+    val fg = if (isError) MaterialTheme.colorScheme.onErrorContainer
+             else GreenPositive
+    val icon = if (isError) Icons.Default.WarningAmber else Icons.Default.CheckCircle
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(bg)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = fg, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(text, fontSize = 12.sp, color = fg, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+// ─── EDITABLE FIELD ROW ───
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -341,7 +484,7 @@ private fun EditableFieldRow(
     placeholder: String = "",
     keyboardType: KeyboardType = KeyboardType.Text,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    trailingNote: String? = null,
+    warningNote: String? = null,
     leadingText: String? = null,
 ) {
     if (isEditing) {
@@ -355,8 +498,9 @@ private fun EditableFieldRow(
             visualTransformation = visualTransformation,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             colors = colors,
-            prefix = if (leadingText != null) { { Text(leadingText, color = PoupaiTheme.tokens.textSecondary) } } else null,
-            trailingIcon = if (trailingNote != null) { { Text(trailingNote, fontSize = 10.sp, color = Color(0xFFFF9800)) } } else null,
+            prefix = if (leadingText != null) {
+                { Text(leadingText, color = PoupaiTheme.tokens.textSecondary) }
+            } else null,
         )
     } else {
         val displayValue = if (visualTransformation != VisualTransformation.None && value.isNotBlank()) {
@@ -368,11 +512,36 @@ private fun EditableFieldRow(
                 .fillMaxWidth()
                 .clickable { onFieldClick() }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
+                    if (warningNote != null) {
+                        Spacer(Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(5.dp),
+                            color = Purple40.copy(alpha = 0.12f),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Default.WarningAmber, null,
+                                    tint = Purple40, modifier = Modifier.size(10.dp),
+                                )
+                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    warningNote,
+                                    fontSize = 9.sp,
+                                    color = Purple40,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                    }
+                }
                 Spacer(Modifier.height(2.dp))
                 Text(
                     if (leadingText != null && displayValue.isNotBlank()) "$leadingText$displayValue"
@@ -382,7 +551,10 @@ private fun EditableFieldRow(
                     fontWeight = if (displayValue.isNotBlank()) FontWeight.Medium else FontWeight.Normal,
                 )
             }
-            Icon(Icons.Default.ChevronRight, "Editar", tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(18.dp))
+            Icon(
+                Icons.Default.ChevronRight, "Editar",
+                tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
