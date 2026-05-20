@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.util.CpfVisualTransformation
@@ -55,9 +56,9 @@ fun ProfileScreen(
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
         focusedIndicatorColor = Purple40,
-        unfocusedIndicatorColor = Color(0xFFBDBDBD),
-        focusedTextColor = Color(0xFF1C1B1F),
-        unfocusedTextColor = Color(0xFF1C1B1F),
+        unfocusedIndicatorColor = PoupaiTheme.tokens.textMuted,
+        focusedTextColor = PoupaiTheme.tokens.textPrimary,
+        unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
         cursorColor = Purple40,
     )
 
@@ -114,7 +115,7 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7))
+            .background(PoupaiTheme.tokens.bg)
             .verticalScroll(rememberScrollState()),
     ) {
         // ─── Header ───
@@ -192,12 +193,12 @@ fun ProfileScreen(
                 "${uiState.editFirstName} ${uiState.editLastName}".trim(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1C1B1F),
+                color = PoupaiTheme.tokens.textPrimary,
             )
             Text(
                 uiState.editEmail,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF6B6B6B),
+                color = PoupaiTheme.tokens.textSecondary,
             )
         }
 
@@ -210,18 +211,18 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         ) {
             Column {
                 EditableFieldRow("Usuário", uiState.editUsername, uiState.editingField == "username",
                     { viewModel.onFieldClick("username") }, viewModel::onUsernameChanged, fieldColors)
-                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
                 EditableFieldRow("Nome", uiState.editFirstName, uiState.editingField == "firstName",
                     { viewModel.onFieldClick("firstName") }, viewModel::onFirstNameChanged, fieldColors)
-                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
                 EditableFieldRow("Sobrenome", uiState.editLastName, uiState.editingField == "lastName",
                     { viewModel.onFieldClick("lastName") }, viewModel::onLastNameChanged, fieldColors)
-                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
                 EditableFieldRow("Data de Nascimento", uiState.editBirthDate, uiState.editingField == "birthDate",
                     { viewModel.onFieldClick("birthDate") }, viewModel::onBirthDateChanged, fieldColors,
                     placeholder = "dd/MM/yyyy")
@@ -237,7 +238,7 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         ) {
             Column {
                 EditableFieldRow(
@@ -250,7 +251,7 @@ fun ProfileScreen(
                     keyboardType = KeyboardType.Email,
                     trailingNote = if (uiState.emailChanged) "⚠ Novo login" else null,
                 )
-                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
                 EditableFieldRow(
                     label = "CPF",
                     value = uiState.editCpf,
@@ -262,7 +263,7 @@ fun ProfileScreen(
                     placeholder = "000.000.000-00",
                     visualTransformation = CpfVisualTransformation(),
                 )
-                HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt, modifier = Modifier.padding(horizontal = 16.dp))
                 EditableFieldRow(
                     label = "Telefone",
                     value = uiState.editPhone,
@@ -322,7 +323,7 @@ private fun ProfileSectionTitle(title: String) {
     Text(
         title,
         style = MaterialTheme.typography.labelMedium,
-        color = Color(0xFF6B6B6B),
+        color = PoupaiTheme.tokens.textSecondary,
         fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
     )
@@ -354,7 +355,7 @@ private fun EditableFieldRow(
             visualTransformation = visualTransformation,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             colors = colors,
-            prefix = if (leadingText != null) { { Text(leadingText, color = Color(0xFF6B6B6B)) } } else null,
+            prefix = if (leadingText != null) { { Text(leadingText, color = PoupaiTheme.tokens.textSecondary) } } else null,
             trailingIcon = if (trailingNote != null) { { Text(trailingNote, fontSize = 10.sp, color = Color(0xFFFF9800)) } } else null,
         )
     } else {
@@ -371,17 +372,17 @@ private fun EditableFieldRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     if (leadingText != null && displayValue.isNotBlank()) "$leadingText$displayValue"
                     else displayValue.ifBlank { placeholder.ifBlank { "—" } },
                     fontSize = 14.sp,
-                    color = if (displayValue.isBlank()) Color(0xFFBDBDBD) else Color(0xFF1C1B1F),
+                    color = if (displayValue.isBlank()) PoupaiTheme.tokens.textMuted else PoupaiTheme.tokens.textPrimary,
                     fontWeight = if (displayValue.isNotBlank()) FontWeight.Medium else FontWeight.Normal,
                 )
             }
-            Icon(Icons.Default.ChevronRight, "Editar", tint = Color(0xFFBDBDBD), modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.ChevronRight, "Editar", tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(18.dp))
         }
     }
 }
