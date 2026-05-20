@@ -12,6 +12,7 @@ import io.poupai.app.domain.usecase.transaction.GetTransactionsUseCase
 import io.poupai.app.features.transactions.state.TransactionFilter
 import io.poupai.app.features.transactions.state.TransactionsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,11 +50,27 @@ class TransactionsViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.saveHideValues(!_uiState.value.hideValues) }
     }
 
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadTransactions()
+            delay(1000)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
+
     fun loadTransactions() {
         viewModelScope.launch {
             getTransactionsUseCase().collect { result ->
                 when (result) {
-                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                    is Resource.Loading -> _uiState.update { current ->
+                        val hasData = current.allTransactions.isNotEmpty()
+                        if (hasData) current.copy(errorMessage = null)
+                        else current.copy(isLoading = true, errorMessage = null)
+                    }
                     is Resource.Success -> {
                         val transactions = result.data
                         val income = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
