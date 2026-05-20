@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
@@ -68,7 +69,7 @@ fun TagsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7)),
+            .background(PoupaiTheme.tokens.bg),
     ) {
 
         // ─── Header ───
@@ -118,15 +119,15 @@ fun TagsScreen(
                         value = uiState.searchQuery,
                         onValueChange = viewModel::onSearchQueryChanged,
                         placeholder = { Text("Pesquisar categoria...", fontSize = 13.sp) },
-                        leadingIcon = { Icon(Icons.Default.Search, "Pesquisar", tint = Color(0xFF9E9E9E)) },
+                        leadingIcon = { Icon(Icons.Default.Search, "Pesquisar", tint = PoupaiTheme.tokens.textMuted) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Purple40,
                             unfocusedBorderColor = Color(0xFFE0E0E0),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = PoupaiTheme.tokens.surface,
+                            unfocusedContainerColor = PoupaiTheme.tokens.surface,
                         ),
                     )
                 }
@@ -136,7 +137,7 @@ fun TagsScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                         ) {
                             Box(
@@ -147,7 +148,7 @@ fun TagsScreen(
                                     if (uiState.searchQuery.isNotBlank()) "Nenhuma categoria encontrada"
                                     else "Nenhuma despesa neste mês",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF9E9E9E),
+                                    color = PoupaiTheme.tokens.textMuted,
                                     textAlign = TextAlign.Center,
                                 )
                             }
@@ -160,7 +161,7 @@ fun TagsScreen(
                             "Por categoria",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF1C1B1F),
+                            color = PoupaiTheme.tokens.textPrimary,
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
@@ -170,7 +171,7 @@ fun TagsScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                         ) {
                             Column {
@@ -182,7 +183,7 @@ fun TagsScreen(
                                     )
                                     if (index < uiState.filteredTags.lastIndex) {
                                         HorizontalDivider(
-                                            color = Color(0xFFF5F5F5),
+                                            color = PoupaiTheme.tokens.surfaceAlt,
                                             modifier = Modifier.padding(horizontal = 16.dp),
                                         )
                                     }
@@ -328,7 +329,7 @@ private fun TagListItem(tag: Tag, totalSpent: Double, onClick: () -> Unit) {
                     tag.name,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1C1B1F),
+                    color = PoupaiTheme.tokens.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
@@ -354,7 +355,7 @@ private fun TagListItem(tag: Tag, totalSpent: Double, onClick: () -> Unit) {
             Text(
                 tag.totalSpent.toBRL(),
                 fontSize = 11.sp,
-                color = Color(0xFF6B6B6B),
+                color = PoupaiTheme.tokens.textSecondary,
             )
         }
 
@@ -362,7 +363,7 @@ private fun TagListItem(tag: Tag, totalSpent: Double, onClick: () -> Unit) {
         Icon(
             Icons.Default.ChevronRight,
             null,
-            tint = Color(0xFFBDBDBD),
+            tint = PoupaiTheme.tokens.textMuted,
             modifier = Modifier.size(20.dp),
         )
     }
@@ -400,21 +401,21 @@ private fun TagDetailSheet(
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(tag.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1B1F))
-                Text("$percent% do total gasto", fontSize = 12.sp, color = Color(0xFF6B6B6B))
+                Text(tag.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
+                Text("$percent% do total gasto", fontSize = 12.sp, color = PoupaiTheme.tokens.textSecondary)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(tag.totalSpent.toBRL(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = tagColor)
                 Text(
                     "${transactions.size} transaç${if (transactions.size == 1) "ão" else "ões"}",
                     fontSize = 11.sp,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                 )
             }
         }
 
         Spacer(Modifier.height(20.dp))
-        HorizontalDivider(color = Color(0xFFF0F0F0))
+        HorizontalDivider(color = PoupaiTheme.tokens.surfaceSunken)
         Spacer(Modifier.height(8.dp))
 
         if (isLoading) {
@@ -426,7 +427,7 @@ private fun TagDetailSheet(
                 Text(
                     "Nenhuma transação encontrada",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF9E9E9E),
+                    color = PoupaiTheme.tokens.textMuted,
                 )
             }
         } else {
@@ -437,7 +438,7 @@ private fun TagDetailSheet(
                     TagTransactionRow(transaction = transaction)
                     if (index < transactions.lastIndex) {
                         HorizontalDivider(
-                            color = Color(0xFFF5F5F5),
+                            color = PoupaiTheme.tokens.surfaceAlt,
                             modifier = Modifier.padding(horizontal = 4.dp),
                         )
                     }
@@ -467,14 +468,14 @@ private fun TagTransactionRow(transaction: Transaction) {
                 transaction.title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1C1B1F),
+                color = PoupaiTheme.tokens.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 dateFormatter.format(transaction.date).replaceFirstChar { it.uppercase() },
                 fontSize = 11.sp,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
             )
         }
         Text(
