@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
@@ -63,7 +64,7 @@ fun IncomeTaxScreen(
     val yearTotalProfit = summariesOfYear.sumOf { it.totalProfit }
     val monthsWithTax = summariesOfYear.count { it.hasTaxDue }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+    Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         // ─── Header ───
         Box(
@@ -147,14 +148,14 @@ fun IncomeTaxScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
                                 elevation = CardDefaults.cardElevation(1.dp),
                             ) {
                                 Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) {
                                     Text(
                                         "Nenhuma venda registrada nesse período",
                                         fontSize = 13.sp,
-                                        color = Color(0xFF9E9E9E),
+                                        color = PoupaiTheme.tokens.textMuted,
                                     )
                                 }
                             }
@@ -164,7 +165,7 @@ fun IncomeTaxScreen(
                             Text("Detalhamento mensal",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF6B6B6B))
+                                color = PoupaiTheme.tokens.textSecondary)
                         }
                         summariesOfYear.forEach { summary ->
                             item {
@@ -273,7 +274,7 @@ private fun YearSelector(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
+            .background(PoupaiTheme.tokens.surface)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -292,7 +293,7 @@ private fun YearSelector(
                     label,
                     fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else Color(0xFF9E9E9E),
+                    color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
                 )
             }
         }
@@ -357,7 +358,7 @@ private fun EmptyState() {
                 "O imposto sobre ganho de capital incide apenas em vendas. " +
                     "Registre um resgate no Livro Contábil para começar a acompanhar.",
                 fontSize = 12.sp,
-                color = Color(0xFF6B6B6B),
+                color = PoupaiTheme.tokens.textSecondary,
                 textAlign = TextAlign.Center,
             )
         }
@@ -374,18 +375,18 @@ private fun MonthCard(summary: MonthlyTaxSummary, sales: List<SaleRecord>) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(monthLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1C1B1F))
+                        color = PoupaiTheme.tokens.textPrimary)
                     Text(
                         "${summary.categories.sumOf { it.saleCount }} venda${if (summary.categories.sumOf { it.saleCount } != 1) "s" else ""} · ${summary.totalSales.toBRL()}",
                         fontSize = 11.sp,
-                        color = Color(0xFF9E9E9E),
+                        color = PoupaiTheme.tokens.textMuted,
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -399,7 +400,7 @@ private fun MonthCard(summary: MonthlyTaxSummary, sales: List<SaleRecord>) {
                         Text(
                             "Lucro: ${if (summary.totalProfit >= 0) "+" else ""}${summary.totalProfit.toBRL()}",
                             fontSize = 10.sp,
-                            color = Color(0xFF9E9E9E),
+                            color = PoupaiTheme.tokens.textMuted,
                         )
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -420,7 +421,7 @@ private fun MonthCard(summary: MonthlyTaxSummary, sales: List<SaleRecord>) {
                         Text(
                             "Lucro: ${if (summary.totalProfit >= 0) "+" else ""}${summary.totalProfit.toBRL()}",
                             fontSize = 10.sp,
-                            color = Color(0xFF9E9E9E),
+                            color = PoupaiTheme.tokens.textMuted,
                         )
                     }
                 }
@@ -428,7 +429,7 @@ private fun MonthCard(summary: MonthlyTaxSummary, sales: List<SaleRecord>) {
 
             if (expanded) {
                 Spacer(Modifier.height(14.dp))
-                HorizontalDivider(color = Color(0xFFF5F5F5))
+                HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
                 Spacer(Modifier.height(12.dp))
 
                 // Por categoria
@@ -438,10 +439,10 @@ private fun MonthCard(summary: MonthlyTaxSummary, sales: List<SaleRecord>) {
                 }
 
                 if (sales.isNotEmpty()) {
-                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                    HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
                     Spacer(Modifier.height(10.dp))
                     Text("Vendas do mês",
-                        fontSize = 11.sp, color = Color(0xFF9E9E9E),
+                        fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted,
                         fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(6.dp))
                     sales.forEach { sale ->
@@ -469,7 +470,7 @@ private fun CategoryRow(cat: MonthlyCategoryTax) {
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(cat.category.label, fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1B1F))
+                fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary)
             Text(
                 buildString {
                     append("${cat.saleCount} venda${if (cat.saleCount != 1) "s" else ""}")
@@ -481,7 +482,7 @@ private fun CategoryRow(cat: MonthlyCategoryTax) {
                     }
                 },
                 fontSize = 10.sp,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
             )
         }
         Column(horizontalAlignment = Alignment.End) {
@@ -489,9 +490,9 @@ private fun CategoryRow(cat: MonthlyCategoryTax) {
                 Text(cat.tax.toBRL(), fontSize = 13.sp,
                     fontWeight = FontWeight.Bold, color = RedNegative)
                 Text("${"%.0f".format(cat.rate * 100)}% sobre lucro",
-                    fontSize = 9.sp, color = Color(0xFF9E9E9E))
+                    fontSize = 9.sp, color = PoupaiTheme.tokens.textMuted)
             } else {
-                Text("—", fontSize = 13.sp, color = Color(0xFF9E9E9E))
+                Text("—", fontSize = 13.sp, color = PoupaiTheme.tokens.textMuted)
             }
         }
     }
@@ -510,16 +511,16 @@ private fun SaleRow(sale: SaleRecord) {
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(sale.investment.name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1C1B1F), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                color = PoupaiTheme.tokens.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 "${io.poupai.app.core.util.DateFormatter.isoToDisplay(sale.entry.date)} · ${"%.2f".format(sale.entry.shares ?: 0.0)} cotas × ${sale.entry.sharePrice?.toBRL() ?: "—"}",
                 fontSize = 10.sp,
-                color = Color(0xFF9E9E9E),
+                color = PoupaiTheme.tokens.textMuted,
             )
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(sale.saleValue.toBRL(), fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1B1F))
+                fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textPrimary)
             Text(
                 "${if (sale.profit >= 0) "+" else ""}${sale.profit.toBRL()}",
                 fontSize = 10.sp,
