@@ -57,6 +57,7 @@ import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.designsystem.components.StaleChip
 import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
@@ -106,7 +107,7 @@ fun InvestmentsScreen(
     // Não recomputamos localmente para evitar divergência de janela temporal e base de cálculo.
     val accumulatedCdi = profitPercent - (uiState.benchmark?.vsCdi ?: 0.0)
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F7))) {
+    Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
         uiState.errorMessage?.let { error ->
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp),
@@ -147,7 +148,7 @@ fun InvestmentsScreen(
         ) {
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Purple40)
+                CircularProgressIndicator(color = PoupaiTheme.tokens.accentBright)
             }
         } else if (allInvestments.isEmpty()) {
             EmptyInvestmentsState(onNavigateToBook = onNavigateToBook)
@@ -185,20 +186,20 @@ fun InvestmentsScreen(
                             else -> RedNegative
                         }
                         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
                             elevation = CardDefaults.cardElevation(1.dp)) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Text("vs CDI", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                     Spacer(Modifier.weight(1f))
                                     Text("Atualizado: ${io.poupai.app.core.util.DateFormatter.isoToDisplay(benchmark.lastUpdated)}",
-                                        fontSize = 10.sp, color = Color(0xFF9E9E9E))
+                                        fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     BenchmarkStat("Rentabilidade Total", "${String.format("%.2f", profitPercent)}%",
                                         if (profitPercent >= 0) GreenPositive else RedNegative)
-                                    BenchmarkStat("CDI acumulado", "${String.format("%.2f", accumulatedCdi)}%", Color(0xFF6B6B6B))
+                                    BenchmarkStat("CDI acumulado", "${String.format("%.2f", accumulatedCdi)}%", PoupaiTheme.tokens.textSecondary)
                                     BenchmarkStat("Diferença", "${if (vsCdi >= 0) "+" else ""}${String.format("%.2f", vsCdi)}%",
                                         vsCdiColor)
                                 }
@@ -226,7 +227,7 @@ fun InvestmentsScreen(
 
                 item {
                     Text("Seus ativos", style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold, color = Color(0xFF6B6B6B))
+                        fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textSecondary)
                 }
 
                 // ─── Seções com expand/collapse ───
@@ -284,7 +285,7 @@ private fun QuickCard(modifier: Modifier, icon: ImageVector, title: String, colo
 @Composable
 private fun BenchmarkStat(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 11.sp, color = Color(0xFF9E9E9E))
+        Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
         Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = color)
     }
 }
@@ -335,10 +336,10 @@ private fun AllocationDonutCard(
 ) {
     if (total <= 0) return
     Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }, shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(1.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        elevation = CardDefaults.cardElevation(1.dp), colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface)) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Alocação", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("Distribuição por categoria", style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
+            Text("Distribuição por categoria", style = MaterialTheme.typography.bodySmall, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 DonutChart(listOf(rendaVariavel, rendaFixa, criptomoedas),
@@ -361,6 +362,7 @@ private fun DonutChart(values: List<Double>, colors: List<Color>, modifier: Modi
     val animProgress by animateFloatAsState(if (animPlayed) 1f else 0f, tween(900), label = "donut")
     LaunchedEffect(values) { animPlayed = true }
     val total = values.sum().takeIf { it > 0 } ?: 1.0
+    val separatorColor = PoupaiTheme.tokens.surface
     Canvas(modifier = modifier) {
         val strokeWidth = 20.dp.toPx()
         val radius = (size.minDimension - strokeWidth) / 2
@@ -376,7 +378,7 @@ private fun DonutChart(values: List<Double>, colors: List<Color>, modifier: Modi
         startAngle = -90f
         values.forEach { v ->
             val sweep = (v / total * 360f * animProgress).toFloat()
-            drawArc(Color(0xFFF5F5F7), startAngle - 0.5f, 1f, false, topLeft, arcSize,
+            drawArc(separatorColor, startAngle - 0.5f, 1f, false, topLeft, arcSize,
                 style = Stroke(strokeWidth + 2.dp.toPx(), cap = StrokeCap.Butt))
             startAngle += sweep
         }
@@ -389,7 +391,7 @@ private fun LegendRow(label: String, percent: Double, color: Color) {
         Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
         Spacer(Modifier.width(8.dp))
         Column {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B6B6B))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = PoupaiTheme.tokens.textSecondary)
             Text("${"%.1f".format(percent)}%", style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold, color = color)
         }
@@ -410,7 +412,7 @@ private fun AssetSection(
 
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface)) {
         Column {
             // ─── Header clicável ───
             Row(modifier = Modifier
@@ -430,13 +432,13 @@ private fun AssetSection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     Text("${investments.size} ativo${if (investments.size != 1) "s" else ""}",
-                        fontSize = 11.sp, color = Color(0xFF9E9E9E))
+                        fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
                 }
                 Text(if (hideValues) HIDDEN else investments.sumOf { it.currentValue }.toBRL(),
                     fontSize = 13.sp, fontWeight = FontWeight.Bold, color = color)
                 Spacer(Modifier.width(8.dp))
                 Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    null, tint = Color(0xFF9E9E9E), modifier = Modifier.size(20.dp))
+                    null, tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(20.dp))
             }
 
             // ─── Lista animada ───
@@ -444,14 +446,14 @@ private fun AssetSection(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()) {
                 Column {
-                    HorizontalDivider(color = Color(0xFFF5F5F5))
+                    HorizontalDivider(color = PoupaiTheme.tokens.divider)
                     investments.forEachIndexed { index, investment ->
                         AssetRow(investment = investment, accentColor = color, hideValues = hideValues,
                             onDelete = { onDelete(investment.id) },
                             onEdit = { onEdit(investment) },
                             onClick = { onItemClick(investment.id) })
                         if (index < investments.lastIndex)
-                            HorizontalDivider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(horizontal = 16.dp))
+                            HorizontalDivider(color = PoupaiTheme.tokens.divider, modifier = Modifier.padding(horizontal = 16.dp))
                     }
                 }
             }
@@ -534,13 +536,13 @@ private fun AssetRow(
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color(0xFF1C1B1F)
+                    color = PoupaiTheme.tokens.textPrimary
                 )
 
                 Text(
                     "Investido: ${if (hideValues) HIDDEN else investment.investedValue.toBRL()}",
                     fontSize = 11.sp,
-                    color = Color(0xFF9E9E9E)
+                    color = PoupaiTheme.tokens.textMuted
                 )
             }
 
@@ -550,7 +552,7 @@ private fun AssetRow(
                     if (hideValues) HIDDEN else investment.currentValue.toBRL(),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1C1B1F)
+                    color = PoupaiTheme.tokens.textPrimary
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -578,7 +580,7 @@ private fun AssetRow(
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Editar",
-                            tint = Purple40,
+                            tint = PoupaiTheme.tokens.accentBright,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -590,7 +592,7 @@ private fun AssetRow(
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Excluir",
-                            tint = Color(0xFFBDBDBD),
+                            tint = PoupaiTheme.tokens.textMuted,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -614,7 +616,7 @@ private fun AssetRow(
                     Text(
                         "${String.format("%.2f", investment.shares)} cotas",
                         fontSize = 10.sp,
-                        color = Color(0xFF9E9E9E)
+                        color = PoupaiTheme.tokens.textMuted
                     )
                 }
                 if (investment.averagePrice > 0) {
@@ -629,7 +631,7 @@ private fun AssetRow(
                     Text(
                         "Alvo: ${String.format("%.1f", investment.allocationTarget)}%",
                         fontSize = 10.sp,
-                        color = Color(0xFF9E9E9E)
+                        color = PoupaiTheme.tokens.textMuted
                     )
                 }
                 if (showStaleChip) {
@@ -756,7 +758,7 @@ private fun EditInvestmentSheet(
             enabled = !uiState.isSavingEdit,
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Purple40),
+            colors = ButtonDefaults.buttonColors(containerColor = PoupaiTheme.tokens.accentBright),
         ) {
             if (uiState.isSavingEdit) {
                 CircularProgressIndicator(
@@ -780,10 +782,10 @@ private fun EmptyInvestmentsState(onNavigateToBook: () -> Unit) {
             Text("Nenhum investimento ainda", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
             Text("Registre seus primeiros aportes\nno livro contábil",
-                style = MaterialTheme.typography.bodyMedium, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center)
+                style = MaterialTheme.typography.bodyMedium, color = PoupaiTheme.tokens.textMuted, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
             Button(onClick = onNavigateToBook, shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Purple40)) {
+                colors = ButtonDefaults.buttonColors(containerColor = PoupaiTheme.tokens.accentBright)) {
                 Icon(Icons.Default.Book, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Ir para Lançamentos")
