@@ -32,6 +32,7 @@ import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.core.theme.RedNegative
 import io.poupai.app.core.util.toBRL
@@ -46,9 +47,9 @@ import kotlin.math.abs
 // ─── Helpers ───
 
 private val typeColor = mapOf(
-    InvestmentType.RENDA_VARIAVEL to Color(0xFF503173),
-    InvestmentType.RENDA_FIXA to Color(0xFF4CAF50),
-    InvestmentType.CRIPTOMOEDAS to Color(0xFFFF9800),
+    InvestmentType.RENDA_VARIAVEL to Purple40,
+    InvestmentType.RENDA_FIXA to Purple60,
+    InvestmentType.CRIPTOMOEDAS to Color(0xFF7C5295),
 )
 private val typeShortLabel = mapOf(
     InvestmentType.RENDA_VARIAVEL to "Renda Variável",
