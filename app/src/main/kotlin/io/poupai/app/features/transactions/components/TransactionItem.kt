@@ -5,20 +5,42 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.poupai.app.core.theme.GreenPositive
-import io.poupai.app.core.theme.RedNegative
+import androidx.compose.ui.unit.sp
+import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.core.util.toDisplayFormat
 import io.poupai.app.domain.model.Transaction
 import io.poupai.app.domain.model.TransactionType
+
+private val TextPrimary = Color(0xFF1C1B1F)
+private val TextSecondary = Color(0xFF6B6B6B)
+private val TextMuted = Color(0xFF9E9E9E)
 
 @Composable
 fun TransactionItem(
@@ -29,66 +51,75 @@ fun TransactionItem(
     modifier: Modifier = Modifier,
 ) {
     val isExpense = transaction.type == TransactionType.EXPENSE
-    val amountColor = if (isExpense) RedNegative else GreenPositive
-    val iconBgColor = if (isExpense) RedNegative.copy(alpha = 0.1f) else GreenPositive.copy(alpha = 0.1f)
+    // Paleta on-brand: receita roxo escuro, despesa lavanda
+    val accentColor = if (isExpense) Purple60 else Purple40
+    val iconBgColor = PurpleLight.copy(alpha = 0.55f)
     val icon = categoryIcon(transaction.category)
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // ─── Ícone da categoria ───
+            // ─── Avatar da categoria ───
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(iconBgColor),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = transaction.category,
-                    tint = amountColor,
-                    modifier = Modifier.size(22.dp),
+                    tint = Purple40,
+                    modifier = Modifier.size(20.dp),
                 )
             }
 
             Spacer(Modifier.width(12.dp))
 
-            // ─── Título e data ───
+            // ─── Título e meta ───
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                Spacer(Modifier.height(2.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
                         text = transaction.date.toDisplayFormat(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        color = TextMuted,
                     )
                     if (transaction.category.isNotBlank()) {
-                        Text(
-                            text = "·",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Box(
+                            Modifier
+                                .size(3.dp)
+                                .clip(CircleShape)
+                                .background(TextMuted),
                         )
                         Text(
                             text = transaction.category,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -97,13 +128,24 @@ fun TransactionItem(
             Spacer(Modifier.width(8.dp))
 
             // ─── Valor ───
-            Text(
-                text = "${if (isExpense) "-" else "+"}${transaction.amount.toBRL()}",
-                style = MaterialTheme.typography.titleMedium,
-                color = amountColor,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${if (isExpense) "−" else "+"} ${transaction.amount.toBRL()}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = accentColor,
+                )
+                // Faixinha sutil que diferencia tipo sem usar verde/vermelho
+                Spacer(Modifier.height(4.dp))
+                Box(
+                    Modifier
+                        .width(28.dp)
+                        .height(2.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(accentColor.copy(alpha = 0.45f)),
+                )
+            }
 
-            // ─── Botão editar ───
             if (onEditClick != null) {
                 Spacer(Modifier.width(2.dp))
                 IconButton(
@@ -113,15 +155,14 @@ fun TransactionItem(
                     Icon(
                         Icons.Default.EditNote,
                         contentDescription = "Editar",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        tint = Purple40.copy(alpha = 0.55f),
                         modifier = Modifier.size(18.dp),
                     )
                 }
             }
 
-            // ─── Botão deletar ───
             if (onDeleteClick != null) {
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(2.dp))
                 if (isDeleting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
@@ -136,7 +177,7 @@ fun TransactionItem(
                         Icon(
                             Icons.Default.DeleteOutline,
                             contentDescription = "Deletar",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            tint = TextMuted,
                             modifier = Modifier.size(18.dp),
                         )
                     }
