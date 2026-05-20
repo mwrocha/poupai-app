@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.util.CpfVisualTransformation
 import io.poupai.app.core.util.PhoneVisualTransformation
 import io.poupai.app.features.register.components.ProfileImagePicker
@@ -49,12 +50,12 @@ fun RegisterProfileScreen(
         unfocusedContainerColor = Color.Transparent,
         disabledContainerColor = Color.Transparent,
         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-        unfocusedIndicatorColor = Color(0xFFBDBDBD),
+        unfocusedIndicatorColor = PoupaiTheme.tokens.textMuted,
         focusedLabelColor = MaterialTheme.colorScheme.primary,
-        unfocusedLabelColor = Color(0xFF9E9E9E),
+        unfocusedLabelColor = PoupaiTheme.tokens.textMuted,
         cursorColor = MaterialTheme.colorScheme.primary,
-        focusedTextColor = Color(0xFF754AA8),
-        unfocusedTextColor = Color(0xFF311E46),
+        focusedTextColor = PoupaiTheme.tokens.textPrimary,
+        unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -205,7 +206,7 @@ private fun RegisterContactFields(
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         visualTransformation = PhoneVisualTransformation(),
-        prefix = { Text("+55 ", color = Color(0xFF9E9E9E)) },
+        prefix = { Text("+55 ", color = PoupaiTheme.tokens.textMuted) },
         modifier = Modifier.fillMaxWidth(),
         colors = fieldColors,
     )
