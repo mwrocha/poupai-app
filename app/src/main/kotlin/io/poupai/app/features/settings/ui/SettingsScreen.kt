@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
 import io.poupai.app.core.theme.PurpleDark
 import io.poupai.app.features.settings.state.SettingsUiState
@@ -43,7 +44,7 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7)),
+            .background(PoupaiTheme.tokens.bg),
     ) {
         Box(
             modifier = Modifier
@@ -96,7 +97,7 @@ private fun SettingsContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -140,7 +141,7 @@ private fun SettingsContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -151,7 +152,7 @@ private fun SettingsContent(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Lembrete diário", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                     Text("Recebe um lembrete às 20h para registrar transações",
-                        style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
+                        style = MaterialTheme.typography.bodySmall, color = PoupaiTheme.tokens.textMuted)
                 }
                 Switch(
                     checked = uiState.notificationsEnabled,
@@ -173,7 +174,7 @@ private fun SettingsContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
         ) {
             SettingsRowItem(icon = Icons.Default.Info, title = "Sobre o Poupaí", subtitle = "Versão 1.0.0", onClick = onShowAbout)
         }
@@ -203,7 +204,7 @@ private fun SettingsSectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelMedium,
-        color = Color(0xFF6B6B6B),
+        color = PoupaiTheme.tokens.textSecondary,
         fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
     )
@@ -222,7 +223,7 @@ private fun SettingsRowItem(icon: ImageVector, title: String, subtitle: String? 
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E9E9E))
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = PoupaiTheme.tokens.textMuted)
         }
     }
 }
