@@ -12,9 +12,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,17 +25,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
-import io.poupai.app.core.theme.GreenPositive
+import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
-import io.poupai.app.core.theme.RedNegative
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.util.toBRL
 import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.features.transactions.components.TransactionItem
@@ -44,6 +50,11 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 private const val HIDDEN = "••••"
+
+private val Bg = Color(0xFFF5F5F7)
+private val TextPrimary = Color(0xFF1C1B1F)
+private val TextSecondary = Color(0xFF6B6B6B)
+private val TextMuted = Color(0xFF9E9E9E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,13 +72,12 @@ fun TransactionsScreen(
         focusedIndicatorColor = Purple40,
         unfocusedIndicatorColor = Color(0xFFBDBDBD),
         focusedLabelColor = Purple40,
-        unfocusedLabelColor = Color(0xFF9E9E9E),
-        focusedTextColor = Color(0xFF1C1B1F),
-        unfocusedTextColor = Color(0xFF1C1B1F),
+        unfocusedLabelColor = TextMuted,
+        focusedTextColor = TextPrimary,
+        unfocusedTextColor = TextPrimary,
         cursorColor = Purple40,
     )
 
-    // ─── Dialogs ───
     if (uiState.showDeleteDialog && uiState.transactionToDelete != null) {
         AlertDialog(
             onDismissRequest = viewModel::onDeleteCancel,
@@ -76,23 +86,21 @@ fun TransactionsScreen(
             confirmButton = {
                 Button(
                     onClick = viewModel::onDeleteConfirm,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) { Text("Excluir") }
             },
             dismissButton = { TextButton(onClick = viewModel::onDeleteCancel) { Text("Cancelar") } },
+            shape = RoundedCornerShape(16.dp),
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F7)),
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(Bg)) {
+
         // ─── Header ───
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
+                .background(Brush.verticalGradient(listOf(PurpleDark, Purple40)))
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp, bottom = 16.dp),
         ) {
@@ -105,91 +113,84 @@ fun TransactionsScreen(
                     "Transações",
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Spacer(Modifier.weight(1f))
-                EyeToggleIcon(
-                    hideValues = uiState.hideValues, onToggle = viewModel::toggleHideValues
-                )
+                EyeToggleIcon(hideValues = uiState.hideValues, onToggle = viewModel::toggleHideValues)
             }
         }
 
-        if (uiState.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Purple40)
-            }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f),
+        uiState.errorMessage?.let { err ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
             ) {
-                item { TransactionSummaryCard(uiState = uiState) }
-                item {
-                    MonthSelector(
-                        uiState = uiState,
-                        onPrevious = viewModel::onPreviousMonth,
-                        onNext = viewModel::onNextMonth
-                    )
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(err, Modifier.weight(1f), fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onErrorContainer)
+                    TextButton(onClick = viewModel::clearError) { Text("Ok") }
                 }
-                item {
-                    FilterChipsRow(
-                        uiState = uiState, onFilterChanged = viewModel::onFilterChanged
-                    )
-                }
+            }
+        }
 
-                if (uiState.filteredTransactions.isEmpty()) {
+        PullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.weight(1f),
+        ) {
+            if (uiState.isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Purple40)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(1.dp)
-                        ) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(40.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("💸", fontSize = 40.sp)
-                                    Spacer(Modifier.height(12.dp))
-                                    Text(
-                                        if (uiState.allTransactions.isEmpty()) "Nenhuma transação ainda"
-                                        else "Nenhuma transação neste período",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFF9E9E9E),
-                                        textAlign = TextAlign.Center,
-                                    )
-                                    Text(
-                                        "Toque em + para adicionar",
-                                        fontSize = 12.sp,
-                                        color = Color(0xFFBDBDBD)
-                                    )
-                                }
-                            }
+                        BalanceHeroCard(
+                            uiState = uiState,
+                            onPreviousMonth = viewModel::onPreviousMonth,
+                            onNextMonth = viewModel::onNextMonth,
+                        )
+                    }
+
+                    item { SectionTitle("Filtros", Icons.Default.FilterList) }
+                    item {
+                        FilterChipsRow(
+                            uiState = uiState,
+                            onFilterChanged = viewModel::onFilterChanged,
+                        )
+                    }
+
+                    item {
+                        SectionTitle(
+                            "${uiState.filteredTransactions.size} " +
+                                if (uiState.filteredTransactions.size == 1) "transação" else "transações",
+                            Icons.Default.Receipt,
+                        )
+                    }
+
+                    if (uiState.filteredTransactions.isEmpty()) {
+                        item { EmptyState(allEmpty = uiState.allTransactions.isEmpty()) }
+                    } else {
+                        items(uiState.filteredTransactions, key = { it.id }) { transaction ->
+                            TransactionItem(
+                                transaction = transaction,
+                                onDeleteClick = { viewModel.onDeleteRequest(it) },
+                                onEditClick = { viewModel.onEditRequest(it) },
+                                isDeleting = uiState.deletingId == transaction.id,
+                            )
                         }
                     }
-                } else {
-                    item {
-                        Text(
-                            "${uiState.filteredTransactions.size} transaç${if (uiState.filteredTransactions.size == 1) "ão" else "ões"}",
-                            fontSize = 12.sp,
-                            color = Color(0xFF9E9E9E),
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                    }
-                    items(uiState.filteredTransactions, key = { it.id }) { transaction ->
-                        TransactionItem(
-                            transaction = transaction,
-                            onDeleteClick = { viewModel.onDeleteRequest(it) },
-                            onEditClick = { viewModel.onEditRequest(it) },
-                            isDeleting = uiState.deletingId == transaction.id,
-                        )
-                    }
+
+                    item { Spacer(Modifier.height(80.dp)) }
                 }
-                item { Spacer(Modifier.height(80.dp)) }
             }
         }
     }
@@ -200,13 +201,12 @@ fun TransactionsScreen(
             onClick = viewModel::onShowAddSheet,
             containerColor = Purple40,
             shape = CircleShape,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier.padding(24.dp),
         ) {
             Icon(Icons.Default.Add, "Adicionar transação", tint = Color.White)
         }
     }
 
-    // ─── Sheet: adicionar ───
     if (uiState.showAddSheet) {
         ModalBottomSheet(onDismissRequest = viewModel::onDismissSheet, sheetState = addSheetState) {
             TransactionForm(
@@ -232,10 +232,9 @@ fun TransactionsScreen(
         }
     }
 
-    // ─── Sheet: editar ───
     if (uiState.showEditSheet) {
         ModalBottomSheet(
-            onDismissRequest = viewModel::onDismissEditSheet, sheetState = editSheetState
+            onDismissRequest = viewModel::onDismissEditSheet, sheetState = editSheetState,
         ) {
             TransactionForm(
                 title = "Editar Transação",
@@ -261,175 +260,279 @@ fun TransactionsScreen(
     }
 }
 
-// ─── CARD RESUMO ───
+@Composable
+private fun SectionTitle(text: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp, start = 2.dp),
+    ) {
+        Icon(icon, null, tint = Purple40, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = TextSecondary,
+        )
+    }
+}
+
+// ─── BALANCE HERO ───
 
 @Composable
-private fun TransactionSummaryCard(uiState: TransactionsUiState) {
+private fun BalanceHeroCard(
+    uiState: TransactionsUiState,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+) {
+    val monthLabel = "${
+        Month.of(uiState.selectedMonth)
+            .getDisplayName(TextStyle.FULL, Locale("pt", "BR"))
+            .replaceFirstChar { it.uppercase() }
+    } ${uiState.selectedYear}"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        shape = RoundedCornerShape(22.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.linearGradient(listOf(PurpleDark, Purple40)),
-                    shape = RoundedCornerShape(20.dp)
+                    Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396))),
+                    RoundedCornerShape(22.dp),
                 )
-                .padding(20.dp)
+                .padding(20.dp),
         ) {
             Column {
-                Text("Saldo atual", fontSize = 12.sp, color = Color.White.copy(alpha = 0.75f))
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    if (uiState.hideValues) HIDDEN else uiState.balance.toBRL(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(16.dp))
+                // ─── Barra de mês integrada ───
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(GreenPositive.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.TrendingUp,
-                                null,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                "Receitas", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                if (uiState.hideValues) HIDDEN else uiState.incomeTotal.toBRL(),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                        }
+                    IconButton(
+                        onClick = onPreviousMonth,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.15f)),
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBackIosNew,
+                            "Mês anterior",
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp),
+                        )
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(RedNegative.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.TrendingDown,
-                                null,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                "Despesas", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                if (uiState.hideValues) HIDDEN else uiState.expenseTotal.toBRL(),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                        }
+                    Text(
+                        monthLabel,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+                    IconButton(
+                        onClick = onNextMonth,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.15f)),
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowForwardIos,
+                            "Próximo mês",
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp),
+                        )
                     }
+                }
+
+                Spacer(Modifier.height(18.dp))
+                Text(
+                    "Saldo do mês",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.65f),
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    if (uiState.balance < 0) {
+                        Text(
+                            "−",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.headlineMedium,
+                        )
+                    }
+                    Text(
+                        if (uiState.hideValues) HIDDEN else kotlin.math.abs(uiState.balance).toBRL(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
+                Spacer(Modifier.height(18.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color.White.copy(alpha = 0.15f)),
+                )
+                Spacer(Modifier.height(14.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    InlineFlowStat(
+                        modifier = Modifier.weight(1f),
+                        label = "Receitas",
+                        value = if (uiState.hideValues) HIDDEN else uiState.incomeTotal.toBRL(),
+                        icon = Icons.Default.ArrowUpward,
+                    )
+                    Box(
+                        Modifier.width(1.dp).height(40.dp)
+                            .background(Color.White.copy(alpha = 0.15f)),
+                    )
+                    InlineFlowStat(
+                        modifier = Modifier.weight(1f),
+                        label = "Despesas",
+                        value = if (uiState.hideValues) HIDDEN else uiState.expenseTotal.toBRL(),
+                        icon = Icons.Default.ArrowDownward,
+                    )
                 }
             }
         }
     }
 }
 
-// ─── SELETOR DE MÊS ───
-
 @Composable
-private fun MonthSelector(
-    uiState: TransactionsUiState, onPrevious: () -> Unit, onNext: () -> Unit
+private fun InlineFlowStat(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    icon: ImageVector,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            IconButton(onClick = onPrevious) {
-                Icon(
-                    Icons.Default.ArrowBackIosNew,
-                    "Mês anterior",
-                    tint = Purple40,
-                    modifier = Modifier.size(16.dp)
-                )
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(12.dp))
             }
+            Spacer(Modifier.width(6.dp))
             Text(
-                "${
-                    Month.of(uiState.selectedMonth)
-                        .getDisplayName(TextStyle.FULL, Locale("pt", "BR"))
-                        .replaceFirstChar { it.uppercase() }
-                } ${uiState.selectedYear}",
-                style = MaterialTheme.typography.titleSmall,
+                label,
+                fontSize = 11.sp,
+                color = Color.White.copy(alpha = 0.7f),
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1C1B1F),
             )
-            IconButton(onClick = onNext) {
-                Icon(
-                    Icons.Default.ArrowForwardIos,
-                    "Próximo mês",
-                    tint = Purple40,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
         }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            value,
+            fontSize = 16.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
 // ─── FILTROS ───
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterChipsRow(
-    uiState: TransactionsUiState, onFilterChanged: (TransactionFilter) -> Unit
+    uiState: TransactionsUiState, onFilterChanged: (TransactionFilter) -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(
-            Triple(TransactionFilter.ALL, "Todos", Purple40),
-            Triple(TransactionFilter.INCOME, "Receitas", GreenPositive),
-            Triple(TransactionFilter.EXPENSE, "Despesas", RedNegative)
-        ).forEach { (filter, label, color) ->
-            FilterChip(
-                selected = uiState.activeFilter == filter,
+    val options = listOf(
+        TransactionFilter.ALL to "Todos",
+        TransactionFilter.INCOME to "Receitas",
+        TransactionFilter.EXPENSE to "Despesas",
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .padding(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        options.forEach { (filter, label) ->
+            val isSelected = uiState.activeFilter == filter
+            Surface(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(10.dp),
+                color = if (isSelected) Purple40 else Color.Transparent,
                 onClick = { onFilterChanged(filter) },
-                label = { Text(label, fontSize = 12.sp) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = color.copy(alpha = 0.12f),
-                    selectedLabelColor = color,
-                ),
-            )
+            ) {
+                Text(
+                    label,
+                    fontSize = 12.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) Color.White else TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 9.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
 
-// ─── FORMULÁRIO COMPARTILHADO (Adicionar e Editar) ───
+// ─── EMPTY STATE ───
+
+@Composable
+private fun EmptyState(allEmpty: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(40.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(PurpleLight.copy(alpha = 0.55f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Inbox, null, tint = Purple40, modifier = Modifier.size(28.dp))
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    if (allEmpty) "Nenhuma transação ainda" else "Nenhuma transação neste período",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Toque em + para adicionar",
+                    fontSize = 12.sp,
+                    color = TextMuted,
+                )
+            }
+        }
+    }
+}
+
+// ─── FORMULÁRIO COMPARTILHADO ───
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -458,25 +561,52 @@ private fun TransactionForm(
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
             .padding(bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
 
-        // Tipo
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Tipo — segmented na paleta roxa
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFFF5F5F7))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
             listOf(
-                TransactionType.INCOME to "Receita", TransactionType.EXPENSE to "Despesa"
-            ).forEach { (type, label) ->
-                val color = if (type == TransactionType.INCOME) GreenPositive else RedNegative
-                FilterChip(
-                    selected = formType == type,
+                TransactionType.INCOME to ("Receita" to Icons.Default.ArrowUpward),
+                TransactionType.EXPENSE to ("Despesa" to Icons.Default.ArrowDownward),
+            ).forEach { (type, payload) ->
+                val (label, icon) = payload
+                val isSelected = formType == type
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(9.dp),
+                    color = if (isSelected) Purple40 else Color.Transparent,
                     onClick = { onTypeChanged(type) },
-                    label = { Text(label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = color.copy(alpha = 0.12f),
-                        selectedLabelColor = color,
-                    ),
-                )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 9.dp),
+                    ) {
+                        Icon(
+                            icon, null,
+                            tint = if (isSelected) Color.White else TextMuted,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            label,
+                            fontSize = 13.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color.White else TextMuted,
+                        )
+                    }
+                }
             }
         }
 
@@ -487,7 +617,7 @@ private fun TransactionForm(
             placeholder = { Text("Ex: Salário, Aluguel...") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            colors = fieldColors
+            colors = fieldColors,
         )
 
         TextField(
@@ -498,11 +628,10 @@ private fun TransactionForm(
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth(),
-            colors = fieldColors
+            colors = fieldColors,
         )
 
-        // ─── Categorias pré-definidas ───
-        Text("Categoria", style = MaterialTheme.typography.labelMedium, color = Color(0xFF9E9E9E))
+        Text("Categoria", style = MaterialTheme.typography.labelMedium, color = TextMuted)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(categories) { category ->
                 val selected = formCategory == category
@@ -517,7 +646,6 @@ private fun TransactionForm(
                 )
             }
         }
-        // Campo livre para categoria customizada
         TextField(
             value = formCategory,
             onValueChange = onCategoryChanged,
@@ -525,17 +653,17 @@ private fun TransactionForm(
             placeholder = { Text("Ex: Airbnb, Pet...") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            colors = fieldColors
+            colors = fieldColors,
         )
 
         TextField(
             value = formDate,
             onValueChange = onDateChanged,
             label = { Text("Data") },
-            placeholder = { Text("dd/MM/yyyy") },
+            placeholder = { Text("dd-MM-yyyy") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            colors = fieldColors
+            colors = fieldColors,
         )
 
         formError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) }
@@ -550,7 +678,7 @@ private fun TransactionForm(
             colors = ButtonDefaults.buttonColors(containerColor = Purple40),
         ) {
             if (isLoading) CircularProgressIndicator(
-                modifier = Modifier.size(24.dp), color = Color.White
+                modifier = Modifier.size(24.dp), color = Color.White,
             )
             else Text(saveLabel, fontSize = 16.sp, color = Color.White)
         }
