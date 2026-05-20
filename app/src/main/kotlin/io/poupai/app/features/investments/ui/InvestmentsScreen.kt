@@ -14,18 +14,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,26 +47,21 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.ui.text.input.KeyboardType
 import io.poupai.app.core.designsystem.components.EyeToggleIcon
 import io.poupai.app.core.designsystem.components.PullToRefresh
 import io.poupai.app.core.designsystem.components.StaleChip
 import io.poupai.app.core.theme.GreenPositive
 import io.poupai.app.core.theme.PoupaiTheme
 import io.poupai.app.core.theme.Purple40
+import io.poupai.app.core.theme.Purple60
 import io.poupai.app.core.theme.PurpleDark
+import io.poupai.app.core.theme.PurpleLight
 import io.poupai.app.core.theme.RedNegative
 import io.poupai.app.core.util.computeStaleInfo
 import io.poupai.app.core.util.needsAttention
@@ -70,10 +72,11 @@ import io.poupai.app.features.investments.viewmodel.InvestmentsViewModel
 
 private const val HIDDEN = "••••"
 
+// Paleta roxa para discriminação de tipo de ativo — 3 tons da identidade.
 private val typeColor = mapOf(
-    InvestmentType.RENDA_VARIAVEL to Color(0xFF503173),
-    InvestmentType.RENDA_FIXA to Color(0xFF4CAF50),
-    InvestmentType.CRIPTOMOEDAS to Color(0xFFFF9800),
+    InvestmentType.RENDA_VARIAVEL to Purple40,           // #503173 deep
+    InvestmentType.RENDA_FIXA to Purple60,                // #9B7FD4 lavanda
+    InvestmentType.CRIPTOMOEDAS to Color(0xFF7C5295),     // tom intermediário
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,26 +112,14 @@ fun InvestmentsScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
-        uiState.errorMessage?.let { error ->
-            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(error, modifier = Modifier.weight(1f), fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onErrorContainer)
-                    TextButton(onClick = viewModel::clearError, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                        Text("Ok", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-
-
-
         // ─── Header ───
-        Box(modifier = Modifier.fillMaxWidth()
-            .background(brush = Brush.verticalGradient(colors = listOf(PurpleDark, Purple40)))
-            .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 16.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(PurpleDark, Purple40)))
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 16.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
@@ -141,110 +132,115 @@ fun InvestmentsScreen(
             }
         }
 
+        uiState.errorMessage?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            ) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(error, modifier = Modifier.weight(1f), fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onErrorContainer)
+                    TextButton(onClick = viewModel::clearError) { Text("Ok", fontSize = 12.sp) }
+                }
+            }
+        }
+
         PullToRefresh(
             isRefreshing = uiState.isRefreshing,
             onRefresh = viewModel::refresh,
             modifier = Modifier.weight(1f),
         ) {
-        if (uiState.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = PoupaiTheme.tokens.accentBright)
-            }
-        } else if (allInvestments.isEmpty()) {
-            EmptyInvestmentsState(onNavigateToBook = onNavigateToBook)
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                item { InvestmentSummaryCard(totalInvested, totalCurrent, totalProfit, uiState.hideValues) }
-
-                // ─── Atalhos rápidos (grid 2x3) ───
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            QuickCard(Modifier.weight(1f), Icons.Default.Book, "Lançamentos", Purple40, onNavigateToBook)
-                            QuickCard(Modifier.weight(1f), Icons.Default.MonetizationOn, "Dividendos", GreenPositive, onNavigateToDividends)
-                            QuickCard(Modifier.weight(1f), Icons.Default.Receipt, "Imposto", Color(0xFF455A64), onNavigateToIncomeTax)
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            QuickCard(Modifier.weight(1f), Icons.Default.BarChart, "Rebalancear", Color(0xFFFF9800), onNavigateToRebalance)
-                            QuickCard(Modifier.weight(1f), Icons.Default.PieChart, "Alocação", Color(0xFF00838F), onNavigateToAllocation)
-                            QuickCard(Modifier.weight(1f), Icons.Default.Flag, "Metas", Color(0xFFE91E63), onNavigateToGoals)
-                        }
-                    }
+            if (uiState.isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PoupaiTheme.tokens.accentBright)
                 }
-
-                // ─── Benchmark CDI ───
-                uiState.benchmark?.let { benchmark ->
+            } else if (allInvestments.isEmpty()) {
+                EmptyInvestmentsState(onNavigateToBook = onNavigateToBook)
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    // ─── Hero card ───
                     item {
-                        val vsCdi = benchmark.vsCdi
-                        val vsCdiColor = when {
-                            vsCdi >= 0 -> GreenPositive
-                            profitPercent >= 0 -> Color(0xFFFF9800) // laranja: positivo mas abaixo do CDI
-                            else -> RedNegative
-                        }
-                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
-                            elevation = CardDefaults.cardElevation(1.dp)) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("vs CDI", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                    Spacer(Modifier.weight(1f))
-                                    Text("Atualizado: ${io.poupai.app.core.util.DateFormatter.isoToDisplay(benchmark.lastUpdated)}",
-                                        fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
-                                }
-                                Spacer(Modifier.height(12.dp))
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    BenchmarkStat("Rentabilidade Total", "${String.format("%.2f", profitPercent)}%",
-                                        if (profitPercent >= 0) GreenPositive else RedNegative)
-                                    BenchmarkStat("CDI acumulado", "${String.format("%.2f", accumulatedCdi)}%", PoupaiTheme.tokens.textSecondary)
-                                    BenchmarkStat("Diferença", "${if (vsCdi >= 0) "+" else ""}${String.format("%.2f", vsCdi)}%",
-                                        vsCdiColor)
-                                }
+                        PortfolioHeroCard(
+                            totalCurrent = totalCurrent,
+                            totalInvested = totalInvested,
+                            totalProfit = totalProfit,
+                            profitPercent = profitPercent,
+                            hideValues = uiState.hideValues,
+                        )
+                    }
+
+                    // ─── Atalhos rápidos (grid 2x3) ───
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                QuickCard(Modifier.weight(1f), Icons.Default.Book, "Lançamentos", onNavigateToBook)
+                                QuickCard(Modifier.weight(1f), Icons.Default.MonetizationOn, "Dividendos", onNavigateToDividends)
+                                QuickCard(Modifier.weight(1f), Icons.Default.Receipt, "Imposto", onNavigateToIncomeTax)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                QuickCard(Modifier.weight(1f), Icons.Default.BarChart, "Rebalancear", onNavigateToRebalance)
+                                QuickCard(Modifier.weight(1f), Icons.Default.PieChart, "Alocação", onNavigateToAllocation)
+                                QuickCard(Modifier.weight(1f), Icons.Default.Flag, "Metas", onNavigateToGoals)
                             }
                         }
                     }
+
+                    // ─── Banner de dados desatualizados ───
+                    val staleCount = allInvestments.count { it.computeStaleInfo().needsAttention() }
+                    if (staleCount > 0) {
+                        item { StaleDataBanner(count = staleCount) }
+                    }
+
+                    // ─── Indicadores: Benchmark CDI ───
+                    uiState.benchmark?.let { benchmark ->
+                        item { SectionTitle("Indicadores", Icons.Default.Insights) }
+                        item {
+                            BenchmarkCard(
+                                vsCdi = benchmark.vsCdi,
+                                profitPercent = profitPercent,
+                                accumulatedCdi = accumulatedCdi,
+                                lastUpdated = benchmark.lastUpdated,
+                            )
+                        }
+                    }
+
+                    // ─── Alocação ───
+                    item { SectionTitle("Alocação", Icons.Default.PieChart) }
+                    item {
+                        AllocationDonutCard(
+                            rendaVariavel = uiState.rendaVariavel.sumOf { it.currentValue },
+                            rendaFixa = uiState.rendaFixa.sumOf { it.currentValue },
+                            criptomoedas = uiState.criptomoedas.sumOf { it.currentValue },
+                            total = totalCurrent,
+                            onClick = onNavigateToAllocation,
+                        )
+                    }
+
+                    // ─── Seus ativos ───
+                    item { SectionTitle("Seus ativos", Icons.Default.AccountBalanceWallet) }
+
+                    item { AssetSection("Renda Variável", InvestmentType.RENDA_VARIAVEL, uiState.rendaVariavel,
+                        uiState.hideValues, onDelete = viewModel::onDeleteInvestment,
+                        onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
+                    item { AssetSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa, uiState.hideValues,
+                        onDelete = viewModel::onDeleteInvestment,
+                        onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
+                    item { AssetSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas, uiState.hideValues,
+                        onDelete = viewModel::onDeleteInvestment,
+                        onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
+
+                    item { Spacer(Modifier.height(40.dp)) }
                 }
-
-                // ─── Donut ───
-                item {
-                    AllocationDonutCard(
-                        rendaVariavel = uiState.rendaVariavel.sumOf { it.currentValue },
-                        rendaFixa = uiState.rendaFixa.sumOf { it.currentValue },
-                        criptomoedas = uiState.criptomoedas.sumOf { it.currentValue },
-                        total = totalCurrent,
-                        onClick = onNavigateToAllocation,
-                    )
-                }
-
-                // ─── Banner de dados desatualizados ───
-                val staleCount = allInvestments.count { it.computeStaleInfo().needsAttention() }
-                if (staleCount > 0) {
-                    item { StaleDataBanner(count = staleCount) }
-                }
-
-                item {
-                    Text("Seus ativos", style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold, color = PoupaiTheme.tokens.textSecondary)
-                }
-
-                // ─── Seções com expand/collapse ───
-                item { AssetSection("Renda Variável", InvestmentType.RENDA_VARIAVEL, uiState.rendaVariavel,
-                    uiState.hideValues, onDelete = viewModel::onDeleteInvestment,
-                    onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
-                item { AssetSection("Renda Fixa", InvestmentType.RENDA_FIXA, uiState.rendaFixa, uiState.hideValues,
-                    onDelete = viewModel::onDeleteInvestment,
-                    onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
-                item { AssetSection("Criptomoedas", InvestmentType.CRIPTOMOEDAS, uiState.criptomoedas, uiState.hideValues,
-                    onDelete = viewModel::onDeleteInvestment,
-                    onEdit = viewModel::onShowEditSheet, onItemClick = onNavigateToDetail) }
-
-                item { Spacer(Modifier.height(32.dp)) }
             }
         }
-        } // close PullToRefresh
     }
 
     // ─── Edit bottom sheet ───
@@ -267,17 +263,234 @@ fun InvestmentsScreen(
     }
 }
 
-// ─── COMPOSABLES ───
+// ─── SECTION TITLE ───
 
 @Composable
-private fun QuickCard(modifier: Modifier, icon: ImageVector, title: String, color: Color, onClick: () -> Unit) {
-    Card(modifier = modifier.clickable { onClick() }, shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
-        elevation = CardDefaults.cardElevation(0.dp)) {
-        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.height(4.dp))
-            Text(title, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color, textAlign = TextAlign.Center)
+private fun SectionTitle(text: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp, start = 2.dp),
+    ) {
+        Icon(icon, null, tint = Purple40, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = PoupaiTheme.tokens.textSecondary,
+        )
+    }
+}
+
+// ─── HERO ───
+
+@Composable
+private fun PortfolioHeroCard(
+    totalCurrent: Double,
+    totalInvested: Double,
+    totalProfit: Double,
+    profitPercent: Double,
+    hideValues: Boolean,
+) {
+    val isPositive = totalProfit >= 0
+    // Chips pastéis sobre o gradiente — tons claros que ficam legíveis em qualquer tema.
+    val gainChipColor = if (isPositive) Color(0xFFB7E4C7) else Color(0xFFFFC4C4)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396))),
+                    RoundedCornerShape(22.dp),
+                )
+                .padding(22.dp),
+        ) {
+            Column {
+                Text("Patrimônio total", fontSize = 11.sp, color = Color.White.copy(alpha = 0.65f))
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    if (hideValues) HIDDEN else totalCurrent.toBRL(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = gainChipColor.copy(alpha = 0.22f),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                            null, tint = gainChipColor, modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            "${if (isPositive) "+" else ""}${"%.1f".format(profitPercent)}% · ${if (isPositive) "+" else ""}${(if (hideValues) HIDDEN else totalProfit.toBRL())}",
+                            fontSize = 11.sp,
+                            color = gainChipColor,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(18.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color.White.copy(alpha = 0.15f)),
+                )
+                Spacer(Modifier.height(14.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    HeroStat(
+                        modifier = Modifier.weight(1f),
+                        label = "Investido",
+                        value = if (hideValues) HIDDEN else totalInvested.toBRL(),
+                        icon = Icons.Default.AccountBalanceWallet,
+                    )
+                    Box(
+                        Modifier.width(1.dp).height(40.dp)
+                            .background(Color.White.copy(alpha = 0.15f)),
+                    )
+                    HeroStat(
+                        modifier = Modifier.weight(1f),
+                        label = "Rendimento",
+                        value = if (hideValues) HIDDEN
+                                else "${if (isPositive) "+" else ""}${totalProfit.toBRL()}",
+                        icon = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                        valueColor = gainChipColor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroStat(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    icon: ImageVector,
+    valueColor: Color = Color.White,
+) {
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(20.dp).clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(12.dp))
+            }
+            Spacer(Modifier.width(6.dp))
+            Text(
+                label,
+                fontSize = 11.sp,
+                color = Color.White.copy(alpha = 0.7f),
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            value,
+            fontSize = 15.sp,
+            color = valueColor,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+// ─── QUICK CARDS (uniforme em Purple40) ───
+
+@Composable
+private fun QuickCard(modifier: Modifier, icon: ImageVector, title: String, onClick: () -> Unit) {
+    Card(
+        modifier = modifier.clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 14.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(PurpleLight.copy(alpha = 0.55f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = Purple40, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = PoupaiTheme.tokens.textPrimary,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+// ─── BENCHMARK CARD ───
+
+@Composable
+private fun BenchmarkCard(
+    vsCdi: Double,
+    profitPercent: Double,
+    accumulatedCdi: Double,
+    lastUpdated: String?,
+) {
+    val vsCdiColor = when {
+        vsCdi >= 0 -> GreenPositive
+        profitPercent >= 0 -> Purple60   // positivo mas abaixo do CDI — tom de alerta on-brand
+        else -> RedNegative
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("vs CDI", style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold, color = PoupaiTheme.tokens.textPrimary)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "Atualizado: ${io.poupai.app.core.util.DateFormatter.isoToDisplay(lastUpdated)}",
+                    fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted,
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                BenchmarkStat("Rentabilidade", "${"%.2f".format(profitPercent)}%",
+                    if (profitPercent >= 0) GreenPositive else RedNegative)
+                BenchmarkStat("CDI acumulado", "${"%.2f".format(accumulatedCdi)}%",
+                    PoupaiTheme.tokens.textSecondary)
+                BenchmarkStat("Diferença",
+                    "${if (vsCdi >= 0) "+" else ""}${"%.2f".format(vsCdi)}%",
+                    vsCdiColor)
+            }
         }
     }
 }
@@ -286,45 +499,12 @@ private fun QuickCard(modifier: Modifier, icon: ImageVector, title: String, colo
 private fun BenchmarkStat(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
+        Spacer(Modifier.height(2.dp))
         Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = color)
     }
 }
 
-@Composable
-private fun InvestmentSummaryCard(totalInvested: Double, totalCurrent: Double, totalProfit: Double, hideValues: Boolean) {
-    val profitPercent = if (totalInvested > 0) (totalProfit / totalInvested) * 100 else 0.0
-    val isPositive = totalProfit >= 0
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(4.dp)) {
-        Box(modifier = Modifier.fillMaxWidth()
-            .background(brush = Brush.linearGradient(listOf(PurpleDark, Purple40)), shape = RoundedCornerShape(20.dp))
-            .padding(20.dp)) {
-            Column {
-                Text("Patrimônio Total", fontSize = 12.sp, color = Color.White.copy(alpha = 0.75f))
-                Spacer(Modifier.height(4.dp))
-                Text(if (hideValues) HIDDEN else totalCurrent.toBRL(),
-                    style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text("Investido", fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f))
-                        Text(if (hideValues) HIDDEN else totalInvested.toBRL(), fontSize = 14.sp, color = Color.White)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Rendimento", fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown, null,
-                                tint = if (isPositive) Color(0xFF81C784) else Color(0xFFEF9A9A), modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("${if (isPositive) "+" else ""}${"%.1f".format(profitPercent)}%",
-                                fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                                color = if (isPositive) Color(0xFF81C784) else Color(0xFFEF9A9A))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+// ─── DONUT ───
 
 @Composable
 private fun AllocationDonutCard(
@@ -335,21 +515,38 @@ private fun AllocationDonutCard(
     onClick: () -> Unit = {},
 ) {
     if (total <= 0) return
-    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }, shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(1.dp), colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface)) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(1.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+    ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Alocação", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("Distribuição por categoria", style = MaterialTheme.typography.bodySmall, color = PoupaiTheme.tokens.textMuted)
+            Text("Distribuição por categoria",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = PoupaiTheme.tokens.textPrimary)
+            Text("Toque para detalhes",
+                fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
             Spacer(Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                DonutChart(listOf(rendaVariavel, rendaFixa, criptomoedas),
-                    listOf(typeColor[InvestmentType.RENDA_VARIAVEL]!!, typeColor[InvestmentType.RENDA_FIXA]!!, typeColor[InvestmentType.CRIPTOMOEDAS]!!),
-                    modifier = Modifier.size(110.dp))
+                DonutChart(
+                    listOf(rendaVariavel, rendaFixa, criptomoedas),
+                    listOf(
+                        typeColor[InvestmentType.RENDA_VARIAVEL]!!,
+                        typeColor[InvestmentType.RENDA_FIXA]!!,
+                        typeColor[InvestmentType.CRIPTOMOEDAS]!!,
+                    ),
+                    modifier = Modifier.size(110.dp),
+                )
                 Spacer(Modifier.width(20.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    LegendRow("Renda Variável", rendaVariavel / total * 100, typeColor[InvestmentType.RENDA_VARIAVEL]!!)
-                    LegendRow("Renda Fixa", rendaFixa / total * 100, typeColor[InvestmentType.RENDA_FIXA]!!)
-                    LegendRow("Cripto", criptomoedas / total * 100, typeColor[InvestmentType.CRIPTOMOEDAS]!!)
+                    LegendRow("Renda Variável", rendaVariavel / total * 100,
+                        typeColor[InvestmentType.RENDA_VARIAVEL]!!)
+                    LegendRow("Renda Fixa", rendaFixa / total * 100,
+                        typeColor[InvestmentType.RENDA_FIXA]!!)
+                    LegendRow("Cripto", criptomoedas / total * 100,
+                        typeColor[InvestmentType.CRIPTOMOEDAS]!!)
                 }
             }
         }
@@ -391,8 +588,8 @@ private fun LegendRow(label: String, percent: Double, color: Color) {
         Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
         Spacer(Modifier.width(8.dp))
         Column {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = PoupaiTheme.tokens.textSecondary)
-            Text("${"%.1f".format(percent)}%", style = MaterialTheme.typography.bodySmall,
+            Text(label, fontSize = 11.sp, color = PoupaiTheme.tokens.textSecondary)
+            Text("${"%.1f".format(percent)}%", fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold, color = color)
         }
     }
@@ -410,9 +607,12 @@ private fun AssetSection(
     val color = typeColor[type] ?: Purple40
     var expanded by remember { mutableStateOf(true) }
 
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(1.dp),
-        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface)) {
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+    ) {
         Column {
             // ─── Header clicável ───
             Row(modifier = Modifier
@@ -420,8 +620,13 @@ private fun AssetSection(
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(color.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(when (type) {
                         InvestmentType.RENDA_VARIAVEL -> "RV"
                         InvestmentType.RENDA_FIXA -> "RF"
@@ -430,7 +635,8 @@ private fun AssetSection(
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        color = PoupaiTheme.tokens.textPrimary)
                     Text("${investments.size} ativo${if (investments.size != 1) "s" else ""}",
                         fontSize = 11.sp, color = PoupaiTheme.tokens.textMuted)
                 }
@@ -453,7 +659,8 @@ private fun AssetSection(
                             onEdit = { onEdit(investment) },
                             onClick = { onItemClick(investment.id) })
                         if (index < investments.lastIndex)
-                            HorizontalDivider(color = PoupaiTheme.tokens.divider, modifier = Modifier.padding(horizontal = 16.dp))
+                            HorizontalDivider(color = PoupaiTheme.tokens.divider,
+                                modifier = Modifier.padding(horizontal = 16.dp))
                     }
                 }
             }
@@ -483,18 +690,13 @@ private fun AssetRow(
                         showDeleteDialog = false
                         onDelete()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Excluir")
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) { Text("Excluir") }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+            },
+            shape = RoundedCornerShape(16.dp),
         )
     }
 
@@ -507,23 +709,22 @@ private fun AssetRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-
         Row(verticalAlignment = Alignment.CenterVertically) {
 
             Box(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.10f)),
-                contentAlignment = Alignment.Center
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(accentColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     investment.name.take(2).uppercase(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = accentColor
+                    color = accentColor,
                 )
             }
 
@@ -536,65 +737,44 @@ private fun AssetRow(
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = PoupaiTheme.tokens.textPrimary
+                    color = PoupaiTheme.tokens.textPrimary,
                 )
-
                 Text(
                     "Investido: ${if (hideValues) HIDDEN else investment.investedValue.toBRL()}",
                     fontSize = 11.sp,
-                    color = PoupaiTheme.tokens.textMuted
+                    color = PoupaiTheme.tokens.textMuted,
                 )
             }
 
             Column(horizontalAlignment = Alignment.End) {
-
                 Text(
                     if (hideValues) HIDDEN else investment.currentValue.toBRL(),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PoupaiTheme.tokens.textPrimary
+                    color = PoupaiTheme.tokens.textPrimary,
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
                     Icon(
                         if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
                         contentDescription = null,
                         tint = if (isPositive) GreenPositive else RedNegative,
-                        modifier = Modifier.size(12.dp)
+                        modifier = Modifier.size(12.dp),
                     )
-
                     Spacer(Modifier.width(2.dp))
-
                     Text(
                         "${if (isPositive) "+" else ""}${"%.1f".format(profitPercent)}%",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isPositive) GreenPositive else RedNegative
+                        color = if (isPositive) GreenPositive else RedNegative,
                     )
-
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Editar",
-                            tint = PoupaiTheme.tokens.accentBright,
-                            modifier = Modifier.size(16.dp)
-                        )
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Edit, "Editar", tint = accentColor,
+                            modifier = Modifier.size(16.dp))
                     }
-
-                    IconButton(
-                        onClick = { showDeleteDialog = true },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = "Excluir",
-                            tint = PoupaiTheme.tokens.textMuted,
-                            modifier = Modifier.size(16.dp)
-                        )
+                    IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Delete, "Excluir", tint = PoupaiTheme.tokens.textMuted,
+                            modifier = Modifier.size(16.dp))
                     }
                 }
             }
@@ -614,9 +794,9 @@ private fun AssetRow(
             ) {
                 if (investment.shares > 0) {
                     Text(
-                        "${String.format("%.2f", investment.shares)} cotas",
+                        "${"%.2f".format(investment.shares)} cotas",
                         fontSize = 10.sp,
-                        color = PoupaiTheme.tokens.textMuted
+                        color = PoupaiTheme.tokens.textMuted,
                     )
                 }
                 if (investment.averagePrice > 0) {
@@ -624,14 +804,14 @@ private fun AssetRow(
                         "PM: ${if (hideValues) HIDDEN else investment.averagePrice.toBRL()}",
                         fontSize = 10.sp,
                         color = accentColor,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
                 if (investment.allocationTarget > 0) {
                     Text(
-                        "Alvo: ${String.format("%.1f", investment.allocationTarget)}%",
+                        "Alvo: ${"%.1f".format(investment.allocationTarget)}%",
                         fontSize = 10.sp,
-                        color = PoupaiTheme.tokens.textMuted
+                        color = PoupaiTheme.tokens.textMuted,
                     )
                 }
                 if (showStaleChip) {
@@ -643,43 +823,47 @@ private fun AssetRow(
     }
 }
 
-// ─── BANNER DE DADOS DESATUALIZADOS ───
+// ─── BANNER DE DADOS DESATUALIZADOS (paleta on-brand) ───
 
 @Composable
 private fun StaleDataBanner(count: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4E0)),
-        elevation = CardDefaults.cardElevation(0.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+        elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                Icons.Default.Warning,
-                contentDescription = null,
-                tint = Color(0xFFE65100),
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(10.dp))
+            Box(
+                Modifier.size(32.dp).clip(CircleShape).background(PurpleLight.copy(alpha = 0.55f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.WarningAmber, null,
+                    tint = Purple40, modifier = Modifier.size(18.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "$count ativo${if (count != 1) "s" else ""} sem atualização recente",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFBF360C),
+                    color = PoupaiTheme.tokens.textPrimary,
                 )
                 Text(
                     "Atualize os preços para análises mais precisas",
                     fontSize = 10.sp,
-                    color = Color(0xFFBF360C).copy(alpha = 0.75f),
+                    color = PoupaiTheme.tokens.textMuted,
                 )
             }
         }
     }
 }
+
 // ─── EDIT BOTTOM SHEET ───
 
 @Composable
@@ -706,6 +890,7 @@ private fun EditInvestmentSheet(
             "Editar ativo",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
+            color = PoupaiTheme.tokens.textPrimary,
         )
 
         OutlinedTextField(
@@ -773,22 +958,57 @@ private fun EditInvestmentSheet(
     }
 }
 
+// ─── EMPTY STATE ───
+
 @Composable
 private fun EmptyInvestmentsState(onNavigateToBook: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("📈", fontSize = 64.sp)
-            Spacer(Modifier.height(16.dp))
-            Text("Nenhum investimento ainda", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(8.dp))
-            Text("Registre seus primeiros aportes\nno livro contábil",
-                style = MaterialTheme.typography.bodyMedium, color = PoupaiTheme.tokens.textMuted, textAlign = TextAlign.Center)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp),
+        ) {
+            Box(
+                Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Purple40.copy(alpha = 0.18f), Purple40.copy(alpha = 0.08f))
+                        )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.Timeline,
+                    null,
+                    tint = Purple40,
+                    modifier = Modifier.size(36.dp),
+                )
+            }
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "Nenhum investimento ainda",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = PoupaiTheme.tokens.textPrimary,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Registre seus primeiros aportes\nno livro contábil",
+                style = MaterialTheme.typography.bodyMedium,
+                color = PoupaiTheme.tokens.textMuted,
+                textAlign = TextAlign.Center,
+            )
             Spacer(Modifier.height(24.dp))
-            Button(onClick = onNavigateToBook, shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PoupaiTheme.tokens.accentBright)) {
-                Icon(Icons.Default.Book, null, modifier = Modifier.size(18.dp))
+            Button(
+                onClick = onNavigateToBook,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Purple40),
+                modifier = Modifier.height(48.dp),
+            ) {
+                Icon(Icons.Default.Book, null, modifier = Modifier.size(18.dp), tint = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text("Ir para Lançamentos")
+                Text("Ir para Lançamentos", color = Color.White)
             }
         }
     }

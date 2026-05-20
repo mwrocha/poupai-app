@@ -16,6 +16,12 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -123,69 +130,61 @@ fun GoalsScreen(
             onRefresh = viewModel::refresh,
             modifier = Modifier.weight(1f),
         ) {
-        when {
-            uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Purple40)
-            }
+            when {
+                uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Purple40)
+                }
 
-            uiState.goals.isEmpty() -> EmptyGoalsState(onAdd = viewModel::onShowAddSheet)
+                uiState.goals.isEmpty() -> EmptyGoalsState(onAdd = viewModel::onShowAddSheet)
 
-            else -> {
-                LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    // ─── Card de resumo ───
-                    item { GoalsSummaryCard(totalCurrent, totalTarget, uiState.goals.size, completed) }
-
-                    // ─── Em andamento ───
-                    if (active.isNotEmpty()) {
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        // ─── Hero ───
                         item {
-                            Text(
-                                "Em andamento",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = PoupaiTheme.tokens.textSecondary,
-                                modifier = Modifier.padding(top = 4.dp),
+                            GoalsHeroCard(
+                                totalCurrent = totalCurrent,
+                                totalTarget = totalTarget,
+                                total = uiState.goals.size,
+                                completed = completed,
+                                active = active.size,
                             )
                         }
-                        items(active, key = { it.id }) { goal ->
-                            GoalCard(
-                                goal = goal,
-                                dateFormat = dateFormat,
-                                onAddProgress = { viewModel.onShowProgressSheet(goal) },
-                                onDelete = { viewModel.onDeleteGoal(goal.id) },
-                            )
-                        }
-                    }
 
-                    // ─── Concluídas ───
-                    if (done.isNotEmpty()) {
-                        item {
-                            Text(
-                                "Concluídas",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = GreenPositive,
-                                modifier = Modifier.padding(top = 8.dp),
-                            )
+                        // ─── Em andamento ───
+                        if (active.isNotEmpty()) {
+                            item { SectionTitle("Em andamento", Icons.Default.TrackChanges) }
+                            items(active, key = { it.id }) { goal ->
+                                GoalCard(
+                                    goal = goal,
+                                    dateFormat = dateFormat,
+                                    onAddProgress = { viewModel.onShowProgressSheet(goal) },
+                                    onDelete = { viewModel.onDeleteGoal(goal.id) },
+                                )
+                            }
                         }
-                        items(done, key = { it.id }) { goal ->
-                            GoalCard(
-                                goal = goal,
-                                dateFormat = dateFormat,
-                                onAddProgress = {},
-                                onDelete = { viewModel.onDeleteGoal(goal.id) },
-                            )
-                        }
-                    }
 
-                    item { Spacer(Modifier.height(80.dp)) }
+                        // ─── Concluídas ───
+                        if (done.isNotEmpty()) {
+                            item { SectionTitle("Concluídas", Icons.Default.EmojiEvents, GreenPositive) }
+                            items(done, key = { it.id }) { goal ->
+                                GoalCard(
+                                    goal = goal,
+                                    dateFormat = dateFormat,
+                                    onAddProgress = {},
+                                    onDelete = { viewModel.onDeleteGoal(goal.id) },
+                                )
+                            }
+                        }
+
+                        item { Spacer(Modifier.height(80.dp)) }
+                    }
                 }
             }
         }
-        } // close PullToRefresh
     }
 
     // ─── FAB ───
@@ -228,14 +227,32 @@ fun GoalsScreen(
     }
 }
 
-// ─── CARD DE RESUMO ───
+@Composable
+private fun SectionTitle(text: String, icon: ImageVector, tint: Color = Purple40) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp, start = 2.dp),
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = PoupaiTheme.tokens.textSecondary,
+        )
+    }
+}
+
+// ─── HERO ───
 
 @Composable
-private fun GoalsSummaryCard(
+private fun GoalsHeroCard(
     totalCurrent: Double,
     totalTarget: Double,
     total: Int,
     completed: Int,
+    active: Int,
 ) {
     val progress = if (totalTarget > 0) (totalCurrent / totalTarget).toFloat().coerceIn(0f, 1f) else 0f
     var animPlayed by remember { mutableStateOf(false) }
@@ -244,48 +261,136 @@ private fun GoalsSummaryCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(22.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(brush = Brush.linearGradient(listOf(PurpleDark, Purple40)), shape = RoundedCornerShape(20.dp))
-                .padding(20.dp),
+                .background(
+                    Brush.linearGradient(listOf(PurpleDark, Purple40, Color(0xFF6B4396))),
+                    RoundedCornerShape(22.dp),
+                )
+                .padding(22.dp),
         ) {
             Column {
-                Text("Progresso geral", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.75f))
-                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Progresso geral", fontSize = 11.sp, color = Color.White.copy(alpha = 0.65f))
+                    Spacer(Modifier.weight(1f))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.White.copy(alpha = 0.18f),
+                    ) {
+                        Text(
+                            "${(progress * 100).toInt()}%",
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            fontSize = 11.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(6.dp))
                 Text(
-                    "${(progress * 100).toInt()}% acumulado",
+                    if (totalTarget > 0) totalCurrent.toBRL() else "R$ 0,00",
                     style = MaterialTheme.typography.headlineMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (totalTarget > 0) "de ${totalTarget.toBRL()} guardado" else "Defina suas metas",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.65f),
+                )
+
+                Spacer(Modifier.height(14.dp))
                 LinearProgressIndicator(
                     progress = { animProgress },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
                     color = Color.White,
-                    trackColor = Color.White.copy(alpha = 0.25f),
+                    trackColor = Color.White.copy(alpha = 0.22f),
                 )
-                Spacer(Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text("Guardado", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-                        Text(totalCurrent.toBRL(), style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Concluídas", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-                        Text("$completed/$total", style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Objetivo", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-                        Text(totalTarget.toBRL(), style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
-                    }
+
+                Spacer(Modifier.height(18.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color.White.copy(alpha = 0.15f)),
+                )
+                Spacer(Modifier.height(14.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    HeroStat(
+                        modifier = Modifier.weight(1f),
+                        label = "Em andamento",
+                        value = "$active",
+                        icon = Icons.Default.TrackChanges,
+                    )
+                    Box(
+                        Modifier.width(1.dp).height(40.dp)
+                            .background(Color.White.copy(alpha = 0.15f)),
+                    )
+                    HeroStat(
+                        modifier = Modifier.weight(1f),
+                        label = "Concluídas",
+                        value = "$completed",
+                        icon = Icons.Default.EmojiEvents,
+                    )
+                    Box(
+                        Modifier.width(1.dp).height(40.dp)
+                            .background(Color.White.copy(alpha = 0.15f)),
+                    )
+                    HeroStat(
+                        modifier = Modifier.weight(1f),
+                        label = "Total",
+                        value = "$total",
+                        icon = Icons.Default.Flag,
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HeroStat(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    icon: ImageVector,
+) {
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(20.dp).clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(12.dp))
+            }
+            Spacer(Modifier.width(6.dp))
+            Text(
+                label,
+                fontSize = 10.sp,
+                color = Color.White.copy(alpha = 0.7f),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            value,
+            fontSize = 18.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
@@ -310,7 +415,7 @@ private fun GoalCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
     ) {
@@ -321,7 +426,7 @@ private fun GoalCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(goalColor.copy(alpha = 0.12f)),
+                        .background(goalColor.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) { Text(goal.icon, fontSize = 20.sp) }
 
@@ -336,18 +441,33 @@ private fun GoalCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    goal.deadline?.let {
+                    Spacer(Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Prazo: ${dateFormat.format(it)}",
+                            "${(goal.progress * 100).toInt()}%",
                             fontSize = 11.sp,
-                            color = PoupaiTheme.tokens.textMuted,
+                            color = goalColor,
+                            fontWeight = FontWeight.Bold,
                         )
+                        goal.deadline?.let {
+                            Text(
+                                " · ${dateFormat.format(it)}",
+                                fontSize = 11.sp,
+                                color = PoupaiTheme.tokens.textMuted,
+                            )
+                        }
                     }
                 }
 
                 if (goal.isCompleted) {
-                    Icon(Icons.Default.CheckCircle, null, tint = GreenPositive, modifier = Modifier.size(22.dp))
-                    Spacer(Modifier.width(4.dp))
+                    Box(
+                        Modifier.size(28.dp).clip(CircleShape)
+                            .background(GreenPositive.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Default.CheckCircle, null, tint = GreenPositive,
+                            modifier = Modifier.size(18.dp))
+                    }
                 } else {
                     IconButton(onClick = onAddProgress, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Edit, "Atualizar", tint = goalColor, modifier = Modifier.size(18.dp))
@@ -362,34 +482,54 @@ private fun GoalCard(
 
             LinearProgressIndicator(
                 progress = { animProgress },
-                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
                 color = if (goal.isCompleted) GreenPositive else goalColor,
                 trackColor = goalColor.copy(alpha = 0.10f),
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    goal.currentValue.toBRL(),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (goal.isCompleted) GreenPositive else goalColor,
-                )
-                Text(
-                    if (goal.isCompleted) "Concluída 🎉" else "Faltam ${goal.remaining.toBRL()}",
-                    fontSize = 11.sp,
-                    color = if (goal.isCompleted) GreenPositive else PoupaiTheme.tokens.textMuted,
-                )
-                Text(
-                    goal.targetValue.toBRL(),
-                    fontSize = 12.sp,
-                    color = PoupaiTheme.tokens.textMuted,
-                )
+                Column {
+                    Text("Guardado", fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
+                    Text(
+                        goal.currentValue.toBRL(),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (goal.isCompleted) GreenPositive else goalColor,
+                    )
+                }
+                if (!goal.isCompleted) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Falta", fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
+                        Text(
+                            goal.remaining.toBRL(),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PoupaiTheme.tokens.textPrimary,
+                        )
+                    }
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = GreenPositive.copy(alpha = 0.14f),
+                    ) {
+                        Text(
+                            "Objetivo alcançado",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GreenPositive,
+                        )
+                    }
+                }
             }
 
             // ─── Insights de prazo / aporte sugerido ───
@@ -412,6 +552,7 @@ private fun GoalCard(
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
             },
+            shape = RoundedCornerShape(16.dp),
         )
     }
 }
@@ -433,26 +574,34 @@ private fun AddGoalSheetContent(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text("Nova Meta", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text("Nova Meta", fontSize = 20.sp, fontWeight = FontWeight.Bold,
+            color = PoupaiTheme.tokens.textPrimary)
 
-        Text("Ícone", style = MaterialTheme.typography.labelMedium, color = PoupaiTheme.tokens.textMuted)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Ícone", style = MaterialTheme.typography.labelMedium,
+            color = PoupaiTheme.tokens.textMuted)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
             iconOptions.forEach { icon ->
+                val selected = uiState.formIcon == icon
                 Box(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (uiState.formIcon == icon) Purple40.copy(alpha = 0.15f) else PoupaiTheme.tokens.surfaceAlt)
+                        .background(
+                            if (selected) Purple40.copy(alpha = 0.18f)
+                            else PoupaiTheme.tokens.surfaceAlt
+                        )
                         .clickable { onIconChanged(icon) },
                     contentAlignment = Alignment.Center,
                 ) { Text(icon, fontSize = 20.sp) }
             }
         }
 
-        Text("Cor", style = MaterialTheme.typography.labelMedium, color = PoupaiTheme.tokens.textMuted)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Cor", style = MaterialTheme.typography.labelMedium,
+            color = PoupaiTheme.tokens.textMuted)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             colorOptions.forEach { hex ->
                 val selected = uiState.formColor == hex
                 Box(
@@ -519,8 +668,10 @@ private fun UpdateProgressSheetContent(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Atualizar Progresso", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(uiState.progressGoalTitle, style = MaterialTheme.typography.bodyMedium, color = PoupaiTheme.tokens.textSecondary)
+        Text("Atualizar Progresso", fontSize = 20.sp, fontWeight = FontWeight.Bold,
+            color = PoupaiTheme.tokens.textPrimary)
+        Text(uiState.progressGoalTitle, style = MaterialTheme.typography.bodyMedium,
+            color = PoupaiTheme.tokens.textSecondary)
 
         LinearProgressIndicator(
             progress = { progress },
@@ -528,8 +679,10 @@ private fun UpdateProgressSheetContent(
             color = Purple40, trackColor = Purple40.copy(alpha = 0.12f),
         )
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-            Text(uiState.progressGoalCurrent.toBRL(), style = MaterialTheme.typography.bodySmall, color = Purple40, fontWeight = FontWeight.SemiBold)
-            Text("Faltam ${remaining.toBRL()}", style = MaterialTheme.typography.bodySmall, color = PoupaiTheme.tokens.textMuted)
+            Text(uiState.progressGoalCurrent.toBRL(), style = MaterialTheme.typography.bodySmall,
+                color = Purple40, fontWeight = FontWeight.SemiBold)
+            Text("Faltam ${remaining.toBRL()}", style = MaterialTheme.typography.bodySmall,
+                color = PoupaiTheme.tokens.textMuted)
         }
 
         TextField(
@@ -558,32 +711,41 @@ private fun DeadlineInsights(goal: Goal, goalColor: Color) {
     val days = daysUntilDeadline(goal.deadline) ?: return
     val months = monthsUntilDeadline(goal.deadline) ?: return
 
+    Spacer(Modifier.height(14.dp))
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(PoupaiTheme.tokens.divider),
+    )
     Spacer(Modifier.height(12.dp))
-    HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
-    Spacer(Modifier.height(10.dp))
 
     when {
         days < 0 -> {
             // Prazo expirado
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color(0xFFFFEBEE),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFFFEBEE))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                Box(
+                    Modifier.size(22.dp).clip(CircleShape)
+                        .background(Color(0xFFC62828).copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text("⏰", fontSize = 12.sp)
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        "Prazo expirado · considere revisar o prazo",
-                        fontSize = 11.sp,
-                        color = Color(0xFFC62828),
-                        fontWeight = FontWeight.SemiBold,
-                    )
+                    Icon(Icons.Default.WarningAmber, null,
+                        tint = Color(0xFFC62828), modifier = Modifier.size(13.dp))
                 }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Prazo expirado · considere revisar o prazo",
+                    fontSize = 11.sp,
+                    color = Color(0xFFC62828),
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
 
@@ -594,11 +756,20 @@ private fun DeadlineInsights(goal: Goal, goalColor: Color) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Box(
+                    Modifier.size(28.dp).clip(CircleShape)
+                        .background(goalColor.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Insights, null,
+                        tint = goalColor, modifier = Modifier.size(15.dp))
+                }
+                Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Aporte sugerido", fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
                     Text(
                         "${required.toBRL()} / mês",
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = goalColor,
                     )
@@ -606,7 +777,6 @@ private fun DeadlineInsights(goal: Goal, goalColor: Color) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Tempo restante", fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
                     val years = months / 12
-                    val remMonths = months % 12
                     val label = when {
                         years >= 2 -> "$months meses · ~$years anos"
                         years == 1L -> "$months meses · 1 ano"
@@ -623,34 +793,43 @@ private fun DeadlineInsights(goal: Goal, goalColor: Color) {
         }
 
         else -> {
-            // Faltam menos de 1 mês — mostra dias e valor total restante
+            // Faltam menos de 1 mês
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Box(
+                    Modifier.size(28.dp).clip(CircleShape)
+                        .background(Color(0xFFE65100).copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Schedule, null,
+                        tint = Color(0xFFE65100), modifier = Modifier.size(15.dp))
+                }
+                Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Falta guardar", fontSize = 10.sp, color = PoupaiTheme.tokens.textMuted)
                     Text(
                         goal.remaining.toBRL(),
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = goalColor,
                     )
                 }
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color(0xFFFFF4E0),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFE65100).copy(alpha = 0.14f),
                 ) {
                     Text(
                         when (days) {
                             0L -> "Vence hoje"
                             1L -> "Falta 1 dia"
-                            else -> "Faltam $days dias"
+                            else -> "$days dias"
                         },
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFE65100),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
             }
@@ -663,11 +842,36 @@ private fun DeadlineInsights(goal: Goal, goalColor: Color) {
 @Composable
 private fun EmptyGoalsState(onAdd: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("🎯", fontSize = 64.sp)
-            Spacer(Modifier.height(16.dp))
-            Text("Nenhuma meta ainda", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(8.dp))
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp),
+        ) {
+            Box(
+                Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Purple40.copy(alpha = 0.18f), Purple40.copy(alpha = 0.08f))
+                        )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.TrackChanges,
+                    null,
+                    tint = Purple40,
+                    modifier = Modifier.size(36.dp),
+                )
+            }
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "Nenhuma meta ainda",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = PoupaiTheme.tokens.textPrimary,
+            )
+            Spacer(Modifier.height(6.dp))
             Text(
                 "Crie sua primeira meta e\nacompanhe seu progresso!",
                 style = MaterialTheme.typography.bodyMedium,
@@ -679,10 +883,11 @@ private fun EmptyGoalsState(onAdd: () -> Unit) {
                 onClick = onAdd,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Purple40),
+                modifier = Modifier.height(48.dp),
             ) {
-                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp), tint = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text("Criar primeira meta")
+                Text("Criar primeira meta", color = Color.White)
             }
         }
     }

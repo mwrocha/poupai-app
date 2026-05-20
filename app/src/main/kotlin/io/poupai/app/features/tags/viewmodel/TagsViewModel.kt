@@ -3,12 +3,14 @@ package io.poupai.app.features.tags.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.poupai.app.core.network.Resource
+import io.poupai.app.core.util.PreferencesManager
 import io.poupai.app.domain.model.Tag
 import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.domain.repository.TagRepository
 import io.poupai.app.domain.repository.TransactionRepository
 import io.poupai.app.features.tags.state.TagsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,14 +24,40 @@ import javax.inject.Inject
 class TagsViewModel @Inject constructor(
     private val tagRepository: TagRepository,
     private val transactionRepository: TransactionRepository,
+    private val preferencesManager: PreferencesManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TagsUiState())
     val uiState: StateFlow<TagsUiState> = _uiState.asStateFlow()
 
     init {
+        observeHideValues()
         loadTags()
     }
+
+    private fun observeHideValues() {
+        viewModelScope.launch {
+            preferencesManager.hideValues.collect { hide ->
+                _uiState.update { it.copy(hideValues = hide) }
+            }
+        }
+    }
+
+    fun toggleHideValues() {
+        viewModelScope.launch { preferencesManager.saveHideValues(!_uiState.value.hideValues) }
+    }
+
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadTags()
+            delay(1000)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
 
     fun loadTags() {
         val state = _uiState.value
@@ -39,7 +67,11 @@ class TagsViewModel @Inject constructor(
                 year = state.selectedYear,
             ).collect { result ->
                 when (result) {
-                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                    is Resource.Loading -> _uiState.update { current ->
+                        val hasData = current.tags.isNotEmpty()
+                        if (hasData) current.copy(errorMessage = null)
+                        else current.copy(isLoading = true, errorMessage = null)
+                    }
                     is Resource.Success -> {
                         val total = result.data.sumOf { it.totalSpent }
                         _uiState.update {

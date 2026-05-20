@@ -11,6 +11,8 @@ data class TagsUiState(
     val selectedMonth: Int = LocalDate.now().monthValue,
     val selectedYear: Int = LocalDate.now().year,
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val hideValues: Boolean = false,
     val errorMessage: String? = null,
 
     // ─── Detalhe da tag selecionada ───
