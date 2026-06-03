@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Callbacks de navegação entre as 8 telas top-level + logout.
+ * Callbacks de navegação entre as 9 telas top-level + logout.
  *
  * Cada tela top-level (Dashboard, Investments, Finances, Transactions,
  * Tags, Goals, Gamification, Profile, Settings) recebe essas lambdas
@@ -86,7 +86,7 @@ class DrawerHostViewModel @Inject constructor(
  * }
  * ```
  *
- * O drawer só está disponível para as 8 telas top-level (listadas no
+ * O drawer só está disponível para as 9 telas top-level (listadas no
  * `drawerMenuItems`). Telas profundas (detalhes, formulários, livro)
  * continuam usando `popBackStack()`.
  */
@@ -123,6 +123,7 @@ fun PoupaiDrawerScaffold(
                     // Se já estamos nessa rota, não navegamos (evita push duplicado)
                     if (route == selectedRoute) return@PoupaiDrawerContent
                     when (route) {
+                        "dashboard"    -> nav.onNavigateToDashboard()
                         "investments"  -> nav.onNavigateToInvestments()
                         "finances"     -> nav.onNavigateToFinances()
                         "transactions" -> nav.onNavigateToTransactions()
