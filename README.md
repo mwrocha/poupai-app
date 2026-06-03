@@ -343,6 +343,3 @@ Próximos passos sob consideração:
 
 ---
 
-## Licença
-
-Projeto pessoal. Sem licença pública até o momento.
