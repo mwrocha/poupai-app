@@ -27,6 +27,7 @@ data class DrawerMenuItem(
 )
 
 val drawerMenuItems = listOf(
+    DrawerMenuItem(Icons.Default.Home,           "Início",            "dashboard"),
     DrawerMenuItem(Icons.Default.AttachMoney,    "Investimentos",     "investments"),
     DrawerMenuItem(Icons.Default.AccountBalance, "Finanças Pessoais", "finances"),
     DrawerMenuItem(Icons.Default.SwapHoriz,      "Transações",        "transactions"),

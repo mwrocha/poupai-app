@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -100,6 +101,15 @@ fun DashboardScreen(
                 onGoals = topLevelNav.onNavigateToGoals,
                 onTags = topLevelNav.onNavigateToTags,
             )
+
+            // ─── Composição do patrimônio (caixa vs investido) ───
+            if (uiState.totalSaved != 0.0 || uiState.investmentsValue != 0.0) {
+                NetWorthBreakdownCard(
+                    uiState = uiState,
+                    onInvestmentsClick = topLevelNav.onNavigateToInvestments,
+                )
+                Spacer(Modifier.height(12.dp))
+            }
 
             // ─── Streak / Conquistas ───
             if (uiState.currentStreak > 0 || uiState.totalPoints > 0) {
@@ -217,10 +227,10 @@ private fun DashboardHero(
 
             Spacer(Modifier.height(20.dp))
 
-            Text("Saldo total", color = Color.White.copy(alpha = 0.65f), fontSize = 11.sp)
+            Text("Patrimônio total", color = Color.White.copy(alpha = 0.65f), fontSize = 11.sp)
             Spacer(Modifier.height(4.dp))
             Text(
-                text = if (uiState.hideValues) HIDDEN else uiState.totalSaved.toBRL(),
+                text = if (uiState.hideValues) HIDDEN else uiState.netWorth.toBRL(),
                 color = Color.White,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
@@ -349,6 +359,144 @@ private fun QuickActionButton(icon: ImageVector, label: String, onClick: () -> U
             fontSize = 11.sp,
             color = PoupaiTheme.tokens.textPrimary,
             fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+// ─── NET WORTH: COMPOSIÇÃO DO PATRIMÔNIO ───
+
+@Composable
+private fun NetWorthBreakdownCard(
+    uiState: DashboardUiState,
+    onInvestmentsClick: () -> Unit,
+) {
+    val cash = uiState.totalSaved
+    val invested = uiState.investmentsValue
+    // Para a barra, segmentos negativos não fazem sentido — clampa em 0.
+    val cashBar = cash.coerceAtLeast(0.0)
+    val investedBar = invested.coerceAtLeast(0.0)
+    val totalBar = cashBar + investedBar
+    val cashPercent = if (totalBar > 0) (cashBar / totalBar * 100).toInt() else 0
+    val investedPercent = if (totalBar > 0) 100 - cashPercent else 0
+
+    val cashColor = Purple40
+    val investedColor = Color(0xFF9B7FD4)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .clickable { onInvestmentsClick() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.PieChart, null,
+                    tint = Purple40, modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "Composição do patrimônio",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PoupaiTheme.tokens.textPrimary,
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            // Barra de proporção caixa vs investido
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(PoupaiTheme.tokens.surfaceSunken),
+            ) {
+                if (cashBar > 0) {
+                    Box(
+                        Modifier
+                            .weight(cashBar.toFloat())
+                            .fillMaxHeight()
+                            .background(cashColor),
+                    )
+                }
+                if (cashBar > 0 && investedBar > 0) Spacer(Modifier.width(2.dp))
+                if (investedBar > 0) {
+                    Box(
+                        Modifier
+                            .weight(investedBar.toFloat())
+                            .fillMaxHeight()
+                            .background(investedColor),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            CompositionLegendRow(
+                color = cashColor,
+                label = "Em caixa",
+                value = cash,
+                percent = cashPercent,
+                hideValues = uiState.hideValues,
+            )
+            Spacer(Modifier.height(10.dp))
+            CompositionLegendRow(
+                color = investedColor,
+                label = "Investido",
+                value = invested,
+                percent = investedPercent,
+                hideValues = uiState.hideValues,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompositionLegendRow(
+    color: Color,
+    label: String,
+    value: Double,
+    percent: Int,
+    hideValues: Boolean,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(color),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            label,
+            fontSize = 12.sp,
+            color = PoupaiTheme.tokens.textSecondary,
+            fontWeight = FontWeight.Medium,
+        )
+        Spacer(Modifier.weight(1f))
+        Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = color.copy(alpha = 0.10f),
+        ) {
+            Text(
+                "$percent%",
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = color,
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            if (hideValues) HIDDEN else value.toBRL(),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = PoupaiTheme.tokens.textPrimary,
         )
     }
 }
