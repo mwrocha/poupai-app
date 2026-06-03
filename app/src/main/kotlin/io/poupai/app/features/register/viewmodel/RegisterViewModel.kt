@@ -87,7 +87,7 @@ class RegisterViewModel @Inject constructor(
     }
 
     fun onBirthDateChanged(date: String) {
-        _profileState.update { it.copy(birthDate = date, errorMessage = null) }
+        _profileState.update { it.copy(birthDate = io.poupai.app.core.util.DateFormatter.applyMask(date), errorMessage = null) }
     }
 
     // CPF e phone: guarda apenas dígitos, máscara cuida da exibição
