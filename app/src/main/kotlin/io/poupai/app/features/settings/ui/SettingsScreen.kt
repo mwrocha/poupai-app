@@ -12,7 +12,9 @@ import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
@@ -47,6 +49,21 @@ fun SettingsScreen(
 
     if (uiState.showAboutDialog) {
         AboutDialog(onDismiss = viewModel::onDismissAboutDialog)
+    }
+
+    uiState.biometricUnavailableMessage?.let { msg ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissBiometricMessage,
+            shape = RoundedCornerShape(16.dp),
+            title = { Text("Bloqueio indisponível", fontWeight = FontWeight.SemiBold) },
+            text = { Text(msg) },
+            confirmButton = {
+                Button(
+                    onClick = viewModel::dismissBiometricMessage,
+                    colors = ButtonDefaults.buttonColors(containerColor = Purple40),
+                ) { Text("Entendi", color = Color.White) }
+            },
+        )
     }
 
     PoupaiDrawerScaffold(
@@ -140,6 +157,58 @@ fun SettingsScreen(
                     Switch(
                         checked = uiState.notificationsEnabled,
                         onCheckedChange = viewModel::onNotificationsChanged,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Purple40,
+                            uncheckedThumbColor = PoupaiTheme.tokens.surface,
+                            uncheckedTrackColor = PoupaiTheme.tokens.surfaceAlt,
+                        ),
+                    )
+                }
+            }
+
+            // ─── Segurança ───
+            SectionTitle("Segurança", Icons.Default.Lock)
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(PurpleLight.copy(alpha = 0.55f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Fingerprint, null,
+                            tint = Purple40, modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Bloqueio do app",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PoupaiTheme.tokens.textPrimary,
+                        )
+                        Text(
+                            "Pede biometria ou PIN ao abrir o Poupaí",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = PoupaiTheme.tokens.textMuted,
+                        )
+                    }
+                    Switch(
+                        checked = uiState.biometricEnabled,
+                        onCheckedChange = viewModel::onBiometricChanged,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = Purple40,
