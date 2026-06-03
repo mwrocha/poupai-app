@@ -129,10 +129,10 @@ class TransactionsViewModel @Inject constructor(
 
     fun onDismissSheet() = _uiState.update { it.copy(showAddSheet = false) }
     fun onFormTitleChanged(value: String) = _uiState.update { it.copy(formTitle = value, formError = null) }
-    fun onFormAmountChanged(value: String) = _uiState.update { it.copy(formAmount = value, formError = null) }
+    fun onFormAmountChanged(value: String) = _uiState.update { it.copy(formAmount = io.poupai.app.core.util.NumberMasks.decimal(value), formError = null) }
     fun onFormTypeChanged(type: TransactionType) = _uiState.update { it.copy(formType = type, formCategory = "") }
     fun onFormCategoryChanged(value: String) = _uiState.update { it.copy(formCategory = value, formError = null) }
-    fun onFormDateChanged(value: String) = _uiState.update { it.copy(formDate = value, formError = null) }
+    fun onFormDateChanged(value: String) = _uiState.update { it.copy(formDate = io.poupai.app.core.util.DateFormatter.applyMask(value), formError = null) }
 
     fun onAddTransaction() {
         val state = _uiState.value
@@ -168,7 +168,7 @@ class TransactionsViewModel @Inject constructor(
                 showEditSheet = true,
                 editingTransaction = transaction,
                 editTitle = transaction.title,
-                editAmount = transaction.amount.toString(),
+                editAmount = io.poupai.app.core.util.NumberMasks.fromDouble(transaction.amount),
                 editType = transaction.type,
                 editCategory = transaction.category,
                 editDate = dateStr,
@@ -183,10 +183,10 @@ class TransactionsViewModel @Inject constructor(
     }
 
     fun onEditTitleChanged(value: String) = _uiState.update { it.copy(editTitle = value, editError = null) }
-    fun onEditAmountChanged(value: String) = _uiState.update { it.copy(editAmount = value, editError = null) }
+    fun onEditAmountChanged(value: String) = _uiState.update { it.copy(editAmount = io.poupai.app.core.util.NumberMasks.decimal(value), editError = null) }
     fun onEditTypeChanged(type: TransactionType) = _uiState.update { it.copy(editType = type, editCategory = "") }
     fun onEditCategoryChanged(value: String) = _uiState.update { it.copy(editCategory = value, editError = null) }
-    fun onEditDateChanged(value: String) = _uiState.update { it.copy(editDate = value, editError = null) }
+    fun onEditDateChanged(value: String) = _uiState.update { it.copy(editDate = io.poupai.app.core.util.DateFormatter.applyMask(value), editError = null) }
 
     fun onUpdateTransaction() {
         val state = _uiState.value
