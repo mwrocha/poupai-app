@@ -69,8 +69,8 @@ class GoalsViewModel @Inject constructor(
     }
 
     fun onFormTitleChanged(v: String) = _uiState.update { it.copy(formTitle = v, formError = null) }
-    fun onFormTargetChanged(v: String) = _uiState.update { it.copy(formTargetValue = v, formError = null) }
-    fun onFormCurrentChanged(v: String) = _uiState.update { it.copy(formCurrentValue = v, formError = null) }
+    fun onFormTargetChanged(v: String) = _uiState.update { it.copy(formTargetValue = io.poupai.app.core.util.NumberMasks.decimal(v), formError = null) }
+    fun onFormCurrentChanged(v: String) = _uiState.update { it.copy(formCurrentValue = io.poupai.app.core.util.NumberMasks.decimal(v), formError = null) }
     fun onFormDeadlineChanged(v: String) {
         val masked = io.poupai.app.core.util.DateFormatter.applyMask(v)
         _uiState.update { it.copy(formDeadline = masked) }
@@ -94,7 +94,7 @@ class GoalsViewModel @Inject constructor(
                 title = state.formTitle.trim(),
                 targetValue = target!!,
                 currentValue = current,
-                // Backend espera ISO yyyy-MM-dd; o form usa dd-MM-yyyy.
+                // Backend espera ISO yyyy-MM-dd; o form usa dd/MM/yyyy.
                 deadline = state.formDeadline.ifBlank { null }?.let {
                     io.poupai.app.core.util.DateFormatter.displayToIso(it) ?: it
                 },
@@ -126,7 +126,7 @@ class GoalsViewModel @Inject constructor(
         it.copy(showProgressSheet = false, progressInput = "", progressGoalId = "")
     }
 
-    fun onProgressInputChanged(v: String) = _uiState.update { it.copy(progressInput = v) }
+    fun onProgressInputChanged(v: String) = _uiState.update { it.copy(progressInput = io.poupai.app.core.util.NumberMasks.decimal(v)) }
 
     fun onUpdateProgress() {
         val state = _uiState.value

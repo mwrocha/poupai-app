@@ -5,6 +5,45 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
+// ─── Valores numéricos no padrão pt-BR (vírgula como separador decimal) ───
+object NumberMasks {
+
+    /**
+     * Normaliza um input numérico para o padrão pt-BR enquanto o usuário digita:
+     * converte ponto em vírgula, mantém só dígitos e no máximo uma vírgula.
+     *
+     *  "100.75" → "100,75"   (ponto vira vírgula)
+     *  "10,5"   → "10,5"
+     *  "1,2,3"  → "1,23"     (mantém apenas a primeira vírgula)
+     */
+    fun decimal(input: String): String {
+        var hasComma = false
+        val sb = StringBuilder()
+        for (c in input.replace('.', ',')) {
+            when {
+                c.isDigit() -> sb.append(c)
+                c == ',' && !hasComma -> {
+                    sb.append(c)
+                    hasComma = true
+                }
+            }
+        }
+        return sb.toString()
+    }
+
+    /** Double → string de input pt-BR (vírgula, sem ".0" supérfluo). 0.0 → "". */
+    fun fromDouble(value: Double): String {
+        if (value == 0.0) return ""
+        return java.math.BigDecimal.valueOf(value)
+            .stripTrailingZeros()
+            .toPlainString()
+            .replace('.', ',')
+    }
+
+    /** String pt-BR (com vírgula) → Double. Null se inválido. */
+    fun parse(input: String): Double? = input.trim().replace(",", ".").toDoubleOrNull()
+}
+
 // ─── CPF: 000.000.000-00 ───
 class CpfVisualTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {

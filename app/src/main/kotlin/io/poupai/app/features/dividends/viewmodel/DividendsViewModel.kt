@@ -99,7 +99,7 @@ class DividendsViewModel @Inject constructor(
     fun onFormInvestmentSelected(id: String, name: String) =
         _uiState.update { it.copy(formInvestmentId = id, formInvestmentName = name, formError = null) }
 
-    fun onFormAmountChanged(v: String) = _uiState.update { it.copy(formAmount = v, formError = null) }
+    fun onFormAmountChanged(v: String) = _uiState.update { it.copy(formAmount = io.poupai.app.core.util.NumberMasks.decimal(v), formError = null) }
     fun onFormTypeChanged(t: DividendType) = _uiState.update { it.copy(formType = t) }
     fun onFormDateChanged(v: String) {
         val masked = DateFormatter.applyMask(v)
@@ -117,7 +117,7 @@ class DividendsViewModel @Inject constructor(
                 _uiState.update { it.copy(formError = "Valor inválido") }; return
             }
             state.formDate.isBlank() || !DateFormatter.isValidDisplay(state.formDate) -> {
-                _uiState.update { it.copy(formError = "Data inválida (use dd-mm-aaaa)") }; return
+                _uiState.update { it.copy(formError = "Data inválida (use dd/mm/aaaa)") }; return
             }
         }
         val isoDate = DateFormatter.displayToIso(state.formDate) ?: state.formDate

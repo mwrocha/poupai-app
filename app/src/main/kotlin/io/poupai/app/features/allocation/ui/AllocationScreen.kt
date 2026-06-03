@@ -361,10 +361,10 @@ private fun HeroCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        // "yyyy-MM-dd" → "MM-yyyy"
+                        // "yyyy-MM-dd" → "MM/yyyy"
                         chartData.first().first.take(7).let { ym ->
                             val parts = ym.split("-")
-                            if (parts.size == 2) "${parts[1]}-${parts[0]}" else ym
+                            if (parts.size == 2) "${parts[1]}/${parts[0]}" else ym
                         },
                         fontSize = 9.sp,
                         color = Color.White.copy(alpha = 0.45f),

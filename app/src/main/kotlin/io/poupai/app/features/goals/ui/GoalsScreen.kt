@@ -83,7 +83,7 @@ fun GoalsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val progressSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val dateFormat = remember { SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
 
     val completed = uiState.goals.count { it.isCompleted }
     val totalTarget = uiState.goals.sumOf { it.targetValue }
@@ -639,7 +639,7 @@ private fun AddGoalSheetContent(
             modifier = Modifier.fillMaxWidth(), colors = fieldColors)
 
         TextField(value = uiState.formDeadline, onValueChange = onDeadlineChanged,
-            label = { Text("Prazo (dd-mm-aaaa) — opcional") }, placeholder = { Text("31-12-2026") },
+            label = { Text("Prazo (dd/mm/aaaa) — opcional") }, placeholder = { Text("31/12/2026") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(), colors = fieldColors)
