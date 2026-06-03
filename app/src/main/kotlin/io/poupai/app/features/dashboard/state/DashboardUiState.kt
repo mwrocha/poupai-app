@@ -13,6 +13,7 @@ data class DashboardUiState(
     val userName: String = "",
     val profileImageUrl: String? = null,
     val totalSaved: Double = 0.0,
+    val investmentsValue: Double = 0.0,
     val monthlyData: List<MonthData> = emptyList(),
 
     // ─── Resumo do mês atual ───
@@ -32,4 +33,7 @@ data class DashboardUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val hideValues: Boolean = false,
-)
+) {
+    /** Patrimônio consolidado = caixa (saldo acumulado de transações) + valor atual da carteira. */
+    val netWorth: Double get() = totalSaved + investmentsValue
+}
