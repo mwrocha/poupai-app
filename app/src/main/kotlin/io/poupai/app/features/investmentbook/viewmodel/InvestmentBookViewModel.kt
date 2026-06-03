@@ -148,16 +148,25 @@ class InvestmentBookViewModel @Inject constructor(
         ))
     }
 
-    fun onFormSharesChanged(v: String) = updateFormField("formShares", v) {
-        copy(formShares = v, generalError = null)
+    fun onFormSharesChanged(v: String) {
+        val masked = io.poupai.app.core.util.NumberMasks.decimal(v)
+        updateFormField("formShares", masked) {
+            copy(formShares = masked, generalError = null)
+        }
     }
 
-    fun onFormSharePriceChanged(v: String) = updateFormField("formSharePrice", v) {
-        copy(formSharePrice = v, generalError = null)
+    fun onFormSharePriceChanged(v: String) {
+        val masked = io.poupai.app.core.util.NumberMasks.decimal(v)
+        updateFormField("formSharePrice", masked) {
+            copy(formSharePrice = masked, generalError = null)
+        }
     }
 
-    fun onFormNewCurrentValueChanged(v: String) = updateFormField("formNewCurrentValue", v) {
-        copy(formNewCurrentValue = v, generalError = null)
+    fun onFormNewCurrentValueChanged(v: String) {
+        val masked = io.poupai.app.core.util.NumberMasks.decimal(v)
+        updateFormField("formNewCurrentValue", masked) {
+            copy(formNewCurrentValue = masked, generalError = null)
+        }
     }
 
     fun onFormNotesChanged(v: String) = _uiState.update {
@@ -165,7 +174,7 @@ class InvestmentBookViewModel @Inject constructor(
     }
 
     fun onFormDateChanged(v: String) {
-        // Aplica máscara dd-MM-yyyy enquanto o usuário digita
+        // Aplica máscara dd/MM/yyyy enquanto o usuário digita
         val masked = io.poupai.app.core.util.DateFormatter.applyMask(v)
         updateFormField("formDate", masked) {
             copy(formDate = masked, generalError = null)
@@ -207,7 +216,7 @@ class InvestmentBookViewModel @Inject constructor(
             }
             "formDate" -> {
                 if (io.poupai.app.core.util.DateFormatter.isValidDisplay(value)) null
-                else "Data inválida (use dd-mm-aaaa)"
+                else "Data inválida (use dd/mm/aaaa)"
             }
             else -> null
         }
@@ -311,7 +320,7 @@ class InvestmentBookViewModel @Inject constructor(
             adjustedShares = null,
             adjustedAveragePrice = null,
             notes = form.formNotes.ifBlank { null },
-            // Backend espera ISO (yyyy-MM-dd); o form trabalha em dd-MM-yyyy.
+            // Backend espera ISO (yyyy-MM-dd); o form trabalha em dd/MM/yyyy.
             date = io.poupai.app.core.util.DateFormatter.displayToIso(form.formDate) ?: form.formDate,
         )
         when (result) {
