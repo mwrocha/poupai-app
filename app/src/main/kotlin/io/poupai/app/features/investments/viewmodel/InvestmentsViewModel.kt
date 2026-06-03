@@ -181,9 +181,9 @@ class InvestmentsViewModel @Inject constructor(
                 showEditSheet = true,
                 editingInvestment = investment,
                 editFormName = investment.name,
-                editFormShares = if (investment.shares > 0) investment.shares.toString() else "",
-                editFormAveragePrice = if (investment.averagePrice > 0) investment.averagePrice.toString() else "",
-                editFormInvestedValue = if (investment.investedValue > 0) investment.investedValue.toString() else "",
+                editFormShares = io.poupai.app.core.util.NumberMasks.fromDouble(investment.shares),
+                editFormAveragePrice = io.poupai.app.core.util.NumberMasks.fromDouble(investment.averagePrice),
+                editFormInvestedValue = io.poupai.app.core.util.NumberMasks.fromDouble(investment.investedValue),
                 editFormError = null,
                 isSavingEdit = false,
             )
@@ -195,9 +195,9 @@ class InvestmentsViewModel @Inject constructor(
     }
 
     fun onEditNameChanged(v: String) { _uiState.update { it.copy(editFormName = v) } }
-    fun onEditSharesChanged(v: String) { _uiState.update { it.copy(editFormShares = v) } }
-    fun onEditAveragePriceChanged(v: String) { _uiState.update { it.copy(editFormAveragePrice = v) } }
-    fun onEditInvestedValueChanged(v: String) { _uiState.update { it.copy(editFormInvestedValue = v) } }
+    fun onEditSharesChanged(v: String) { _uiState.update { it.copy(editFormShares = io.poupai.app.core.util.NumberMasks.decimal(v)) } }
+    fun onEditAveragePriceChanged(v: String) { _uiState.update { it.copy(editFormAveragePrice = io.poupai.app.core.util.NumberMasks.decimal(v)) } }
+    fun onEditInvestedValueChanged(v: String) { _uiState.update { it.copy(editFormInvestedValue = io.poupai.app.core.util.NumberMasks.decimal(v)) } }
 
     fun onSaveEdit() {
         val state = _uiState.value
