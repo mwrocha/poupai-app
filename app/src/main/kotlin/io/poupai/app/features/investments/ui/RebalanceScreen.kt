@@ -291,7 +291,8 @@ private fun CategoryRow(
         ) {
             OutlinedTextField(
                 value = text,
-                onValueChange = { new ->
+                onValueChange = { raw ->
+                    val new = io.poupai.app.core.util.NumberMasks.decimal(raw)
                     if (new.isEmpty() || (new.length <= 5 && new.replace(",", ".").toDoubleOrNull()
                             ?.let { it <= 100.0 } != false)
                     ) {
@@ -442,7 +443,8 @@ private fun RebalanceItemCard(
                     Text("Alvo: ", fontSize = 12.sp, color = PoupaiTheme.tokens.textSecondary)
                     OutlinedTextField(
                         value = targetText,
-                        onValueChange = { new ->
+                        onValueChange = { raw ->
+                            val new = io.poupai.app.core.util.NumberMasks.decimal(raw)
                             if (new.isEmpty() || (new.length <= 5 && new.replace(",", ".")
                                     .toDoubleOrNull()?.let { it <= 100.0 } != false)
                             ) {
