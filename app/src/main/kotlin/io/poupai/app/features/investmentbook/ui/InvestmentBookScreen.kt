@@ -614,7 +614,9 @@ private fun AddEntryForm(
 
         TextField(value = formState.formDate, onValueChange = onDateChanged,
             label = { Text("Data (dd-mm-aaaa)") }, placeholder = { Text("18-05-2026") },
-            singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(), colors = fieldColors,
             isError = fe.containsKey("formDate"),
             supportingText = fe["formDate"]?.let { { Text(it, color = MaterialTheme.colorScheme.error) } })
 

@@ -640,7 +640,9 @@ private fun AddGoalSheetContent(
 
         TextField(value = uiState.formDeadline, onValueChange = onDeadlineChanged,
             label = { Text("Prazo (dd-mm-aaaa) — opcional") }, placeholder = { Text("31-12-2026") },
-            singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(), colors = fieldColors)
 
         uiState.formError?.let {
             Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)

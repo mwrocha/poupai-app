@@ -4,7 +4,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -13,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.*
@@ -26,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,6 +53,19 @@ import java.time.LocalDate
 
 private val MONTHS_PT = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
     "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+private val MONTHS_PT_FULL = listOf(
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+)
+
+/** Dividendos de um mesmo mês, com subtotal — base da agenda mensal. */
+private data class MonthGroup(
+    val year: Int,
+    val month: Int,
+    val total: Double,
+    val items: List<Dividend>,
+)
 
 private val typeColor = mapOf(
     DividendType.DIVIDENDO to Purple40,
@@ -126,6 +143,21 @@ fun DividendsScreen(
     }
     val totalInvested = uiState.investments.sumOf { it.investedValue }
     val dyPeriod = if (totalInvested > 0) totalInPeriod / totalInvested * 100.0 else 0.0
+
+    // Agenda: agrupa os dividendos do período por mês, mais recente primeiro.
+    val monthGroups = remember(dividendsInPeriod) {
+        dividendsInPeriod
+            .mapNotNull { d ->
+                val y = yearOf(d.date)
+                val m = monthOf(d.date)
+                if (y != null && m != null) Triple(y, m, d) else null
+            }
+            .groupBy { it.first to it.second }
+            .map { (key, triples) ->
+                MonthGroup(key.first, key.second, triples.sumOf { it.third.amount }, triples.map { it.third })
+            }
+            .sortedWith(compareByDescending<MonthGroup> { it.year }.thenByDescending { it.month })
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(PoupaiTheme.tokens.bg)) {
 
@@ -222,16 +254,16 @@ fun DividendsScreen(
                     }
                 }
 
-                // 6. Recent list
+                // 6. Agenda mensal — dividendos agrupados por mês
                 item {
                     Text(
-                        "Registros (${dividendsInPeriod.size})",
+                        "Agenda",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = PoupaiTheme.tokens.textSecondary,
                     )
                 }
-                if (dividendsInPeriod.isEmpty()) {
+                if (monthGroups.isEmpty()) {
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -249,28 +281,11 @@ fun DividendsScreen(
                         }
                     }
                 } else {
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
-                            elevation = CardDefaults.cardElevation(1.dp),
-                        ) {
-                            Column {
-                                dividendsInPeriod.forEachIndexed { idx, dividend ->
-                                    DividendRow(
-                                        dividend = dividend,
-                                        onDelete = { viewModel.onDeleteRequest(dividend) },
-                                    )
-                                    if (idx < dividendsInPeriod.lastIndex) {
-                                        HorizontalDivider(
-                                            color = PoupaiTheme.tokens.surfaceAlt,
-                                            modifier = Modifier.padding(horizontal = 16.dp),
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    items(monthGroups) { group ->
+                        MonthAgendaGroup(
+                            group = group,
+                            onDelete = viewModel::onDeleteRequest,
+                        )
                     }
                 }
                 item { Spacer(Modifier.height(80.dp)) }
@@ -388,33 +403,73 @@ private fun YearSelector(
     val options: List<Pair<String, Int?>> =
         availableYears.map { it.toString() to it } + ("Todos" to null)
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(PoupaiTheme.tokens.surface)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        options.forEach { (label, year) ->
-            val isSelected = year == selected
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(if (isSelected) Purple40 else Color.Transparent)
-                    .clickable { onSelect(year) }
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label,
-                    fontSize = 12.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
+    // Até 6 opções: segmented control que preenche a largura.
+    // Acima disso: rolagem horizontal, para nunca espremer nem estourar o layout.
+    if (options.size <= 6) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(PoupaiTheme.tokens.surface)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            options.forEach { (label, year) ->
+                YearChip(
+                    label = label,
+                    isSelected = year == selected,
+                    onClick = { onSelect(year) },
+                    modifier = Modifier.weight(1f),
+                    horizontalPadding = 4.dp,
                 )
             }
         }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(PoupaiTheme.tokens.surface)
+                .horizontalScroll(rememberScrollState())
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            options.forEach { (label, year) ->
+                YearChip(
+                    label = label,
+                    isSelected = year == selected,
+                    onClick = { onSelect(year) },
+                    modifier = Modifier.widthIn(min = 52.dp),
+                    horizontalPadding = 16.dp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun YearChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    horizontalPadding: Dp = 8.dp,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(9.dp))
+            .background(if (isSelected) Purple40 else Color.Transparent)
+            .clickable { onClick() }
+            .padding(vertical = 8.dp, horizontal = horizontalPadding),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) Color.White else PoupaiTheme.tokens.textMuted,
+            maxLines = 1,
+        )
     }
 }
 
@@ -788,6 +843,64 @@ private fun DividendRow(dividend: Dividend, onDelete: () -> Unit) {
     }
 }
 
+// ─── AGENDA MENSAL ───
+
+@Composable
+private fun MonthAgendaGroup(group: MonthGroup, onDelete: (Dividend) -> Unit) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 2.dp, end = 2.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Default.CalendarMonth, null,
+                tint = Purple40, modifier = Modifier.size(15.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "${MONTHS_PT_FULL[group.month - 1]} ${group.year}",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = PoupaiTheme.tokens.textSecondary,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                "${group.items.size} pgto${if (group.items.size != 1) "s" else ""}",
+                fontSize = 10.sp,
+                color = PoupaiTheme.tokens.textMuted,
+            )
+            Spacer(Modifier.width(8.dp))
+            Surface(shape = RoundedCornerShape(6.dp), color = Purple40.copy(alpha = 0.12f)) {
+                Text(
+                    "+${group.total.toBRL()}",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Purple40,
+                )
+            }
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+            elevation = CardDefaults.cardElevation(1.dp),
+        ) {
+            Column {
+                group.items.forEachIndexed { idx, dividend ->
+                    DividendRow(dividend = dividend, onDelete = { onDelete(dividend) })
+                    if (idx < group.items.lastIndex) {
+                        HorizontalDivider(
+                            color = PoupaiTheme.tokens.surfaceAlt,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ─── EMPTY STATE ───
 
 @Composable
@@ -958,6 +1071,7 @@ private fun AddDividendForm(
             value = uiState.formDate, onValueChange = onDateChanged,
             label = { Text("Data (dd-mm-aaaa)") }, placeholder = { Text("18-05-2026") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(), colors = fieldColors,
         )
 

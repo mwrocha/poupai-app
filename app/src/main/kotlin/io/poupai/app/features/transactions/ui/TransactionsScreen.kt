@@ -665,6 +665,7 @@ private fun TransactionForm(
             label = { Text("Data") },
             placeholder = { Text("dd-MM-yyyy") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             colors = fieldColors,
         )
