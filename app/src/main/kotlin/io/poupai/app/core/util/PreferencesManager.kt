@@ -100,6 +100,9 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[KEY_BIOMETRIC_ENABLED] = enabled }
     }
 
+    suspend fun getBiometricEnabledSync(): Boolean =
+        context.dataStore.data.first()[KEY_BIOMETRIC_ENABLED] ?: false
+
     // ─── Theme ───
     val appTheme: Flow<String> = context.dataStore.data.map {
         it[KEY_THEME] ?: "system"
@@ -156,12 +159,14 @@ class PreferencesManager @Inject constructor(
     // ─── Logout ───
     suspend fun clearAll() {
         context.dataStore.edit { prefs ->
-            // Preserva apenas as preferências de UI ao fazer logout
+            // Preserva apenas as preferências de dispositivo ao fazer logout
             val theme = prefs[KEY_THEME]
             val hideValues = prefs[KEY_HIDE_VALUES]
+            val biometric = prefs[KEY_BIOMETRIC_ENABLED]
             prefs.clear()
             theme?.let { prefs[KEY_THEME] = it }
             hideValues?.let { prefs[KEY_HIDE_VALUES] = it }
+            biometric?.let { prefs[KEY_BIOMETRIC_ENABLED] = it }
         }
     }
 }
