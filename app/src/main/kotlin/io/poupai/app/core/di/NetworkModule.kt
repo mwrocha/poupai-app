@@ -28,7 +28,11 @@ import javax.inject.Singleton
 object NetworkModule {
 
     private const val EMULATOR_URL = "http://10.0.2.2:8080/"
-    private const val DEVICE_URL   = "http://192.168.0.4:8080/"
+    // Device físico: loopback do aparelho tunelado até a máquina via
+    //   adb reverse tcp:8080 tcp:8080
+    // Imune a troca de IP (DHCP) e a firewall. Rode o adb reverse uma vez por sessão
+    // (persiste enquanto o adb estiver conectado ao aparelho).
+    private const val DEVICE_URL   = "http://127.0.0.1:8080/"
 
     /**
      * URL base do backend. A escolha é amarrada ao tipo de build:
