@@ -96,6 +96,9 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Biometric / App Lock
+    implementation(libs.androidx.biometric)
+
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
