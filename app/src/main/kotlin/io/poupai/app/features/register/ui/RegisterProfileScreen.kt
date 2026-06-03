@@ -160,6 +160,7 @@ private fun RegisterProfileFields(
         label = { Text("Data de Nascimento") },
         placeholder = { Text("dd/MM/yyyy") },
         singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth(),
         colors = fieldColors,
     )
