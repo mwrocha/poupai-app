@@ -18,7 +18,10 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
@@ -161,6 +164,16 @@ fun FinancesScreen(
                             expenseChange = uiState.expenseChangePercent,
                             hideValues = uiState.hideValues,
                         )
+                    }
+
+                    val insights = buildInsights(uiState)
+                    if (insights.isNotEmpty()) {
+                        item { SectionTitle("Insights", Icons.Default.Lightbulb) }
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                insights.forEach { InsightCardRow(it) }
+                            }
+                        }
                     }
 
                     item { SectionTitle("Indicadores", Icons.Default.Insights) }
@@ -642,6 +655,165 @@ private fun InsightCard(data: InsightData, modifier: Modifier = Modifier) {
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+// ─── INSIGHTS AUTOMÁTICOS (leitura narrativa do período) ───
+
+private enum class InsightTone { POSITIVE, NEGATIVE, WARNING, NEUTRAL }
+
+private data class Insight(
+    val icon: ImageVector,
+    val title: String,
+    val detail: String? = null,
+    val tone: InsightTone = InsightTone.NEUTRAL,
+)
+
+private fun insightToneColor(tone: InsightTone): Color = when (tone) {
+    InsightTone.POSITIVE -> Color(0xFF22A06B)
+    InsightTone.NEGATIVE -> Color(0xFFD05050)
+    InsightTone.WARNING  -> Color(0xFFC98A00)
+    InsightTone.NEUTRAL  -> Purple40
+}
+
+/**
+ * Gera insights narrativos a partir do resumo já carregado — sem chamadas extras.
+ * Usa apenas percentuais e categorias (não valores em R$), então é seguro mesmo
+ * com "ocultar valores" ligado. A ordem reflete prioridade; a tela mostra os 4 primeiros.
+ */
+private fun buildInsights(s: FinancesUiState): List<Insight> {
+    val out = mutableListOf<Insight>()
+    fun pct(v: Double) = "%.0f".format(kotlin.math.abs(v))
+
+    // 1. Taxa de poupança (saldo do período / receita)
+    if (s.totalIncome > 0) {
+        val rate = s.totalProfit / s.totalIncome * 100
+        when {
+            rate < 0 -> out += Insight(
+                Icons.Default.WarningAmber,
+                "Você gastou mais do que ganhou",
+                "No período, as despesas superaram as receitas. Vale revisar os gastos.",
+                InsightTone.NEGATIVE,
+            )
+            rate >= 20 -> out += Insight(
+                Icons.Default.Savings,
+                "Você poupou ${pct(rate)}% da sua renda",
+                "Ótima taxa de poupança — acima dos 20% recomendados.",
+                InsightTone.POSITIVE,
+            )
+            else -> out += Insight(
+                Icons.Default.Savings,
+                "Você poupou ${pct(rate)}% da sua renda",
+                "Tente chegar perto de 20% para acelerar suas metas.",
+                InsightTone.NEUTRAL,
+            )
+        }
+    }
+
+    // 2. Despesas vs período anterior
+    if (kotlin.math.abs(s.expenseChangePercent) >= 1.0) {
+        if (s.expenseChangePercent > 0) out += Insight(
+            Icons.Default.TrendingUp,
+            "Seus gastos subiram ${pct(s.expenseChangePercent)}%",
+            "Comparado ao período anterior.",
+            if (s.expenseChangePercent >= 15) InsightTone.WARNING else InsightTone.NEUTRAL,
+        ) else out += Insight(
+            Icons.Default.TrendingDown,
+            "Você reduziu gastos em ${pct(s.expenseChangePercent)}%",
+            "Comparado ao período anterior. Continue assim!",
+            InsightTone.POSITIVE,
+        )
+    }
+
+    // 3. Categoria dominante
+    s.categoryBreakdown.firstOrNull()?.let { top ->
+        if (top.percent >= 40) out += Insight(
+            Icons.Default.PieChart,
+            "${top.category} concentra ${pct(top.percent)}% dos gastos",
+            "Uma única categoria domina as despesas — vale diversificar ou cortar.",
+            InsightTone.WARNING,
+        ) else out += Insight(
+            Icons.Default.PieChart,
+            "Maior categoria: ${top.category}",
+            "Representa ${pct(top.percent)}% das despesas do período.",
+            InsightTone.NEUTRAL,
+        )
+    }
+
+    // 4. Projeção do mês vs média mensal
+    if (s.projectedMonthlyExpense > 0 && s.avgMonthlyExpense > 0) {
+        val diff = (s.projectedMonthlyExpense - s.avgMonthlyExpense) / s.avgMonthlyExpense * 100
+        when {
+            diff >= 10 -> out += Insight(
+                Icons.Default.Insights,
+                "Projeção ${pct(diff)}% acima da média",
+                "No ritmo atual, este mês deve fechar acima do seu gasto mensal médio.",
+                InsightTone.WARNING,
+            )
+            diff <= -10 -> out += Insight(
+                Icons.Default.Insights,
+                "Projeção abaixo da sua média",
+                "No ritmo atual, este mês deve fechar mais econômico que o normal.",
+                InsightTone.POSITIVE,
+            )
+        }
+    }
+
+    // 5. Receita vs período anterior (menor prioridade)
+    if (s.incomeChangePercent >= 15) out += Insight(
+        Icons.Default.TrendingUp,
+        "Sua receita cresceu ${pct(s.incomeChangePercent)}%",
+        "Bom momento para reforçar seus aportes.",
+        InsightTone.POSITIVE,
+    ) else if (s.incomeChangePercent <= -10) out += Insight(
+        Icons.Default.TrendingDown,
+        "Sua receita caiu ${pct(s.incomeChangePercent)}%",
+        "Comparado ao período anterior.",
+        InsightTone.WARNING,
+    )
+
+    return out.take(4)
+}
+
+@Composable
+private fun InsightCardRow(insight: Insight) {
+    val tone = insightToneColor(insight.tone)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(1.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                    .background(tone.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(insight.icon, null, tint = tone, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    insight.title,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PoupaiTheme.tokens.textPrimary,
+                )
+                insight.detail?.let {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        it,
+                        fontSize = 11.sp,
+                        color = PoupaiTheme.tokens.textSecondary,
+                        lineHeight = 15.sp,
+                    )
                 }
             }
         }
