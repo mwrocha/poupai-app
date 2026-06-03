@@ -8,6 +8,7 @@ import io.poupai.app.domain.model.Transaction
 import io.poupai.app.domain.model.TransactionType
 import io.poupai.app.domain.repository.GamificationRepository
 import io.poupai.app.domain.repository.GoalRepository
+import io.poupai.app.domain.repository.InvestmentRepository
 import io.poupai.app.domain.repository.TransactionRepository
 import io.poupai.app.features.dashboard.state.DashboardUiState
 import io.poupai.app.features.dashboard.state.MonthData
@@ -29,6 +30,7 @@ class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val goalRepository: GoalRepository,
     private val gamificationRepository: GamificationRepository,
+    private val investmentRepository: InvestmentRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -56,6 +58,7 @@ class DashboardViewModel @Inject constructor(
     fun loadDashboard() {
         loadUserInfo()
         loadTransactionsAndSummary()
+        loadInvestments()
         loadGoals()
         loadGamification()
     }
@@ -135,6 +138,22 @@ class DashboardViewModel @Inject constructor(
                             totalPoints = result.data.totalPoints,
                         )
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Soma o valor atual de mercado (currentValue) de todos os ativos para compor o
+     * patrimônio consolidado. Usa currentValue — não investedValue — pois o patrimônio
+     * representa quanto a carteira vale hoje, não o custo de aquisição.
+     */
+    private fun loadInvestments() {
+        viewModelScope.launch {
+            investmentRepository.getInvestments().collect { result ->
+                if (result is Resource.Success) {
+                    val value = result.data.sumOf { it.currentValue }
+                    _uiState.update { it.copy(investmentsValue = value) }
                 }
             }
         }
