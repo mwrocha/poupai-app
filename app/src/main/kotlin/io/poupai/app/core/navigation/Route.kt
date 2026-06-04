@@ -17,6 +17,7 @@ sealed class Route(val route: String) {
 
     data object Tags : Route("tags")
     data object Finances : Route("finances")
+    data object Budget : Route("finances/budget")
     data object Investments : Route("investments")
     data object InvestmentBook : Route("investments/book")
     data object Dividends : Route("investments/dividends")
