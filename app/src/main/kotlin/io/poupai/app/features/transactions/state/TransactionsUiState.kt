@@ -32,6 +32,7 @@ data class TransactionsUiState(
     val activeFilter: TransactionFilter = TransactionFilter.ALL,
     val selectedMonth: Int = java.time.LocalDate.now().monthValue,
     val selectedYear: Int = java.time.LocalDate.now().year,
+    val searchQuery: String = "",
 
     // ─── Exclusão ───
     val deletingId: String? = null,
@@ -80,10 +81,16 @@ data class TransactionsUiState(
                 cal.get(java.util.Calendar.MONTH) + 1 == selectedMonth &&
                         cal.get(java.util.Calendar.YEAR) == selectedYear
             }
-            return when (activeFilter) {
+            val byType = when (activeFilter) {
                 TransactionFilter.ALL -> byMonth
                 TransactionFilter.INCOME -> byMonth.filter { it.type == TransactionType.INCOME }
                 TransactionFilter.EXPENSE -> byMonth.filter { it.type == TransactionType.EXPENSE }
+            }
+            val q = searchQuery.trim()
+            return if (q.isBlank()) byType
+            else byType.filter {
+                it.title.contains(q, ignoreCase = true) ||
+                    it.category.contains(q, ignoreCase = true)
             }
         }
 

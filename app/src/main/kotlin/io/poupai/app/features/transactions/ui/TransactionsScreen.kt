@@ -14,10 +14,12 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -171,6 +173,13 @@ fun TransactionsScreen(
                     }
 
                     item {
+                        TransactionSearchBar(
+                            query = uiState.searchQuery,
+                            onQueryChange = viewModel::onSearchQueryChanged,
+                        )
+                    }
+
+                    item {
                         SectionTitle(
                             "${uiState.filteredTransactions.size} " +
                                 if (uiState.filteredTransactions.size == 1) "transação" else "transações",
@@ -179,7 +188,13 @@ fun TransactionsScreen(
                     }
 
                     if (uiState.filteredTransactions.isEmpty()) {
-                        item { EmptyState(allEmpty = uiState.allTransactions.isEmpty()) }
+                        item {
+                            if (uiState.searchQuery.isNotBlank()) {
+                                SearchEmptyState(query = uiState.searchQuery)
+                            } else {
+                                EmptyState(allEmpty = uiState.allTransactions.isEmpty())
+                            }
+                        }
                     } else {
                         items(uiState.filteredTransactions, key = { it.id }) { transaction ->
                             TransactionItem(
@@ -441,6 +456,84 @@ private fun InlineFlowStat(
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+// ─── BUSCA ───
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TransactionSearchBar(query: String, onQueryChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = {
+            Text(
+                "Buscar por título ou categoria",
+                fontSize = 13.sp,
+                color = PoupaiTheme.tokens.textMuted,
+            )
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Search, null,
+                tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(20.dp),
+            )
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        Icons.Default.Close, "Limpar busca",
+                        tint = PoupaiTheme.tokens.textMuted, modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Purple40,
+            unfocusedBorderColor = PoupaiTheme.tokens.divider,
+            focusedContainerColor = PoupaiTheme.tokens.surface,
+            unfocusedContainerColor = PoupaiTheme.tokens.surface,
+            focusedTextColor = PoupaiTheme.tokens.textPrimary,
+            unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
+            cursorColor = Purple40,
+        ),
+    )
+}
+
+@Composable
+private fun SearchEmptyState(query: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(PurpleLight.copy(alpha = 0.55f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.Search, null, tint = Purple40, modifier = Modifier.size(28.dp))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "Nada encontrado para \"$query\"",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = PoupaiTheme.tokens.textSecondary,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "A busca cobre o mês selecionado. Tente outro termo ou navegue para outro mês.",
+            fontSize = 12.sp,
+            color = PoupaiTheme.tokens.textMuted,
+            textAlign = TextAlign.Center,
         )
     }
 }

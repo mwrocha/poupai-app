@@ -88,6 +88,7 @@ class TransactionsViewModel @Inject constructor(
 
     // ─── Filtros ───
     fun onFilterChanged(filter: TransactionFilter) = _uiState.update { it.copy(activeFilter = filter) }
+    fun onSearchQueryChanged(query: String) = _uiState.update { it.copy(searchQuery = query) }
 
     fun onPreviousMonth() {
         val state = _uiState.value
