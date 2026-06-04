@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -77,6 +78,7 @@ private val ExpenseColor = Purple60          // despesa (lavanda)
 @Composable
 fun FinancesScreen(
     topLevelNav: TopLevelNavCallbacks,
+    onNavigateToBudget: () -> Unit,
     viewModel: FinancesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -166,6 +168,8 @@ fun FinancesScreen(
                         )
                     }
 
+                    item { BudgetEntryCard(onClick = onNavigateToBudget) }
+
                     val insights = buildInsights(uiState)
                     if (insights.isNotEmpty()) {
                         item { SectionTitle("Insights", Icons.Default.Lightbulb) }
@@ -216,6 +220,45 @@ fun FinancesScreen(
         }
     }
     } // close PoupaiDrawerScaffold
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BudgetEntryCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(PurpleLight.copy(alpha = 0.55f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Default.Savings, null, tint = Purple40, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Orçamento do mês",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PoupaiTheme.tokens.textPrimary,
+                )
+                Text(
+                    "Defina tetos por categoria e acompanhe",
+                    fontSize = 11.sp,
+                    color = PoupaiTheme.tokens.textMuted,
+                )
+            }
+            Icon(Icons.Default.ChevronRight, null, tint = PoupaiTheme.tokens.textMuted)
+        }
+    }
 }
 
 @Composable
