@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -39,6 +41,9 @@ class PreferencesManager @Inject constructor(
         private val KEY_TARGET_RV = doublePreferencesKey("category_target_rv")
         private val KEY_TARGET_RF = doublePreferencesKey("category_target_rf")
         private val KEY_TARGET_CRIPTO = doublePreferencesKey("category_target_cripto")
+
+        // ─── Orçamento mensal por categoria (JSON: {"categoria": teto}) ───
+        private val KEY_CATEGORY_BUDGETS = stringPreferencesKey("category_budgets")
 
         // ─── Imposto de Renda ───
         // Conjunto de investmentIds marcados manualmente como FII (Fundo Imobiliário).
@@ -153,6 +158,35 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { prefs ->
             val current = prefs[KEY_FII_INVESTMENT_IDS] ?: emptySet()
             prefs[KEY_FII_INVESTMENT_IDS] = if (isFii) current + investmentId else current - investmentId
+        }
+    }
+
+    // ─── Orçamento mensal por categoria ───
+    private val budgetGson = Gson()
+    private val budgetMapType = object : TypeToken<Map<String, Double>>() {}.type
+
+    private fun parseBudgets(json: String?): Map<String, Double> =
+        if (json.isNullOrBlank()) emptyMap()
+        else runCatching { budgetGson.fromJson<Map<String, Double>>(json, budgetMapType) }.getOrNull() ?: emptyMap()
+
+    /** Tetos de gasto por categoria. Mapa categoria → limite mensal. */
+    val categoryBudgets: Flow<Map<String, Double>> =
+        context.dataStore.data.map { parseBudgets(it[KEY_CATEGORY_BUDGETS]) }
+
+    /** Define (ou remove, se limit <= 0) o teto de uma categoria. */
+    suspend fun setCategoryBudget(category: String, limit: Double) {
+        context.dataStore.edit { prefs ->
+            val updated = parseBudgets(prefs[KEY_CATEGORY_BUDGETS]).toMutableMap().apply {
+                if (limit > 0) this[category] = limit else remove(category)
+            }
+            prefs[KEY_CATEGORY_BUDGETS] = budgetGson.toJson(updated)
+        }
+    }
+
+    suspend fun removeCategoryBudget(category: String) {
+        context.dataStore.edit { prefs ->
+            val updated = parseBudgets(prefs[KEY_CATEGORY_BUDGETS]) - category
+            prefs[KEY_CATEGORY_BUDGETS] = budgetGson.toJson(updated)
         }
     }
 
