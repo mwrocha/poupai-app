@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -105,6 +106,8 @@ fun RebalanceScreen(
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    item { SmartContributionCard(rebalance = rebalance) }
+
                     item {
                         CategoryAllocationCard(
                             rebalance = rebalance,
@@ -142,6 +145,189 @@ fun RebalanceScreen(
                 }
             }
         }
+    }
+}
+
+// ─── APORTE INTELIGENTE ───
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SmartContributionCard(rebalance: RebalanceSummary) {
+    var input by remember { mutableStateOf("") }
+    val contribution = io.poupai.app.core.util.NumberMasks.parse(input) ?: 0.0
+    val hasTargets = rebalance.items.any { it.targetPercent > 0 }
+
+    // Distribui o aporte: preenche o que falta para o alvo de cada ativo (proporcional
+    // quando o aporte é menor que a soma das lacunas); a sobra vai pelo % alvo.
+    val allocations: List<Pair<RebalanceItem, Double>> = remember(input, rebalance) {
+        val c = io.poupai.app.core.util.NumberMasks.parse(input) ?: 0.0
+        if (c <= 0 || rebalance.items.none { it.targetPercent > 0 }) emptyList()
+        else {
+            val newTotal = rebalance.totalCurrentValue + c
+            val needs = rebalance.items.map { item ->
+                item to (newTotal * item.targetPercent / 100.0 - item.currentValue).coerceAtLeast(0.0)
+            }
+            val sumNeeded = needs.sumOf { it.second }
+            val sumTarget = rebalance.items.sumOf { it.targetPercent }
+            val raw = when {
+                sumNeeded <= 0.0 ->
+                    if (sumTarget > 0) rebalance.items.map { it to c * it.targetPercent / sumTarget }
+                    else emptyList()
+                c <= sumNeeded -> needs.map { (item, need) -> item to c * need / sumNeeded }
+                else -> {
+                    val remainder = c - sumNeeded
+                    needs.map { (item, need) ->
+                        val extra = if (sumTarget > 0) remainder * item.targetPercent / sumTarget else 0.0
+                        item to (need + extra)
+                    }
+                }
+            }
+            raw.filter { it.second > 0.01 }.sortedByDescending { it.second }
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = PoupaiTheme.tokens.surface),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(36.dp).clip(RoundedCornerShape(11.dp))
+                        .background(Purple40.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Savings, null, tint = Purple40, modifier = Modifier.size(20.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(
+                        "Aporte inteligente",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = PoupaiTheme.tokens.textPrimary,
+                    )
+                    Text(
+                        "Onde aportar para reequilibrar sem vender",
+                        fontSize = 11.sp,
+                        color = PoupaiTheme.tokens.textMuted,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = input,
+                onValueChange = { input = io.poupai.app.core.util.NumberMasks.decimal(it) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Quanto você vai aportar? (R$)") },
+                placeholder = { Text("0,00") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Purple40,
+                    unfocusedBorderColor = PoupaiTheme.tokens.divider,
+                    focusedLabelColor = Purple40,
+                    unfocusedLabelColor = PoupaiTheme.tokens.textMuted,
+                    focusedTextColor = PoupaiTheme.tokens.textPrimary,
+                    unfocusedTextColor = PoupaiTheme.tokens.textPrimary,
+                    cursorColor = Purple40,
+                ),
+            )
+
+            when {
+                !hasTargets -> {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Defina os % alvo dos ativos (abaixo) para usar o aporte inteligente.",
+                        fontSize = 12.sp,
+                        color = PoupaiTheme.tokens.textMuted,
+                    )
+                }
+
+                contribution > 0 && allocations.isNotEmpty() -> {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Sugestão de distribuição",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PoupaiTheme.tokens.textSecondary,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    allocations.forEach { (item, amount) ->
+                        SmartContributionRow(
+                            name = item.name,
+                            type = item.type,
+                            amount = amount,
+                            percentOfContribution = amount / contribution * 100.0,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
+                    HorizontalDivider(color = PoupaiTheme.tokens.surfaceAlt)
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            "Total distribuído",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PoupaiTheme.tokens.textSecondary,
+                        )
+                        Text(
+                            allocations.sumOf { it.second }.toBRL(),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Purple40,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmartContributionRow(
+    name: String,
+    type: String,
+    amount: Double,
+    percentOfContribution: Double,
+) {
+    val accent = when (type) {
+        "RENDA_VARIAVEL" -> Purple40
+        "RENDA_FIXA" -> Purple60
+        "CRIPTOMOEDAS" -> Color(0xFF7C5295)
+        else -> Purple40
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(34.dp).clip(CircleShape).background(accent.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(name.take(2).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = accent)
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                name,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = PoupaiTheme.tokens.textPrimary,
+                maxLines = 1,
+            )
+            Text(
+                "${"%.0f".format(percentOfContribution)}% do aporte",
+                fontSize = 10.sp,
+                color = PoupaiTheme.tokens.textMuted,
+            )
+        }
+        Text("+ ${amount.toBRL()}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = GreenPositive)
     }
 }
 
