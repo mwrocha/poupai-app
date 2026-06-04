@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import io.poupai.app.core.designsystem.components.TopLevelNavCallbacks
 import io.poupai.app.features.auth.ui.LoginScreen
 import io.poupai.app.features.auth.ui.WelcomeScreen
+import io.poupai.app.features.budget.ui.BudgetScreen
 import io.poupai.app.features.dashboard.ui.DashboardScreen
 import io.poupai.app.features.dividends.ui.DividendsScreen
 import io.poupai.app.features.finances.ui.FinancesScreen
@@ -151,7 +152,15 @@ fun PoupaiNavHost(navController: NavHostController) {
 
         composable(Route.Transactions.route) { TransactionsScreen(topLevelNav = topLevelNav) }
         composable(Route.Tags.route) { TagsScreen(topLevelNav = topLevelNav) }
-        composable(Route.Finances.route) { FinancesScreen(topLevelNav = topLevelNav) }
+        composable(Route.Finances.route) {
+            FinancesScreen(
+                topLevelNav = topLevelNav,
+                onNavigateToBudget = { navController.navigate(Route.Budget.route) },
+            )
+        }
+        composable(Route.Budget.route) {
+            BudgetScreen(onNavigateBack = { navController.popBackStack() })
+        }
 
         composable(Route.Investments.route) {
             InvestmentsScreen(
